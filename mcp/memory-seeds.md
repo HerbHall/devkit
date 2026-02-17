@@ -1,5 +1,9 @@
 # MCP Memory Bootstrap
 
+> **Example content**: Replace entity names, GitHub handles, project names, and
+> observations with your own before loading into MCP Memory. These are examples
+> showing the structure, not values to use verbatim.
+
 Key entities to create in a fresh MCP Memory instance. These represent foundational knowledge that should exist from the start. Create using `create_entities` and `create_relations` tools.
 
 ## Core Entities
@@ -7,12 +11,12 @@ Key entities to create in a fresh MCP Memory instance. These represent foundatio
 ### User Profile
 
 ```text
-Entity: herb-dev-profile
+Entity: your-dev-profile
 Type: Person
 Observations:
 - Solo developer working on multiple concurrent projects
-- Primary stack: Go + React (SubNetree), C#/.NET (IPScan), Rust (DigitalRain)
-- Platform: Windows with MSYS/Git Bash
+- Primary stack: <your languages and frameworks>
+- Platform: <your OS and shell>
 - Editor: VS Code with Claude Code extension
 - Prefers: concise communication, no emojis, conventional commits
 - Workflow: Explore -> Plan -> Code -> Commit
@@ -37,25 +41,17 @@ Observations:
 Create one entity per active project:
 
 ```text
-Entity: project-subnetree
+Entity: project-one
 Type: Project
 Observations:
-- Network monitoring platform (Go backend + React frontend)
-- Most active project, production-grade CI/CD
-- GitHub: HerbHall/SubNetree
+- <description of the project>
+- GitHub: <your-handle>/<repo-name>
 
-Entity: project-ipscan
+Entity: project-two
 Type: Project
 Observations:
-- C# .NET 10 network scanner (WPF + CLI)
-- Shelved, used as SDD research test bed
-- GitHub: HerbHall/IPScan
-
-Entity: project-runbooks
-Type: Project
-Observations:
-- Docker Desktop extension for saved command scripts
-- GitHub: HerbHall/Runbooks
+- <description of the project>
+- GitHub: <your-handle>/<repo-name>
 ```
 
 ### Key Patterns
@@ -65,9 +61,8 @@ Entity: pattern-subagent-parallel-execution
 Type: Pattern
 Observations:
 - Launch 2-3 background agents per wave for independent tasks
-- All agents share working tree (gotcha #28)
+- All agents share working tree (see known-gotchas.md)
 - Sort changes into branches via git stash/pop after completion
-- Proven on SubNetree sprints: 6 PRs from 2 waves
 
 Entity: pattern-autolearn-feedback-loop
 Type: Pattern
@@ -75,16 +70,14 @@ Observations:
 - /reflect skill captures session learnings
 - Stores in MCP Memory (deep) and rules files (fast)
 - Rules files auto-load every session
-- 70+ patterns accumulated across projects
 ```
 
 ## Relations
 
 ```text
-herb-dev-profile -> USES -> dev-methodology
-herb-dev-profile -> WORKS_ON -> project-subnetree
-herb-dev-profile -> WORKS_ON -> project-ipscan
-herb-dev-profile -> WORKS_ON -> project-runbooks
+your-dev-profile -> USES -> dev-methodology
+your-dev-profile -> WORKS_ON -> project-one
+your-dev-profile -> WORKS_ON -> project-two
 dev-methodology -> INCLUDES -> pattern-subagent-parallel-execution
 dev-methodology -> INCLUDES -> pattern-autolearn-feedback-loop
 ```

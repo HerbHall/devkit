@@ -62,7 +62,7 @@ This project is NOT worth pursuing if:
 - Technical feasibility check (can the core idea actually work?)
 - User needs summary (what do real people say about this problem?)
 
-**Tools**: `/research-mode` skill, GitHub search, blog aggregation, `gh api` for competitor analysis.
+**Tools**: GitHub search, blog aggregation, `gh api` for competitor analysis. (Create a project-specific `/research-mode` skill for structured research workflows.)
 
 **Key questions**:
 
@@ -246,13 +246,13 @@ After significant sessions, sync changes back:
 
 ```bash
 # Copy updated rules
-cp ~/.claude/rules/*.md /d/DevSpace/devkit/claude/rules/
+cp ~/.claude/rules/*.md ~/workspace/devkit/claude/rules/
 
 # Copy new skills
-cp -r ~/.claude/skills/new-skill /d/DevSpace/devkit/claude/skills/
+cp -r ~/.claude/skills/new-skill ~/workspace/devkit/claude/skills/
 
 # Commit
-cd /d/DevSpace/devkit && git add -A && git commit -m "chore: sync patterns from [project]"
+cd ~/workspace/devkit && git add -A && git commit -m "chore: sync patterns from [project]"
 ```
 
 ### When to Update the Methodology
@@ -288,6 +288,6 @@ The methodology should evolve. Version 1 is a starting point, not a final answer
 | CI/CD setup | `/setup-github-actions` skill | Manual workflow writing |
 | Code review | `/quality-control` skill | PR review plugins |
 | Learning capture | `/reflect` (autolearn) | Manual rules file update |
-| Competitive research | `/research-mode` skill | Manual GitHub/web research |
+| Competitive research | `gh api` + blog aggregation | Project-specific `/research-mode` skill |
 
 **Default**: Use Claude Code native capabilities (plan mode, subagents, skills) for most work. External tools (BMAD, Spec Kit) are optional supplements for complex scenarios.

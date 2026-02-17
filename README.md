@@ -2,37 +2,59 @@
 
 Personal development methodology and Claude Code configuration. Clone this repo to replicate the full development environment on any machine.
 
+## Quick Start
+
+```bash
+# 1. Clone into your workspace root
+cd ~/workspace  # or wherever your projects live
+git clone https://github.com/HerbHall/devkit.git
+
+# 2. Check prerequisites (git, node, gh required)
+bash devkit/setup/install-tools.sh
+
+# 3. Install everything
+bash devkit/setup/setup.sh
+
+# 4. Verify
+bash devkit/setup/verify.sh
+```
+
+Setup copies rules, skills, agents, and hooks to `~/.claude/`, installs workspace configs (`.editorconfig`, `.markdownlint.json`), and runs verification.
+
+## What's Included
+
+### Portable (works as-is)
+
+| Component | Count | Location |
+|-----------|-------|----------|
+| Rules (auto-loaded every session) | 5 files | `claude/rules/` |
+| Skills (invoke with `/skill-name`) | 9 skills | `claude/skills/` |
+| Agent templates | 6 agents | `claude/agents/` |
+| SessionStart hook | 1 | `claude/hooks/` |
+| Setup + verification scripts | 3 | `setup/` |
+
+### Templates (customize per user/machine)
+
+| File | Purpose |
+|------|---------|
+| `claude/settings.template.json` | Claude Code settings — adjust permissions and plugins |
+| `devspace/CLAUDE.md` | Workspace CLAUDE.md template — fill in your projects |
+| `mcp/memory-seeds.md` | MCP Memory bootstrap — replace with your profile |
+| `mcp/claude-desktop.template.json` | MCP server config — fill in tokens and paths |
+
+### Methodology (opinionated process guide)
+
+`METHODOLOGY.md` — 6-phase development process (Concept, Research, Specification, Prototype, Implementation, Release) with gates, templates, and a decision framework. Use as-is or adapt to your workflow.
+
 ## What's Inside
 
 | Directory | Purpose |
 |-----------|---------|
-| `claude/` | Global Claude Code config — CLAUDE.md, 5 rules files (70+ patterns), 14 skills, 6 agent templates, hooks |
+| `claude/` | Global Claude Code config — CLAUDE.md, 5 rules files (70+ patterns), 9 skills, 6 agent templates, hooks |
 | `devspace/` | Workspace shared configs — .editorconfig, .markdownlint.json, project templates, VS Code fragments |
 | `mcp/` | MCP server inventory, config templates (no secrets), Memory bootstrap guide |
 | `setup/` | Automated setup scripts for new machines |
 | `METHODOLOGY.md` | Development process — phases, gates, decision framework |
-
-## Quick Setup
-
-```bash
-# 1. Clone the repo into your workspace root
-cd /d/DevSpace  # or wherever your projects live
-git clone https://github.com/HerbHall/devkit.git
-
-# 2. Check prerequisites
-bash devkit/setup/install-tools.sh
-
-# 3. Run setup (installs Claude config + workspace configs)
-bash devkit/setup/setup.sh
-```
-
-The setup script:
-
-- Copies rules, skills, agents, and hooks to `~/.claude/`
-- Installs `.editorconfig` and `.markdownlint.json` at the workspace root
-- Copies project templates and VS Code setting fragments
-- Creates `settings.json` from template (if none exists)
-- Runs verification to confirm everything is in place
 
 ## Manual Setup
 
@@ -57,16 +79,16 @@ cp claude/agents/*.md ~/.claude/agents/
 cp claude/hooks/* ~/.claude/hooks/
 chmod +x ~/.claude/hooks/*.sh
 
-# Create settings from template
+# Create settings from template (only if none exists)
 cp claude/settings.template.json ~/.claude/settings.json
-# Then edit settings.json to add project-specific tool permissions
+# Then edit settings.json to adjust permissions and plugins
 ```
 
 ### MCP Servers
 
 ```bash
 # Copy and customize the desktop config
-cp mcp/claude-desktop.template.json "%APPDATA%/Claude/claude_desktop_config.json"
+cp mcp/claude-desktop.template.json "$HOME/.config/Claude/claude_desktop_config.json"
 # Edit the file and replace all <PLACEHOLDER> values with your tokens/paths
 ```
 
@@ -76,26 +98,27 @@ See [mcp/servers.md](mcp/servers.md) for the full server inventory and install i
 
 ```bash
 # These go at your workspace root (parent of all projects)
-cp devspace/.editorconfig /d/DevSpace/.editorconfig
-cp devspace/.markdownlint.json /d/DevSpace/.markdownlint.json
-cp -r devspace/templates /d/DevSpace/.templates
-cp -r devspace/shared-vscode /d/DevSpace/.shared-vscode
+WORKSPACE="$HOME/workspace"  # adjust to your path
+cp devspace/.editorconfig "$WORKSPACE/.editorconfig"
+cp devspace/.markdownlint.json "$WORKSPACE/.markdownlint.json"
+cp -r devspace/templates "$WORKSPACE/.templates"
+cp -r devspace/shared-vscode "$WORKSPACE/.shared-vscode"
 ```
 
 ## Starting a New Project
 
 ```bash
 # 1. Create the project directory
-mkdir /d/DevSpace/my-project && cd /d/DevSpace/my-project
+mkdir ~/workspace/my-project && cd ~/workspace/my-project
 git init
 
 # 2. Copy the CLAUDE.md template
-cp /d/DevSpace/.templates/claude-md-template.md CLAUDE.md
+cp ~/workspace/.templates/claude-md-template.md CLAUDE.md
 # Edit CLAUDE.md with project-specific build commands and architecture
 
 # 3. (Optional) Copy other templates as needed
-cp /d/DevSpace/.templates/adr-template.md docs/decisions/ADR-001.md
-cp /d/DevSpace/.templates/design-template.md docs/designs/DES-001.md
+cp ~/workspace/.templates/adr-template.md docs/decisions/ADR-001.md
+cp ~/workspace/.templates/design-template.md docs/designs/DES-001.md
 
 # 4. Follow the methodology (see METHODOLOGY.md)
 # Phase 0: Write a concept brief
@@ -111,7 +134,7 @@ Changes flow in two directions:
 ### Repo to machine (pull updates)
 
 ```bash
-cd /d/DevSpace/devkit
+cd ~/workspace/devkit
 git pull
 bash setup/setup.sh  # Re-runs setup (safe, backs up existing files)
 ```
@@ -122,13 +145,13 @@ When you've accumulated new patterns, skills, or config changes:
 
 ```bash
 # Copy updated rules back to repo
-cp ~/.claude/rules/*.md /d/DevSpace/devkit/claude/rules/
+cp ~/.claude/rules/*.md ~/workspace/devkit/claude/rules/
 
 # Copy new/updated skills
-cp -r ~/.claude/skills/my-new-skill /d/DevSpace/devkit/claude/skills/
+cp -r ~/.claude/skills/my-new-skill ~/workspace/devkit/claude/skills/
 
 # Commit and push
-cd /d/DevSpace/devkit
+cd ~/workspace/devkit
 git add -A && git commit -m "chore: sync config from workstation"
 git push
 ```
@@ -139,6 +162,7 @@ git push
 - **MCP Memory data** — Accumulates organically; see `mcp/memory-seeds.md` for bootstrap
 - **Session state** — Debug logs, file history, task state (machine-specific, not portable)
 - **Project-specific CLAUDE.md** — Each project has its own; only the template is here
+- **Project-specific skills** — Skills tied to specific projects (dashboards, coordination, research workflows) belong in those projects' `.claude/` directories, not here
 
 ## File Inventory
 
@@ -157,9 +181,7 @@ git push
 | Skill | Purpose |
 |-------|---------|
 | autolearn | Session learning capture and reflection |
-| dashboard | Session control station with project state |
 | quality-control | CI verification and PR health checks |
-| research-mode | Competitive analysis and market research |
 | manage-github-issues | Issue generation, audit, and triage |
 | requirements-generator | Requirements.md creation |
 | setup-github-actions | CI/CD workflow generation |
@@ -167,9 +189,17 @@ git push
 | react-frontend-development | React + TypeScript patterns |
 | docker-containerization | Docker best practices |
 | windows-development | Windows-specific patterns |
-| coordination-sync | Cross-project coordination |
-| pm-view | Project management overview |
-| dev-mode | Development session toggle |
+
+### Agent Templates
+
+| Agent | Purpose |
+|-------|---------|
+| go-test-writer | Table-driven Go tests, benchmarks, mock interfaces |
+| review-code | Security + quality review with verdict |
+| security-analyzer | OWASP-focused vulnerability analysis |
+| portfolio-analyzer | Scans all agent/skill locations for overlap and gaps |
+| vscode-test-writer | VS Code extension test generation |
+| vscode-translation-manager | VS Code extension localization management |
 
 ## License
 
