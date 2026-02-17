@@ -33,6 +33,7 @@ check_dir() {
 echo "Verifying Claude Code configuration..."
 check "$CLAUDE_HOME/CLAUDE.md" "Global CLAUDE.md"
 check "$CLAUDE_HOME/settings.json" "Settings file"
+check "$CLAUDE_HOME/claude-functions.sh" "Shell helper functions"
 check_dir "$CLAUDE_HOME/rules" "Rules directory"
 check_dir "$CLAUDE_HOME/skills" "Skills directory"
 check_dir "$CLAUDE_HOME/agents" "Agents directory"
@@ -49,6 +50,21 @@ echo "Verifying individual skills..."
 for skill in autolearn docker-containerization go-development manage-github-issues quality-control react-frontend-development requirements-generator setup-github-actions windows-development; do
     check "$CLAUDE_HOME/skills/$skill/SKILL.md" "$skill skill"
 done
+
+echo ""
+echo "Verifying git template directory..."
+GIT_TMPL="$HOME/.git-templates"
+check "$GIT_TMPL/CLAUDE.md" "Git template CLAUDE.md"
+check "$GIT_TMPL/.gitignore" "Git template .gitignore"
+
+GIT_TMPL_CFG="$(git config --global --get init.templateDir 2>/dev/null || echo "")"
+if [ -n "$GIT_TMPL_CFG" ]; then
+    echo "  [OK] git init.templateDir = $GIT_TMPL_CFG"
+    PASS=$((PASS + 1))
+else
+    echo "  [MISSING] git init.templateDir not configured"
+    FAIL=$((FAIL + 1))
+fi
 
 echo ""
 echo "Results: $PASS passed, $FAIL failed"

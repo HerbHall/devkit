@@ -121,12 +121,41 @@ for doc in CLAUDE.md.template CLAUDE.local.md.template AGENT-WORKFLOW-GUIDE.md A
 done
 info "Supplementary docs installed"
 
+# Shell helper functions
+cp "$REPO_DIR/claude/claude-functions.sh" "$CLAUDE_HOME/claude-functions.sh"
+chmod +x "$CLAUDE_HOME/claude-functions.sh" 2>/dev/null || true
+info "claude-functions.sh installed"
+
 # Settings template (don't overwrite existing settings)
 if [ ! -f "$CLAUDE_HOME/settings.json" ]; then
     cp "$REPO_DIR/claude/settings.template.json" "$CLAUDE_HOME/settings.json"
     info "settings.json created from template (customize tool permissions)"
 else
     warn "settings.json already exists. Template at: claude/settings.template.json"
+fi
+
+echo ""
+
+# --- Git template directory ---
+echo "Setting up git template directory..."
+
+GIT_TMPL="$HOME/.git-templates"
+mkdir -p "$GIT_TMPL"
+cp "$REPO_DIR/git-templates/CLAUDE.md" "$GIT_TMPL/CLAUDE.md"
+cp "$REPO_DIR/git-templates/.gitignore" "$GIT_TMPL/.gitignore"
+info "Git template files installed at $GIT_TMPL"
+
+# Configure git to use the template directory
+CURRENT_TMPL="$(git config --global --get init.templateDir 2>/dev/null || echo "")"
+if [ -z "$CURRENT_TMPL" ]; then
+    git config --global init.templateDir "$GIT_TMPL"
+    info "git init.templateDir configured"
+elif [ "$CURRENT_TMPL" != "$GIT_TMPL" ]; then
+    warn "git init.templateDir already set to: $CURRENT_TMPL"
+    warn "  devkit template is at: $GIT_TMPL"
+    warn "  Run: git config --global init.templateDir '$GIT_TMPL' to switch"
+else
+    info "git init.templateDir already configured correctly"
 fi
 
 echo ""
@@ -179,7 +208,8 @@ echo "========================================="
 echo ""
 echo "Next steps:"
 echo "  1. Review ~/.claude/settings.json and add project-specific tool permissions"
-echo "  2. Set up MCP servers: see mcp/servers.md for instructions"
-echo "  3. Copy mcp/claude-desktop.template.json to %APPDATA%/Claude/ and add your tokens"
-echo "  4. Start a new Claude Code session to verify everything loads"
+echo "  2. Add to ~/.bashrc:  source ~/.claude/claude-functions.sh"
+echo "  3. Set up MCP servers: see mcp/servers.md for instructions"
+echo "  4. Copy mcp/claude-desktop.template.json to %APPDATA%/Claude/ and add your tokens"
+echo "  5. Start a new Claude Code session to verify everything loads"
 echo ""
