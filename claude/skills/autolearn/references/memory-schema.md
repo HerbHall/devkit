@@ -29,13 +29,14 @@ Standard entity types, relation types, and observation formats for the autolearn
 
 When adding observations to entities, use this structure:
 
-```
+```text
 [YYYY-MM-DD] (source: <project|global>) (confidence: HIGH|MEDIUM|LOW) (category: <type>)
 <description of the observation>
 ```
 
 Example:
-```
+
+```text
 [2026-02-02] (source: netvantage) (confidence: HIGH) (category: correction)
 gosec G101 flags constants with "credential" in the name as hardcoded credentials.
 Fix: add //nolint:gosec // G101: <reason> comment.
@@ -44,16 +45,19 @@ Fix: add //nolint:gosec // G101: <reason> comment.
 ## Entity Creation Guidelines
 
 ### When to Create a NEW Entity
+
 - First time encountering this type of issue/pattern
 - No existing entity covers this specific topic
 - Search MCP Memory first: `search_nodes` with relevant keywords
 
 ### When to Add an OBSERVATION to Existing Entity
+
 - Same issue encountered again in different context
 - Additional detail or nuance discovered
 - Confirmation that the pattern still applies
 
 ### When to Create RELATIONS
+
 - A correction directly fixes a known error type
 - A pattern was discovered while working in a specific project
 - A skill update was motivated by a recurring mistake

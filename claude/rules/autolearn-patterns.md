@@ -70,7 +70,6 @@ claims, err := h.tokens.ValidateAccessToken(token)
 
 **Also:** Add `packages: write` and `id-token: write` permissions to the workflow.
 
-
 ## 8. Dockerfile ldflags Must Match Go Variable Names
 
 **Category:** ci-config
@@ -307,8 +306,6 @@ if err != nil {
 
 **Prevention:** When designing REST routes with wildcards like `{id}`, check that no sibling literal segments at the same depth could be captured by the wildcard.
 
-
-
 ## 31. ESLint Catches Unused Imports That TypeScript Misses
 
 **Category:** ci-fix
@@ -419,7 +416,6 @@ git push --force-with-lease
 ```
 
 **Prevention:** When adding code generation to a project, decide upfront: commit artifacts or regenerate in CI. Don't gitignore files that CI needs to compile.
-
 
 ## 40. Go-Side Time-Bucket Aggregation Over SQL
 
@@ -544,6 +540,7 @@ onSuccess: () => { setLocalOverride(null); queryClient.invalidateQueries(['confi
 5. Identify integration targets from adjacent categories (dashboards, IoT platforms)
 
 **Key insights:**
+
 - Empty categories = underserved market segment
 - Competitor absence from high-star lists = first-mover listing advantage
 - License classification (e.g., BSL 1.1 = "non-free") constrains listing placement but doesn't prevent discoverability
@@ -572,7 +569,6 @@ grep -r "<keyword>" --include="*.svg" --include="*.png" --include="*.md" .
 **Pattern:** Agents detect leaked files from other agents via `git status` or unexpected file contents, then clean up with `git checkout -- <leaked files>`. Agents on the wrong branch detect it and recover with `git stash && git checkout <correct-branch> && git stash pop`.
 **Key enabler:** Agent prompts must clearly specify: (1) target branch name, (2) exact files to create/modify, (3) `git checkout <branch>` as the first step. With this context, agents self-heal.
 **Example:** v0.6.0 Wave 2: Agent D found Agent E's `internal/insight/*` files and ran `git checkout -- internal/insight/handlers.go internal/insight/store.go`. Agent E found itself on D's branch and ran `git stash && git checkout feature/issue-282-analytics-dashboard && git stash pop`. Both completed successfully.
-
 
 ## 50. VS Code Auto-Open File on Workspace Start
 
@@ -632,9 +628,6 @@ The static file orients the human while waiting; the interactive skill provides 
 **Fix:** Merge the PR with the new dependency FIRST, then rebase the stdlib-only PR onto updated main. The rebase will be clean because go.mod/go.sum changes don't overlap.
 **Example:** v0.5.0: MQTT (#298, adds `paho.mqtt.golang`) merged before Tier (#303, stdlib only). Tier rebased with zero conflicts.
 
-
-
-
 ## 57. JSX Short-Circuit with `unknown` Type Is Not ReactNode
 
 **Category:** typescript-fix
@@ -648,7 +641,6 @@ The static file orients the human while waiting; the interactive skill provides 
 // GOOD: != null evaluates to boolean
 {expanded && entry.details != null && (<pre>{JSON.stringify(entry.details)}</pre>)}
 ```
-
 
 ## 59. gocritic commentedOutCode on Math-Like Comments
 
@@ -792,6 +784,7 @@ if hostname != "" { ... }
 **Context:** When a background agent is given autonomy to commit, push, and create a PR (rather than just writing files), it runs `git checkout <branch>` which changes HEAD. This discards other parallel agents' unstaged changes to **tracked** files. Untracked files (new directories/files) survive because `git checkout` only restores tracked files.
 **Scenario:** Sprint 2 Wave 1: Agent H committed on `feature/issue-399-snmp-fdb-walks` and pushed. Agent B had unstaged changes to `main.go` (tracked) and new `internal/seed/` directory (untracked). After H's commit, `main.go` changes were lost; `internal/seed/` survived.
 **Fix:** Two approaches:
+
 1. **Restrict agents from committing** (safer): Agent prompt says "do NOT commit or push -- leave all changes unstaged for the main context to handle." Main context sorts changes via stash/pop (pattern #52).
 2. **Accept tracked file loss** (faster): Let agents commit autonomously, manually re-apply lost tracked-file changes from the agent's output summary. Faster overall since one PR is already created.
 **Tradeoff:** Approach 1 is safer but slower (main context does all git). Approach 2 saves ~5min per PR but requires reading the other agent's summary to re-apply changes.
@@ -802,6 +795,7 @@ if hostname != "" { ... }
 **Category:** testing-pattern
 **Context:** E2E tests for data-driven pages (dashboards, analytics) that assert specific widget names ("Scout Agents", "Active Alerts") or exact data values fail when the UI changes widget labels or when seed data differs. These tests are brittle and require constant maintenance.
 **Fix:** Assert core structural elements that are stable across UI iterations:
+
 - Page heading (`getByRole('heading', { name: 'Dashboard' })`)
 - Primary action button (`getByRole('button', { name: /scan network/i })`)
 - Navigation links (`getByRole('link', { name: /devices/i })`)
@@ -858,3 +852,37 @@ gh api repos/github/spec-kit/contents/templates/commands/specify.md \
 
 If tools are at different levels, identify a **bridge artifact** (e.g., Spec Kit's "constitution" bridges product-level governance to feature-level specs). Direct piping between levels always requires manual decomposition.
 **Proven:** B3 integration test -- BMAD PRD cannot pipe into Spec Kit specify; constitution seeding is the viable bridge.
+
+## 71. Scope CI Lint to Maintained Files on First Introduction
+
+**Category:** ci-config
+**Context:** Adding CI linting (markdownlint, eslint) to a repo with many pre-existing files produces hundreds of violations (930 errors across 69 files in devkit). Making CI fail on all files means CI is permanently red until a massive cleanup PR is done.
+**Fix:** Scope the CI lint glob to only the files you actively maintain. Fix pre-existing violations incrementally in follow-up PRs.
+**Example:**
+
+```yaml
+# BAD: fails on 930 pre-existing errors
+globs: "**/*.md"
+
+# GOOD: only lint maintained files
+globs: |
+  *.md
+  setup/*.md
+  devspace/*.md
+  git-templates/*.md
+  mcp/*.md
+```
+
+**Note:** Document the scoping in a comment or CHANGELOG so future maintainers know to expand the glob as files are cleaned up.
+
+## 72. Three-Layer Project Initialization Chain
+
+**Category:** workflow-pattern
+**Context:** Ensuring every new project gets a proper CLAUDE.md requires multiple safety nets because no single mechanism covers all cases.
+**Pattern:** Three complementary layers:
+
+1. **git init.templateDir** -- Auto-copies starter `CLAUDE.md` and `.gitignore` on `git init`. Zero effort, always fires. Produces a minimal template with TODO sections.
+2. **Shell helper** (`claude-init-project`) -- Creates dir, runs `git init`, copies full `CLAUDE.md.template`. Intentional workflow for users who know about the helpers.
+3. **SessionStart.sh hook** -- Detects project directories missing `CLAUDE.md` and prompts user once. Catches projects initialized outside the helper workflow.
+
+Each layer catches what the previous missed. Layer 1 is passive, layer 2 is active, layer 3 is interactive.

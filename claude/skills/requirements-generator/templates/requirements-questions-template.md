@@ -15,6 +15,7 @@
 4. Reference this document when implementing related features
 
 **Status Values:**
+
 - `OPEN` - Not yet answered
 - `RESEARCHING` - Investigating options
 - `ANSWERED` - Decision made
@@ -42,16 +43,19 @@ These questions must be answered before implementing core functionality.
 **OPTIONS:**
 
 A. **{OPTION_A_NAME}** ({pros/cons})
-   - {Description}
-   - {Implications}
+
+- {Description}
+- {Implications}
 
 B. **{OPTION_B_NAME}** ({pros/cons})
-   - {Description}
-   - {Implications}
+
+- {Description}
+- {Implications}
 
 C. **{OPTION_C_NAME}** ({pros/cons})
-   - {Description}
-   - {Implications}
+
+- {Description}
+- {Implications}
 
 **RECOMMENDED**: Option {X} - {Brief rationale}
 
@@ -92,10 +96,12 @@ These questions affect Phase 1 implementation but can proceed with reasonable de
 **OPTIONS:**
 
 A. **{OPTION_A}** ({simple/safe/recommended})
-   - {Description}
+
+- {Description}
 
 B. **{OPTION_B}** ({alternative approach})
-   - {Description}
+
+- {Description}
 
 **RECOMMENDED**: Option {X} with {rationale}
 
@@ -129,13 +135,16 @@ These questions enhance user experience but aren't blocking for MVP.
 **OPTIONS:**
 
 A. **{SIMPLE_OPTION}** (MVP approach)
-   - {Description}
+
+- {Description}
 
 B. **{ENHANCED_OPTION}** (better UX)
-   - {Description}
+
+- {Description}
 
 C. **{FULL_FEATURED_OPTION}** (most flexible)
-   - {Description}
+
+- {Description}
 
 **RECOMMENDED**: Option {X} for MVP, add {Y} in Phase 2
 
@@ -180,6 +189,7 @@ B. **{ALTERNATIVE_OPTION}**
 ### To Unblock Development Immediately
 
 Please answer these questions first (in order):
+
 1. **Q1.1**: {Most critical question}
 2. **Q1.2**: {Second most critical}
 3. **Q1.3**: {Third most critical}
@@ -187,6 +197,7 @@ Please answer these questions first (in order):
 ### Can Proceed with Defaults
 
 These have recommended defaults that allow development to continue:
+
 - Q{N}: {Question} (default: {suggested default})
 
 ### Defer to Later Phases

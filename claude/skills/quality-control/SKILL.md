@@ -9,6 +9,7 @@ description: Follow up after code changes to verify PRs pass CI, check for unres
 This skill provides systematic quality verification for code changes. It catches CI failures, blocked PRs, stale branches, and unresolved issues before they accumulate into tech debt.
 
 **When to Use**
+
 - After creating or pushing to a PR
 - When the user asks to check PR status or fix CI failures
 - As a follow-up after other skills that produce code changes (e.g., after `/create-plan` execution)
@@ -50,11 +51,13 @@ This skill provides systematic quality verification for code changes. It catches
 For each failing check, follow this diagnostic flow:
 
 1. **Get the failure details:**
+
    ```bash
    gh pr checks <number>
    ```
 
 2. **For each failing job, get logs:**
+
    ```bash
    gh run view <run_id> --log --job=<job_id> 2>&1 | grep -E "error|Error|FAIL|fatal" | head -20
    ```
@@ -62,6 +65,7 @@ For each failing check, follow this diagnostic flow:
 3. **Classify the failure** using the table above.
 
 4. **For pre-existing failures**, verify by checking if the same error exists on the base branch:
+
    ```bash
    gh api repos/{owner}/{repo}/actions/runs?branch=main&per_page=3 --jq '.workflow_runs[0].conclusion'
    ```
@@ -133,6 +137,7 @@ What would you like to do?
 </routing>
 
 <workflows_index>
+
 | Workflow | Purpose |
 |----------|---------|
 | check-pr.md | Diagnose and fix CI failures on a specific PR |
@@ -142,12 +147,15 @@ What would you like to do?
 | root-cause-analysis.md | Investigate recurring failures and implement prevention |
 | pre-release-check.md | Validate release readiness (git state, GoReleaser, ldflags, Dockerfile) |
 | file-qc-issues.md | Create GitHub issues for QC testing session findings |
+
 </workflows_index>
 
 <reference_index>
+
 | Reference | Content |
 |-----------|---------|
 | ci-failure-patterns.md | Common CI failure patterns with diagnosis and fix steps |
+
 </reference_index>
 
 <skill_coordination>
@@ -164,6 +172,7 @@ What would you like to do?
 **Note:** The pre-release check workflow (option 6) consolidates what was previously the standalone `/pre-release-check` skill. Use it before tagging any release.
 
 **Typical workflow sequence:**
+
 1. Developer creates code changes using any skill
 2. Developer creates PR using git workflow
 3. **`/quality-control`** (post-push) -- verify CI passes
@@ -174,6 +183,7 @@ What would you like to do?
 
 **Proactive Usage:**
 Other skills that produce code changes SHOULD invoke quality-control after creating PRs:
+
 - After `git push` + `gh pr create`, run post-push verification
 - After fixing bugs, verify the fix passes CI before marking complete
 
@@ -181,6 +191,7 @@ Other skills that produce code changes SHOULD invoke quality-control after creat
 
 <success_criteria>
 A successful quality control run produces:
+
 - [ ] All target PRs checked for CI status
 - [ ] Failing checks diagnosed with root cause identified
 - [ ] Failures classified (PR-introduced, pre-existing, infrastructure, config)

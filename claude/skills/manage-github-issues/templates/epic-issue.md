@@ -34,6 +34,7 @@ Replace all `{PLACEHOLDER}` values with actual content.
 <guidelines>
 
 When using this template:
+
 - Create the sub-task issues FIRST, then reference them by number in the checklist
 - Keep epics to 3-8 sub-tasks; if more, create intermediate epics
 - Sub-tasks should be independently mergeable

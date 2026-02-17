@@ -1,5 +1,6 @@
 <required_reading>
 **Read these reference files NOW:**
+
 1. references/label-conventions.md
 2. references/issue-quality-standards.md
 </required_reading>
@@ -26,6 +27,7 @@ Check for project configuration:
 Ask the user what to audit using AskUserQuestion:
 
 <audit_options>
+
 - **All open issues** - Full audit across all phases/milestones
 - **Specific phase/milestone** - Audit issues for one phase or milestone only
 - **Recent issues** - Audit issues created in the last 30 days
@@ -36,11 +38,13 @@ Ask the user what to audit using AskUserQuestion:
 Based on scope, run the appropriate `gh` command:
 
 For all open issues:
+
 ```bash
 gh issue list --state open --limit 500 --json number,title,state,labels,milestone,createdAt,updatedAt,body,assignees
 ```
 
 For a specific phase/milestone:
+
 ```bash
 gh issue list --state open --label "{PHASE_LABEL}" --limit 200 --json number,title,state,labels,milestone,createdAt,updatedAt,body,assignees
 ```
@@ -58,16 +62,19 @@ Analyze each issue against these checks:
 <audit_checks>
 
 **Labeling Completeness**
+
 - [ ] Has at least one type label (feature, bug, enhancement, etc.)
 - [ ] Has at least one phase/milestone label (if the project uses them)
 - [ ] Has at least one area/module label (if the project uses them)
 - [ ] Has a priority label (P0-P3) -- recommended for all active work
 
 **Milestone Assignment**
+
 - [ ] Has a milestone assigned (if the project uses milestones)
 - [ ] Milestone is consistent with phase/milestone label
 
 **Issue Quality**
+
 - [ ] Title starts with an action verb
 - [ ] Title is under 80 characters
 - [ ] Body contains "Acceptance Criteria" section (or equivalent)
@@ -75,14 +82,17 @@ Analyze each issue against these checks:
 - [ ] Body references a planning/requirements doc (if the project has them)
 
 **Staleness**
+
 - [ ] Updated within the last 30 days (if open)
 - [ ] Not blocked without explanation (has `blocked` label with comment)
 
 **Duplicates**
+
 - [ ] No other open issue has a substantially similar title
 - [ ] Check for issues that could be merged
 
 **Roadmap Coverage** (only if roadmap exists)
+
 - [ ] Each outstanding roadmap item for the current phase has a matching issue
 - [ ] No orphan issues exist that don't map to any roadmap item
 
@@ -92,7 +102,7 @@ Analyze each issue against these checks:
 
 Present findings organized by severity:
 
-```
+```text
 ## Issue Audit Report
 
 ### Issues Needing Attention (N issues)
@@ -132,6 +142,7 @@ Present findings organized by severity:
 Ask the user which fixes to apply:
 
 <fix_options>
+
 1. **Add missing labels** - Apply suggested labels to under-labeled issues
 2. **Assign milestones** - Set milestones based on phase labels
 3. **Flag stale issues** - Add comment asking for status update
@@ -145,21 +156,25 @@ Ask the user which fixes to apply:
 For each approved fix, use the appropriate `gh` command:
 
 Add labels:
+
 ```bash
 gh issue edit {NUMBER} --add-label "{LABELS}"
 ```
 
 Set milestone:
+
 ```bash
 gh issue edit {NUMBER} --milestone "{MILESTONE}"
 ```
 
 Flag stale:
+
 ```bash
 gh issue comment {NUMBER} --body "This issue has had no activity for 30+ days. Is it still relevant? Please update with current status or close if no longer needed."
 ```
 
 Close duplicate:
+
 ```bash
 gh issue close {NUMBER} --comment "Closing as duplicate of #{OTHER}. See #{OTHER} for continued tracking."
 ```
@@ -167,7 +182,8 @@ gh issue close {NUMBER} --comment "Closing as duplicate of #{OTHER}. See #{OTHER
 **Step 9: Report Results**
 
 Summarize all changes made:
-```
+
+```text
 Applied N fixes:
 - Added labels to M issues
 - Assigned milestones to M issues
@@ -179,6 +195,7 @@ Applied N fixes:
 
 <success_criteria>
 This workflow is complete when:
+
 - [ ] Project context discovered
 - [ ] Issues fetched for the target scope
 - [ ] All audit checks run against each issue

@@ -67,8 +67,6 @@ useEffect(() => {
 }, [deps])
 ```
 
-
-
 ## 10. Windows Python Aliases Shadow Real Python
 
 **Platform:** Windows (MSYS_NT)
@@ -106,7 +104,6 @@ done
 - `(?!\\d{1,2}$)` skips bare 1-2 digit numbers (menu selections like `0`-`14`)
 
 Regular prompts containing numbers still fire normally (e.g., "fix issue #297").
-
 
 ## 14. GitHub API Returns Empty Without User-Agent Header
 
@@ -340,6 +337,7 @@ function CustomTooltip({ active, payload, label }: TooltipContentProps<number, s
 **Platform:** Go (cross-platform development)
 **Issue:** Files with `//go:build !windows` tags are completely excluded from `golangci-lint` when running on Windows (and vice versa). Lint errors in these files -- `gocritic filepathJoin` (absolute paths in `filepath.Join`), `gosec G115` (int->int32 overflow), `gocritic paramTypeCombine`, `prealloc` -- only appear in Linux CI. This caused 2 fix-push cycles on PR #262 (Linux Scout).
 **Common errors in `!windows` files caught only by Linux CI:**
+
 - `filepathJoin`: `filepath.Join("/sys/block", name)` -- the absolute path contains a separator. Fix: use string concat `"/sys/block/" + name`
 - `G115`: `int32(runtime.NumCPU())` -- safe conversion but needs `//nolint:gosec // G115: fits in int32`
 - `paramTypeCombine`: `(model string, physCores int32, logical int32)` should be `(model string, physCores, logical int32)`
@@ -456,7 +454,6 @@ cpuDelta := float64(newUsage - oldUsage)
 **Fix:** Remove file contents first (`rm -f dir/*`, `rm -rf dir/.git`), then accept the empty directory will self-clean when VS Code reloads with the new workspace config. Alternatively, close VS Code first, delete the directory, then reopen.
 **Prevention:** When restructuring workspaces, plan to reload VS Code between removing directory contents and deleting the directory itself.
 
-
 ## 41. Playwright getByLabel Resolves Multiple Elements with Toggle Buttons
 
 **Platform:** Playwright (all browsers)
@@ -465,13 +462,11 @@ cpuDelta := float64(newUsage - oldUsage)
 **Fix:** Use `page.locator('#password')` to target by ID instead of label. This is unambiguous regardless of companion buttons.
 **Prevention:** For any form field with companion buttons (password toggle, clear button, search icon), prefer `locator('#id')` over `getByLabel()`.
 
-
 ## 43. Docker Extension `update` Fails After Image Rebuild
 
 **Platform:** Docker Desktop Extensions (all)
 **Issue:** `docker extension update <tag>` returns "the extension is not installed" after rebuilding the Docker image, even if the extension was previously installed with the same tag. This happens because rebuilding replaces the image SHA, and Docker Desktop tracks extensions by image digest, not tag.
 **Fix:** Use `docker extension install <tag>` instead of `update` when the image has been rebuilt. The install command works whether or not the extension is currently registered. Pipe `echo "y"` to auto-confirm the prompt in scripts.
-
 
 ## 45. User Manual Commits During Context Compaction Gap
 
@@ -524,3 +519,17 @@ npx -y bmad-method install --modules bmm --tools claude-code \
 ```
 
 Key flag names (easy to get wrong): `install` (not `init`), `--modules` (not `--module`), `--tools` (not `--ide`), `--directory` (not `--dir`). Use `npx -y bmad-method --help` and `npx -y bmad-method install --help` to discover flags.
+
+## 51. markdownlint-cli2 Config Must Be at Repo Root for CI
+
+**Platform:** GitHub Actions / markdownlint-cli2
+**Issue:** `DavidAnson/markdownlint-cli2-action@v19` `config` parameter does not reliably override the config file lookup. markdownlint-cli2 discovers `.markdownlint.json` by walking up from each file's directory. If the config is only in a subdirectory (e.g., `devspace/.markdownlint.json`), CI uses default rules instead.
+**Diagnosis:** CI fails with MD013 (line-length) errors even though the config has `"MD013": false`. Locally, lint passes because the parent directory's config is found via filesystem walk.
+**Fix:** Place `.markdownlint.json` at the repo root. If you also need it in a subdirectory for parent-directory cascading, maintain two copies (repo root for CI, subdirectory for local cascading). Remove the `config` parameter from the action -- auto-discovery from repo root works correctly.
+
+## 52. markdownlint MD060 Auto-Enabled by Default: True
+
+**Platform:** markdownlint v0.40.0+
+**Issue:** MD060 (table-column-style) is a newer rule that gets auto-enabled when config has `"default": true`. It flags tables where separator rows use compact style (`|---|`) but content rows use padded style (`| text |`). If your config was written before this rule existed, it will suddenly appear in CI after a markdownlint version upgrade.
+**Diagnosis:** CI shows dozens of `MD060/table-column-style` errors on tables that look fine visually. The errors say "Table pipe is missing space to the left/right for style compact".
+**Fix:** Add `"MD060": false` to `.markdownlint.json` to disable, or fix all table pipe spacing to be consistent. When using `"default": true`, review release notes after markdownlint upgrades for newly added rules.

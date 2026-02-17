@@ -1,0 +1,7 @@
+{
+  // Extend the main markdownlint config
+  "config": false,
+
+  // Ignore git internal directory (template copies we can't modify)
+  "ignores": [".git/**"]
+}

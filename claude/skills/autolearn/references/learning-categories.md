@@ -11,6 +11,7 @@ Mistakes made and subsequently fixed. These are the most valuable learnings beca
 **Store as:** `Correction` entity in MCP Memory + entry in `rules/autolearn-patterns.md`
 
 **Examples:**
+
 - Build failures and their fixes
 - Lint errors and their solutions
 - Test failures and root causes
@@ -27,6 +28,7 @@ Reusable approaches that work well. These speed up future work.
 **Store as:** `Pattern` entity in MCP Memory + entry in `rules/autolearn-patterns.md`
 
 **Examples:**
+
 - Code patterns that work well in this ecosystem
 - Testing patterns and fixture approaches
 - Git workflow patterns (rebase strategy, PR flow)
@@ -42,6 +44,7 @@ Surprising behaviors or platform-specific issues. These prevent wasted debugging
 **Store as:** `Gotcha` entity in MCP Memory + entry in `rules/known-gotchas.md`
 
 **Examples:**
+
 - Platform-specific issues (Windows/MSYS, macOS, Linux differences)
 - Library quirks and version incompatibilities
 - CI environment differences from local dev
@@ -57,6 +60,7 @@ Architectural or design choices with their rationale. These maintain consistency
 **Store as:** `Decision` entity in MCP Memory (not in rules files -- too context-specific)
 
 **Examples:**
+
 - Architecture choices with rationale (why this pattern over alternatives)
 - Library selection decisions (why library X over Y)
 - Convention adoption reasons (why this commit format, branch naming)
@@ -71,6 +75,7 @@ User workflow and style preferences. These ensure consistency across sessions.
 **Store as:** `Preference` entity in MCP Memory + entry in `rules/workflow-preferences.md`
 
 **Examples:**
+
 - Coding style preferences (formatting, naming)
 - Commit message format conventions
 - Branch naming conventions
@@ -92,6 +97,7 @@ User workflow and style preferences. These ensure consistency across sessions.
 ## Deduplication
 
 Before storing any learning:
+
 1. Search MCP Memory for existing entities with similar names/descriptions
 2. If a match exists, add an observation instead of creating a new entity
 3. If the existing entity is outdated, add a new observation noting the update

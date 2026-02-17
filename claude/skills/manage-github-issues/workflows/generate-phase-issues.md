@@ -1,5 +1,6 @@
 <required_reading>
 **Read these reference files NOW:**
+
 1. references/label-conventions.md
 2. references/issue-quality-standards.md
 </required_reading>
@@ -28,6 +29,7 @@ Check for project configuration:
 Ask the user which phase or milestone to generate issues for using AskUserQuestion.
 
 If the project config defines phases, present them as options. Otherwise, ask the user to describe the scope:
+
 - A specific milestone name
 - A section of the roadmap
 - A set of features or requirements
@@ -37,6 +39,7 @@ If the user already specified a phase/milestone, skip this step.
 **Step 3: Read the Roadmap**
 
 Read the project's roadmap file (from config or user input) and extract ONLY the section for the selected phase/milestone. Identify:
+
 - All checklist items (lines starting with `- [ ]` or `- [x]`)
 - Which items are already completed (`[x]`) vs outstanding (`[ ]`)
 - Any sub-sections or groupings within the phase
@@ -58,6 +61,7 @@ gh issue list --label "{PHASE_LABEL}" --state all --limit 200 --json number,titl
 ```
 
 If the project doesn't use phase labels, fetch all open issues:
+
 ```bash
 gh issue list --state open --limit 200 --json number,title,state,labels
 ```
@@ -67,6 +71,7 @@ Parse the output to build a list of existing issue titles and their states (open
 **Step 6: Diff Roadmap vs Existing Issues**
 
 For each outstanding roadmap checklist item (`- [ ]`):
+
 1. Search existing issues for a matching title (fuzzy match on key terms)
 2. If a match exists and is open, skip it (already tracked)
 3. If a match exists and is closed, check if it was completed or won't-fix'd
@@ -75,17 +80,20 @@ For each outstanding roadmap checklist item (`- [ ]`):
 **Step 7: Draft Issues**
 
 For each item in the "issues to create" list, draft an issue using the appropriate template from `templates/`:
+
 - Use `templates/feature-issue.md` for features and enhancements
 - Use `templates/epic-issue.md` for items that need multiple sub-tasks
 - Use `templates/bug-issue.md` only if the item describes a known defect
 
 For each issue, determine:
+
 - **Title**: Action verb + specific description (see `references/issue-quality-standards.md`)
 - **Body**: Fill template with description, acceptance criteria from docs, and references
 - **Labels**: Type + priority + area/module + phase/milestone (from project config or user)
 - **Milestone**: From project config or user input
 
 **Priority assignment heuristic:**
+
 - Items that block other items in the phase: `P1-high`
 - Core functionality for the phase's goal: `P2-medium`
 - Quality improvements, docs, nice-to-haves: `P3-low`
@@ -95,7 +103,7 @@ For each issue, determine:
 
 Present ALL drafted issues to the user in a summary table:
 
-```
+```text
 | # | Title | Labels | Priority |
 |---|-------|--------|----------|
 | 1 | Add user list page with sorting | feature, area:frontend, phase:1 | P2-medium |
@@ -104,6 +112,7 @@ Present ALL drafted issues to the user in a summary table:
 ```
 
 Ask the user:
+
 - "Should I create all of these issues?"
 - "Do you want to modify any titles, priorities, or labels?"
 - "Should any items be skipped or combined?"
@@ -131,7 +140,7 @@ Create issues sequentially and collect the issue numbers.
 
 Present a summary of created issues:
 
-```
+```text
 Created N issues for {PHASE/MILESTONE}:
 - #101: Add user list page with sorting
 - #102: Implement WebSocket notifications
@@ -148,6 +157,7 @@ If any epic issues were created, remind the user to update the task checklists w
 
 <success_criteria>
 This workflow is complete when:
+
 - [ ] Project context discovered (config file, CLAUDE.md, or user input)
 - [ ] Phase/milestone selected and roadmap section read
 - [ ] Relevant docs read for context (if available)

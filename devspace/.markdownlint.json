@@ -1,5 +1,6 @@
 {
-  "// NOTE": "Shared markdownlint config for all D:\\ projects. Matches ~/.claude/rules/markdown-style.md",
+  "// NOTE": "Shared markdownlint config. Matches ~/.claude/rules/markdown-style.md",
+  "// NOTE2": "MD033 allows custom XML tags used in Claude Code skills/agents",
 
   "default": true,
 
@@ -23,15 +24,27 @@
   "MD031": true,
   "MD032": true,
   "MD033": {
-    "allowed_elements": ["br", "details", "summary", "img", "a", "sub", "sup"]
+    "allowed_elements": [
+      "br", "details", "summary", "img", "a", "sub", "sup",
+      "role", "approach", "patterns", "pattern", "constraints",
+      "area", "workflow", "references", "routing", "intake",
+      "template", "objective", "overview", "conventions",
+      "essential_principles", "tool_restrictions",
+      "expertise", "responsibilities", "responsibility",
+      "guidelines", "idiom", "idioms", "process", "forms",
+      "validation", "diagnostics", "performance", "security",
+      "testing", "accessibility", "stakeholders",
+      "criterion", "issue", "lesson"
+    ]
   },
   "MD034": true,
   "MD035": { "style": "---" },
+  "MD036": false,
   "MD037": true,
   "MD038": true,
   "MD039": true,
   "MD040": true,
-  "MD041": true,
+  "MD041": false,
   "MD042": true,
   "MD045": true,
   "MD046": { "style": "fenced" },

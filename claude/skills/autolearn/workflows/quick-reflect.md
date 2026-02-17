@@ -7,6 +7,7 @@ Fast end-of-task assessment. Scans the current conversation for high-value learn
 ### 1. Scan Conversation
 
 Review the conversation for:
+
 - **Corrections**: Mistakes made and fixed (e.g., wrong command, bad assumption, code that didn't compile)
 - **Gotchas**: Surprising behaviors encountered (e.g., platform quirk, library bug, unexpected error)
 - **Patterns**: Approaches that worked well and are reusable
@@ -17,11 +18,13 @@ Focus on the most recent task. Don't rehash older context unless it's directly r
 ### 2. Classify Findings
 
 For each finding, determine:
+
 - **Category**: correction, gotcha, pattern, or decision
 - **Confidence**: HIGH (clear mistake/fix, confirmed behavior) or MEDIUM (useful but not critical)
 - **Reusability**: Would this help in a different session or project?
 
 Filter out:
+
 - One-off observations that won't recur
 - Trivial details (typos, formatting)
 - Context-specific decisions that don't generalize
@@ -29,7 +32,8 @@ Filter out:
 ### 3. Check for Duplicates
 
 Search MCP Memory for existing entities:
-```
+
+```text
 search_nodes with keywords from each finding
 ```
 
@@ -40,7 +44,8 @@ If a match exists, plan to add an observation instead of creating a new entity.
 For each HIGH-confidence finding:
 
 **If new entity needed:**
-```
+
+```text
 create_entities: [{
   name: "<kebab-case-name>",
   entityType: "<Pattern|Gotcha|Correction|Decision>",
@@ -49,7 +54,8 @@ create_entities: [{
 ```
 
 **If existing entity found:**
-```
+
+```text
 add_observations: [{
   entityName: "<existing-name>",
   contents: ["[YYYY-MM-DD] (source: <project>) (confidence: HIGH) Additional context: <description>"]
@@ -57,7 +63,8 @@ add_observations: [{
 ```
 
 **Create relations if applicable:**
-```
+
+```text
 create_relations: [{
   from: "<learning-name>",
   to: "<project-name>",
@@ -69,7 +76,7 @@ create_relations: [{
 
 Present a brief summary to the user:
 
-```
+```text
 ## Quick Reflect Summary
 
 **Learnings stored:** N items

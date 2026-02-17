@@ -40,6 +40,7 @@ const message = localize(
   filePath,
 );
 ```
+
 </responsibility>
 
 <responsibility name="managing_nls_json">
@@ -105,11 +106,13 @@ Corresponding package.nls.json:
   "config.enable.description": "Enable or disable this extension"
 }
 ```
+
 </responsibility>
 
 </responsibilities>
 
 <quality_standards>
+
 1. **Consistency**: Use consistent key naming patterns throughout
 2. **Completeness**: Never leave user-facing strings hardcoded
 3. **Clarity**: Default English strings should be clear and grammatically correct
@@ -125,6 +128,7 @@ Corresponding package.nls.json:
 </workflow>
 
 <error_prevention>
+
 - Always escape special characters properly in JSON
 - Verify key uniqueness before adding new entries
 - Test that placeholder substitution works correctly

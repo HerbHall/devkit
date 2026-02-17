@@ -34,6 +34,7 @@ reg query "HKEY_CLASSES_ROOT\Directory\shell\<entry>\command"
 # Full recursive dump
 reg query "HKEY_CLASSES_ROOT\Directory\shell" /s
 ```
+
 </lesson>
 
 <lesson name="context_menu_locations">
@@ -66,6 +67,7 @@ $cmd = "wsl.exe --cd `"%1`""
 ```powershell
 Set-Location -LiteralPath $folderPath  # Handles [brackets], spaces, etc.
 ```
+
 </lesson>
 
 <lesson name="testing_approach">
@@ -77,9 +79,11 @@ Set-Location -LiteralPath $folderPath  # Handles [brackets], spaces, etc.
    - Right-click ON the folder
    - Right-click INSIDE the folder (empty space)
 4. Verify registry entries after creation:
+
    ```powershell
    reg query "HKEY_CLASSES_ROOT\Directory\shell\YourEntry\command"
    ```
+
 </lesson>
 
 <lesson name="windows_terminal">
@@ -89,11 +93,13 @@ Set-Location -LiteralPath $folderPath  # Handles [brackets], spaces, etc.
 ```
 
 **Common WT commands:**
+
 ```powershell
 wt.exe -d "path"                    # Open at directory (uses default profile)
 wt.exe -p "Profile Name" -d "path"  # Specific profile
 wt.exe -p "Command Prompt" -d "path" cmd /k command  # CMD with command
 ```
+
 </lesson>
 
 <lesson name="batch_vs_powershell">
@@ -106,10 +112,12 @@ param([string]$Path)
 ```
 
 **If batch files are required, use `%~1` to strip outer quotes:**
+
 ```batch
 @echo off
 wt.exe -d "%~1"
 ```
+
 </lesson>
 
 </critical_lessons>
@@ -117,13 +125,14 @@ wt.exe -d "%~1"
 <proven_patterns>
 These patterns are proven to work from registry entries:
 
-```
+```text
 cmd.exe /s /k pushd "%V"
 powershell.exe -NoExit -Command Set-Location -LiteralPath '%V'
 wsl.exe --cd "%V"
 wt.exe -d "%V" -p "Command Prompt"
 "C:\Program Files\App\app.exe" "%1"
 ```
+
 </proven_patterns>
 
 <debugging_checklist>

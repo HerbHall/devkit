@@ -7,7 +7,8 @@ Analyze past mistakes from MCP Memory and improve existing skills/agents to prev
 ### 1. Gather Correction History
 
 Search MCP Memory for all corrections and recurring issues:
-```
+
+```text
 search_nodes: "correction"
 search_nodes: "mistake"
 search_nodes: "fix"
@@ -15,6 +16,7 @@ search_nodes: "failure"
 ```
 
 Group findings by:
+
 - **Recurring**: Same type of mistake happened more than once
 - **Preventable**: A skill or rule could have prevented it
 - **Systemic**: Points to a gap in workflow or tooling
@@ -36,15 +38,18 @@ For each recurring or preventable issue, determine which skill or component coul
 For each improvement target, draft the specific change:
 
 **Skill updates:**
+
 - Read the current skill file (SKILL.md, workflow .md, or reference .md)
 - Identify where the new knowledge should be added
 - Draft the addition (new section, new checklist item, new diagnostic pattern)
 
 **Rules updates:**
+
 - Identify which rules file needs the entry
 - Draft the new entry following the existing format
 
 **Hook updates:**
+
 - If the autolearn hooks themselves need adjustment (e.g., Stop hook prompt is too broad or too narrow)
 - Draft the modified prompt or script
 
@@ -52,7 +57,7 @@ For each improvement target, draft the specific change:
 
 Show each proposed change to the user:
 
-```
+```text
 ## Proposed Skill Improvements
 
 ### 1. [Skill Name] - [Brief Description]
@@ -69,12 +74,14 @@ Apply these changes? [Present each for approval]
 ### 5. Apply Approved Changes
 
 For each approved change:
+
 1. Read the target file
 2. Apply the edit (Edit tool for existing files, Write for new sections)
 3. Verify the file is well-formatted after the edit
 
 Record the skill update in MCP Memory:
-```
+
+```text
 create_entities: [{
   name: "<skill-name>-update-<date>",
   entityType: "SkillUpdate",
@@ -89,7 +96,8 @@ create_relations: [{
 ```
 
 Report:
-```
+
+```text
 ## Skill Improvement Summary
 
 | Skill | Change | Motivated By |

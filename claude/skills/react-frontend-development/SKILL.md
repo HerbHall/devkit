@@ -23,6 +23,7 @@ description: Modern React + TypeScript dashboard and SPA development patterns. C
 | Icons | lucide-react | Consistent with shadcn |
 
 **Core Conventions**
+
 - TypeScript strict mode is non-negotiable. Always `"strict": true` + `"noUncheckedIndexedAccess": true`.
 - Never use `any`. Use `unknown` and narrow with type guards.
 - File naming: kebab-case for files (`user-profile.tsx`), PascalCase for components (`UserProfile`), camelCase for hooks and utils.
@@ -35,6 +36,7 @@ description: Modern React + TypeScript dashboard and SPA development patterns. C
 <project_setup>
 
 **Scaffold:**
+
 ```bash
 npm create vite@latest my-app -- --template react-swc-ts
 cd my-app
@@ -42,6 +44,7 @@ npm install
 ```
 
 **tsconfig.app.json (strict):**
+
 ```json
 {
   "compilerOptions": {
@@ -69,7 +72,8 @@ npm install
 **ESLint:** Use `typescript-eslint` with strict type-checked rules, plus `eslint-plugin-react-hooks`, `eslint-plugin-react-refresh`, `eslint-plugin-jsx-a11y`.
 
 **Directory structure:**
-```
+
+```text
 src/
   components/       # Shared components
     ui/             # shadcn/ui generated components (don't modify)
@@ -93,12 +97,14 @@ src/
 **What it is:** Copy-paste component blueprints built on Radix UI primitives + Tailwind CSS. No runtime package -- you own the code after generation.
 
 **Setup:**
+
 ```bash
 npx shadcn@latest init
 npx shadcn@latest add button card dialog input table form
 ```
 
 **The `cn()` utility (required for class merging):**
+
 ```ts
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -109,11 +115,13 @@ export function cn(...inputs: ClassValue[]) {
 ```
 
 **Tailwind v4 changes:**
+
 - CSS-first configuration: `@theme` directive in CSS, no `tailwind.config.js`
 - Colors use OKLCH instead of HSL
 - Replace `tailwindcss-animate` with `tw-animate-css`
 
 **Conventions:**
+
 - Keep `components/ui/` for generated shadcn components; don't modify in place
 - Use a `components/ui/overrides/` folder for heavy customizations
 - Declare `dark:` variants early; retrofitting is double work
@@ -153,6 +161,7 @@ export const useSidebarStore = create<SidebarStore>()(
 ```
 
 **Conventions:**
+
 - One store per domain/feature, not one monolithic store
 - Always type stores with `create<StoreType>()()`
 - Use `devtools` middleware in development
@@ -163,6 +172,7 @@ export const useSidebarStore = create<SidebarStore>()(
 ### TanStack Query v5 (server state)
 
 **Query key factory pattern:**
+
 ```ts
 export const deviceKeys = {
   all: ["devices"] as const,
@@ -174,6 +184,7 @@ export const deviceKeys = {
 ```
 
 **Colocate with `queryOptions` for type safety:**
+
 ```ts
 import { queryOptions } from "@tanstack/react-query";
 
@@ -187,6 +198,7 @@ export const deviceDetailOptions = (id: string) =>
 ```
 
 **Mutation with invalidation:**
+
 ```ts
 export function useUpdateDevice() {
   const queryClient = useQueryClient();
@@ -201,6 +213,7 @@ export function useUpdateDevice() {
 ```
 
 **v5 breaking changes:**
+
 - `isPending` replaces `isLoading` for initial load
 - `gcTime` replaces `cacheTime`
 - `onSuccess`/`onError` removed from `useQuery` -- use `useEffect`
@@ -213,6 +226,7 @@ export function useUpdateDevice() {
 **Use `createBrowserRouter` + `<RouterProvider>`, not `<BrowserRouter>`.**
 
 **Protected routes with middleware (v7.9+):**
+
 ```ts
 const authMiddleware: Route.unstable_MiddlewareFunction = async ({ context }) => {
   const user = await getUser();
@@ -224,6 +238,7 @@ export const middleware = [authMiddleware];
 ```
 
 **Loaders (data fetching before render):**
+
 ```ts
 export async function loader({ request }: Route.LoaderArgs) {
   const devices = await api.devices.list();
@@ -238,6 +253,7 @@ export default function DevicesPage({ loaderData }: Route.ComponentProps) {
 **Error boundaries:** Define `ErrorBoundary` per route. Nested routes propagate errors up to the nearest boundary.
 
 **React Router v7 notes:**
+
 - Use `react-router` only (not `react-router-dom` -- merged in v7)
 - TypeScript typegen auto-generates `.d.ts` for routes in `.react-router/types/`
 - Route-level code splitting with `React.lazy` + `Suspense`
@@ -247,6 +263,7 @@ export default function DevicesPage({ loaderData }: Route.ComponentProps) {
 <api_integration>
 
 **Axios instance with JWT interceptors:**
+
 ```ts
 import axios from "axios";
 
@@ -301,6 +318,7 @@ api.interceptors.response.use(
 ```
 
 **Typed API functions:**
+
 ```ts
 export const devicesApi = {
   list: (params?: { page?: number; search?: string }) =>
@@ -351,6 +369,7 @@ function DeviceForm({ onSubmit }: { onSubmit: (data: DeviceFormData) => void }) 
 ```
 
 **Conventions:**
+
 - Always use `z.infer<typeof schema>` -- never write a separate TypeScript type
 - Keep schemas in `schemas/` for sharing between frontend and backend
 - Use `z.coerce.number()` for inputs that come in as strings
@@ -361,6 +380,7 @@ function DeviceForm({ onSubmit }: { onSubmit: (data: DeviceFormData) => void }) 
 <testing>
 
 **Setup (`vite.config.ts`):**
+
 ```ts
 export default defineConfig({
   plugins: [react()],
@@ -374,6 +394,7 @@ export default defineConfig({
 ```
 
 **Setup file (`src/tests/setup.ts`):**
+
 ```ts
 import { afterEach } from "vitest";
 import { cleanup } from "@testing-library/react";
@@ -383,6 +404,7 @@ afterEach(() => { cleanup(); });
 ```
 
 **Test pattern:**
+
 ```ts
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -403,6 +425,7 @@ describe("DeviceCard", () => {
 **Query priority:** `getByRole` > `getByLabelText` > `getByText` > `getByTestId`
 
 **Conventions:**
+
 - Use `userEvent.setup()` + `await user.click()` over `fireEvent`
 - Use `findByRole` / `waitFor` for async components
 - Mock API calls, not component internals
@@ -416,6 +439,7 @@ describe("DeviceCard", () => {
 **Semantic HTML first, ARIA second.** If a native element exists (`<button>`, `<nav>`, `<dialog>`), use it.
 
 **Requirements:**
+
 - All interactive elements Tab-reachable
 - Focus order follows visual/logical sequence
 - Focus visible -- never `outline: none` without replacement
@@ -427,6 +451,7 @@ describe("DeviceCard", () => {
 - Charts: `aria-label` on container + visually-hidden data table
 
 **Tooling:**
+
 - `eslint-plugin-jsx-a11y` for lint-time checks
 - `axe-core` / Axe DevTools for automated WCAG 2.2 AA audits
 - Radix UI (used by shadcn) handles most ARIA patterns correctly
@@ -436,6 +461,7 @@ describe("DeviceCard", () => {
 <performance>
 
 **Route-level code splitting (highest ROI):**
+
 ```ts
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 // In routes:
@@ -443,16 +469,20 @@ const Dashboard = lazy(() => import("./pages/Dashboard"));
 ```
 
 **Virtual lists for large datasets:**
+
 ```ts
 import { useVirtualizer } from "@tanstack/react-virtual";
 ```
+
 Use `@tanstack/react-virtual` for lists > 100 items.
 
 **Concurrent features:**
+
 - `useTransition` for non-urgent updates (filtering, searching)
 - `useDeferredValue` for expensive re-renders on search input
 
 **Conventions:**
+
 - Profile with React DevTools Profiler before optimizing
 - `React.memo` only when parent re-renders frequently with stable child props
 - Use skeleton loaders that match content structure (prevent layout shift)
@@ -463,6 +493,7 @@ Use `@tanstack/react-virtual` for lists > 100 items.
 <typescript_patterns>
 
 **Discriminated unions for state:**
+
 ```ts
 type AsyncState<T> =
   | { status: "idle" }
@@ -472,6 +503,7 @@ type AsyncState<T> =
 ```
 
 **Variant props (prevent impossible states):**
+
 ```ts
 type ButtonProps =
   | { variant: "link"; href: string; onClick?: never }
@@ -479,6 +511,7 @@ type ButtonProps =
 ```
 
 **Generic components:**
+
 ```ts
 interface SelectProps<T> {
   items: T[];
@@ -491,6 +524,7 @@ function Select<T>({ items, value, onChange, getLabel }: SelectProps<T>) { ... }
 ```
 
 **Conventions:**
+
 - Props: use `interface` (not `type`) -- use `type` for unions and mapped types
 - Extend native elements: `React.ComponentPropsWithoutRef<"button">`
 - Custom hook returns: `as const` for tuple inference
@@ -515,6 +549,7 @@ function Select<T>({ items, value, onChange, getLabel }: SelectProps<T>) { ... }
 
 <success_criteria>
 A well-built React frontend:
+
 - TypeScript strict mode with no `any` or `@ts-ignore`
 - All components accessible (axe-core passes WCAG 2.2 AA)
 - Server state managed by TanStack Query with proper cache invalidation

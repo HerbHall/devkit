@@ -54,6 +54,7 @@ Before writing tests, discover the project's testing conventions:
 </conventions>
 
 <test_template>
+
 ```typescript
 import * as assert from "assert";
 import * as vscode from "vscode";
@@ -66,9 +67,11 @@ describe("ComponentName Test Suite", () => {
   });
 });
 ```
+
 </test_template>
 
 <quality_standards>
+
 - Tests must be deterministic and not flaky
 - Avoid testing implementation details; test behavior and contracts
 - Clean up all resources in teardown hooks
