@@ -1,0 +1,101 @@
+# [Project Name]
+
+[One sentence describing the project's purpose and tech stack]
+
+## Quick Start
+
+```bash
+# Install dependencies
+npm install
+
+# Run development server
+npm run dev
+
+# Run tests
+npm test
+
+# Build for production
+npm run build
+
+# Lint
+npm run lint
+```
+
+## Project Structure
+
+```
+/src
+  /components   - Reusable UI components
+  /pages        - Route pages
+  /utils        - Helper functions
+  /api          - API integration
+/tests          - Test files
+/public         - Static assets
+```
+
+## Code Style
+
+- Use ES modules with named exports
+- Prefer functional components with hooks
+- Use TypeScript strict mode
+- Component files use PascalCase, utilities use camelCase
+- Max line length: 100 characters
+
+## Testing Strategy
+
+- Unit tests for utilities and business logic
+- Integration tests for API calls
+- Component tests using React Testing Library
+- Minimum 80% coverage on new code
+
+## Project Gotchas
+
+**IMPORTANT**:
+- [Flag unusual patterns, e.g., "Auth token refresh has custom retry logic in api/client.ts:45"]
+- [List files that shouldn't be modified, e.g., "Don't modify config/legacy-adapter.js - used by production only"]
+- [Note quirky API requirements, e.g., "The analytics API requires ISO-8601 timestamps, not Unix"]
+- [Mention non-obvious workarounds, e.g., "Use debounce wrapper for search - see utils/search.ts for pattern"]
+
+## Key Dependencies
+
+- [Framework/Library] v[X.X] - [Why it's used]
+- [Database/Service] - [Connection details or docs link]
+- [API/External Service] - [Where credentials are configured]
+
+## Environment Variables
+
+Required in `.env`:
+```
+API_KEY=xxx          # Get from [source]
+DATABASE_URL=xxx     # Format: postgresql://...
+FEATURE_FLAG_X=true  # Enable [feature]
+```
+
+## Deployment
+
+- Production: [Platform/Service]
+- Staging: [Platform/Service]
+- Build artifacts: [Location]
+- CI/CD: [Service] - see `.github/workflows/` or [config file]
+
+## Common Tasks
+
+**Add new API endpoint:**
+1. Create handler in `/api/[name].ts`
+2. Add type definitions in `/types/api.ts`
+3. Add integration test in `/tests/api/`
+
+**Add new component:**
+1. Create in `/src/components/[Name]/`
+2. Include index.ts, [Name].tsx, [Name].test.tsx
+3. Export from `/src/components/index.ts`
+
+## Related Documentation
+
+- [API Documentation](link)
+- [Design System](link)
+- [Architecture Decision Records](link)
+
+---
+
+**Note**: Add personal preferences to `CLAUDE.local.md` (gitignored) instead of this file.

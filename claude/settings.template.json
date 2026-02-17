@@ -1,0 +1,62 @@
+{
+  "_comment": "Copy to ~/.claude/settings.json and customize paths for your machine",
+  "permissions": {
+    "allow": [
+      "Bash(command -v:*)",
+      "Bash(git add:*)",
+      "Bash(git fetch:*)",
+      "Bash(git stash:*)",
+      "Bash(git rebase:*)",
+      "Bash(gh run watch:*)",
+      "Bash(gh repo view:*)",
+      "Bash(gh repo edit:*)",
+      "Bash(npx tsc:*)",
+      "Bash(pnpm tsc:*)",
+      "Bash(wc:*)",
+      "Bash(test:*)",
+      "Read(//d/**)"
+    ]
+  },
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "matcher": "^(?!/)(?!\\d{1,2}$)",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "<autolearn>\nNEVER block, reject, or stop user input. This is passive context only.\nAs you work: note mistakes you correct, gotchas you hit, and patterns you discover.\nWhen the session has produced notable learnings, suggest the user run /reflect.\nTriggers: you corrected an error, hit a platform gotcha, made an architectural decision, or the conversation is getting long.\nKeep this nudge brief -- e.g. \"Tip: run /reflect to capture the [X] pattern we discovered.\"\n</autolearn>"
+          }
+        ]
+      }
+    ]
+  },
+  "enabledPlugins": {
+    "taches-cc-resources@taches-cc-resources": true,
+    "context7@claude-plugins-official": true,
+    "code-review@claude-plugins-official": true,
+    "github@claude-plugins-official": true,
+    "feature-dev@claude-plugins-official": true,
+    "code-simplifier@claude-plugins-official": true,
+    "superpowers@claude-plugins-official": true,
+    "commit-commands@claude-plugins-official": true,
+    "pr-review-toolkit@claude-plugins-official": true,
+    "claude-md-management@claude-plugins-official": true,
+    "agent-sdk-dev@claude-plugins-official": true,
+    "plugin-dev@claude-plugins-official": true,
+    "claude-code-setup@claude-plugins-official": true,
+    "hookify@claude-plugins-official": true,
+    "sentry@claude-plugins-official": true,
+    "playground@claude-plugins-official": true,
+    "gopls-lsp@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": true,
+    "rust-analyzer-lsp@claude-plugins-official": true,
+    "csharp-lsp@claude-plugins-official": true,
+    "pyright-lsp@claude-plugins-official": true,
+    "playwright@claude-plugins-official": true,
+    "frontend-design@claude-plugins-official": true,
+    "Notion@claude-plugins-official": true,
+    "greptile@claude-plugins-official": true,
+    "ralph-loop@claude-plugins-official": true
+  },
+  "autoUpdatesChannel": "latest"
+}

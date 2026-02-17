@@ -1,0 +1,32 @@
+// TypeScript / React project settings fragment
+// Copy relevant settings into your .code-workspace "settings" block
+// Only include what your User Settings don't already cover
+{
+    // -- TypeScript SDK --
+    // Point to the project's local TypeScript install
+    // Adjust the path to match your project structure
+    "typescript.tsdk": "dev/node_modules/typescript/lib",
+    "typescript.enablePromptUseWorkspaceTsdk": true,
+
+    // -- ESLint --
+    "eslint.workingDirectories": [{ "mode": "auto" }],
+
+    // -- File exclusions --
+    // Hide build artifacts and dependencies from file explorer and search
+    "files.exclude": {
+        "**/node_modules": true,
+        "**/dist": true,
+        "**/build": true,
+        "**/.DS_Store": true
+    },
+    "search.exclude": {
+        "**/node_modules": true,
+        "**/dist": true,
+        "**/build": true
+    },
+
+    // -- Tailwind CSS (if using) --
+    "tailwindCSS.experimental.classRegex": [
+        ["cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"]
+    ]
+}

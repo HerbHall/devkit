@@ -1,0 +1,72 @@
+{
+  "_comment": "Copy to %APPDATA%/Claude/claude_desktop_config.json and replace <PLACEHOLDER> values",
+  "mcpServers": {
+    "sequential-thinking": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
+    },
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp"]
+    },
+    "memory": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-memory"]
+    },
+    "sqlite": {
+      "command": "npx",
+      "args": ["-y", "mcp-sqlite", "<PATH_TO_DATABASES>/claude.db"]
+    },
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "<GITHUB_PAT>"
+      }
+    },
+    "gitlab": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-gitlab"],
+      "env": {
+        "GITLAB_PERSONAL_ACCESS_TOKEN": "<GITLAB_PAT>",
+        "GITLAB_API_URL": "https://gitlab.com/api/v4"
+      }
+    },
+    "docker-local": {
+      "command": "uvx",
+      "args": ["mcp-server-docker"]
+    },
+    "docker-unraid": {
+      "command": "uvx",
+      "args": ["mcp-server-docker"],
+      "env": {
+        "DOCKER_HOST": "ssh://<USER>@<UNRAID_HOST>"
+      }
+    },
+    "hass-mcp": {
+      "command": "uvx",
+      "args": ["hass-mcp"],
+      "env": {
+        "HA_URL": "http://<HOME_ASSISTANT_HOST>:8123",
+        "HA_TOKEN": "<HA_LONG_LIVED_TOKEN>"
+      }
+    },
+    "MCP_DOCKER": {
+      "command": "docker",
+      "args": ["mcp", "gateway", "run"],
+      "env": {
+        "LOCALAPPDATA": "<LOCALAPPDATA_PATH>",
+        "ProgramData": "<PROGRAMDATA_PATH>",
+        "ProgramFiles": "<PROGRAMFILES_PATH>"
+      }
+    },
+    "filesystem-docker": {
+      "command": "docker",
+      "args": ["run", "-i", "--rm", "-v", "<HOME_DIR>:/workspace", "mcp/filesystem", "/workspace"]
+    },
+    "playwright-docker": {
+      "command": "docker",
+      "args": ["run", "-i", "--rm", "mcp/playwright"]
+    }
+  }
+}

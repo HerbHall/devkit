@@ -1,0 +1,24 @@
+// Go project settings fragment
+// Copy relevant settings into your .code-workspace "settings" block
+{
+    // -- Go language server --
+    "go.useLanguageServer": true,
+
+    // -- File associations --
+    "files.associations": {
+        "*.proto": "proto3"
+    },
+
+    // -- Protobuf (if using gRPC) --
+    // Adjust path to your protoc install
+    "protobuf.protoc.path": "C:\\Users\\Herb\\go\\bin\\protoc.exe",
+
+    // -- File exclusions --
+    "files.exclude": {
+        "**/vendor": true,
+        "**/.DS_Store": true
+    },
+    "search.exclude": {
+        "**/vendor": true
+    }
+}

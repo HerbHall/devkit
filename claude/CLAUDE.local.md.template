@@ -1,0 +1,84 @@
+# Personal Claude Preferences
+
+**NOTE**: This file should be added to `.gitignore` - it contains your personal preferences that shouldn't be shared with the team.
+
+## My Code Style Preferences
+
+- [Personal formatting preferences that differ from team standards]
+- [Specific patterns you prefer]
+- [Libraries or approaches you favor]
+
+Example:
+- Prefer async/await over promises chains
+- Always use explicit return types in TypeScript
+- Prefer named functions over arrow functions for top-level functions
+
+## My Workflow Preferences
+
+- [How you prefer to work through tasks]
+- [Whether you want verbose explanations or concise responses]
+- [Testing approaches you prefer]
+
+Example:
+- Run tests after every significant change
+- Show me git diffs before committing
+- Ask before installing new dependencies
+
+## My Environment
+
+- Editor: [VS Code / other]
+- Terminal: [bash / zsh / PowerShell]
+- Node version: [version]
+- Package manager preference: [npm / yarn / pnpm]
+
+## Personal Shortcuts & Aliases
+
+```bash
+# My custom aliases (if Claude needs to use them)
+alias gst='git status'
+alias gp='git push'
+alias test-watch='npm test -- --watch'
+```
+
+## My Project-Specific Notes
+
+- [Personal reminders about this project]
+- [Things you're working on]
+- [Known issues you're tracking]
+- [Your TODO items]
+
+Example:
+- Need to refactor the auth flow once API is stable
+- Performance bottleneck in data processing - profile later
+- Check with team about migrating to new design system
+
+## My Communication Preferences
+
+- [How verbose you want responses]
+- [Whether you want proactive suggestions]
+- [Your tolerance for interruptions vs autonomy]
+
+Example:
+- Be concise unless I ask for explanations
+- Proactively suggest optimizations when you see them
+- Always ask before making architectural decisions
+
+## Personal Gotchas to Remember
+
+- [Things you frequently forget]
+- [Mistakes you've made before]
+- [Patterns you want to avoid]
+
+Example:
+- I always forget to update the changelog
+- Remind me to run the full test suite before pushing to main
+- I tend to over-engineer - keep me focused on MVP
+
+---
+
+**Usage**: Copy this template to `CLAUDE.local.md` in any project root, then add to `.gitignore`:
+
+```bash
+# Add to .gitignore
+echo "CLAUDE.local.md" >> .gitignore
+```

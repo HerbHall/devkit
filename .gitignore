@@ -1,0 +1,34 @@
+# Secrets and credentials
+.credentials.json
+*.local.json
+.env
+.env.*
+
+# Claude Code runtime state
+debug/
+file-history/
+projects/
+ide/
+session-env/
+shell-snapshots/
+cache/
+downloads/
+tasks/
+todos/
+stats-cache.json
+history.jsonl
+
+# Plugin cache (reinstalled per machine)
+plugins/cache/
+plugins/marketplaces/
+
+# OS
+Thumbs.db
+.DS_Store
+Desktop.ini
+
+# Editor
+.vs/
+.idea/
+*.swp
+*.swo

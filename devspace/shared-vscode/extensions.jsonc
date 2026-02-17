@@ -1,0 +1,40 @@
+// Extension recommendations by project type
+// Copy the relevant section into your .code-workspace "extensions.recommendations" array
+//
+// RULE: Only recommend extensions that are project-specific.
+// Extensions you always want (like GitLens, Prettier) should be installed
+// globally via your VS Code profile, not repeated in every workspace.
+
+{
+    // -- TypeScript / React --
+    "typescript": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss",
+        "dsznajder.es7-react-js-snippets"
+    ],
+
+    // -- Go --
+    "go": [
+        "golang.go",
+        "zxh404.vscode-proto3"
+    ],
+
+    // -- Docker --
+    "docker": [
+        "ms-azuretools.vscode-docker"
+    ],
+
+    // -- C# / Unity --
+    "csharp": [
+        "ms-dotnettools.csharp",
+        "ms-dotnettools.csdevkit"
+    ],
+
+    // -- General development (add if not in your global profile) --
+    "general": [
+        "eamodio.gitlens",
+        "davidanson.vscode-markdownlint",
+        "editorconfig.editorconfig"
+    ]
+}
