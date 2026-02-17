@@ -48,6 +48,7 @@ func TestFunctionName(t *testing.T) {
     }
 }
 ```
+
 </pattern>
 
 <pattern name="benchmarks">
@@ -80,6 +81,7 @@ func (m *mockDependency) Method(args) (result, error) {
     return m.methodFunc(args)
 }
 ```
+
 </pattern>
 
 <pattern name="test_helpers">
@@ -96,6 +98,7 @@ func mustSetup(t *testing.T) *Resource {
     return r
 }
 ```
+
 </pattern>
 
 </patterns>

@@ -8,10 +8,11 @@ The main Claude instance should act as a **coordinator**, delegating specialized
 
 ## When to Use Subagents
 
-### ✅ USE Subagents For:
+### ✅ USE Subagents For
 
 **1. Codebase Exploration**
-```
+
+```text
 ❌ DON'T: Run Grep/Glob directly in main context
 ✅ DO: Use Task tool with subagent_type=Explore
 
@@ -22,7 +23,8 @@ Main Claude: [Receives summary, stays lean]
 ```
 
 **2. Research Tasks**
-```
+
+```text
 User: "What's the best library for date parsing?"
 Main Claude: [Spawns research agent]
 Research Agent: [WebSearch, WebFetch, compares options]
@@ -30,7 +32,8 @@ Main Claude: [Receives recommendation with reasoning]
 ```
 
 **3. Independent Verification**
-```
+
+```text
 User: "Implement feature X"
 Main Claude: [Implements feature]
 Main Claude: [Spawns code-reviewer agent for verification]
@@ -39,7 +42,8 @@ Main Claude: [Applies feedback]
 ```
 
 **4. Parallel Independent Tasks**
-```
+
+```text
 User: "Update docs, run tests, and check dependencies"
 Main Claude: [Spawns 3 agents in parallel]
   - docs-agent: Updates documentation
@@ -48,7 +52,7 @@ Main Claude: [Spawns 3 agents in parallel]
 Main Claude: [Aggregates results when all complete]
 ```
 
-### ❌ DON'T Use Subagents For:
+### ❌ DON'T Use Subagents For
 
 - Single file reads (use Read tool directly)
 - Simple edits (use Edit tool directly)
@@ -60,8 +64,10 @@ Main Claude: [Aggregates results when all complete]
 Based on your system instructions, these are the available subagent types:
 
 ### **Explore Agent**
+
 **Use for**: Codebase exploration, finding files, understanding structure
-```
+
+```text
 Tasks:
 - "How does authentication work?"
 - "Find all API endpoints"
@@ -74,8 +80,10 @@ Tasks:
 **Thoroughness levels**: "quick", "medium", "very thorough"
 
 ### **Plan Agent**
+
 **Use for**: Designing implementation strategies before coding
-```
+
+```text
 Tasks:
 - "Plan how to add authentication"
 - "Design a refactoring approach for the data layer"
@@ -85,8 +93,10 @@ Tasks:
 **Tools**: All tools except Task, ExitPlanMode, Edit, Write, NotebookEdit
 
 ### **General-Purpose Agent**
+
 **Use for**: Complex multi-step tasks, research, autonomous work
-```
+
+```text
 Tasks:
 - "Research best practices for error handling in Node.js"
 - "Find and summarize all TODOs in the codebase"
@@ -96,8 +106,10 @@ Tasks:
 **Tools**: All tools
 
 ### **Bash Agent**
+
 **Use for**: Git operations, command execution, terminal tasks
-```
+
+```text
 Tasks:
 - "Check git history for changes to auth module"
 - "Run npm audit and summarize vulnerabilities"
@@ -107,8 +119,10 @@ Tasks:
 **Tools**: Bash only (specialized for command execution)
 
 ### **Custom Agents**
+
 You can define specialized agents for recurring tasks:
-```
+
+```text
 - code-reviewer: Reviews code for quality and security
 - test-runner: Runs tests and analyzes results
 - docs-updater: Updates documentation based on code changes
@@ -120,7 +134,8 @@ You can define specialized agents for recurring tasks:
 ### Pattern 1: Explore → Plan → Code → Commit (with Agents)
 
 **Traditional approach (high context usage):**
-```
+
+```text
 1. User asks for feature
 2. Main Claude searches entire codebase (fills context)
 3. Main Claude plans (adding to context)
@@ -129,7 +144,8 @@ You can define specialized agents for recurring tasks:
 ```
 
 **Agent-optimized approach (lean context):**
-```
+
+```text
 1. User asks for feature
 2. Main Claude spawns Explore agent → receives summary
 3. Main Claude spawns Plan agent → receives plan
@@ -188,7 +204,7 @@ git worktree add ../feature-branch-3 feature-3
 
 ### Example 1: Adding a New Feature
 
-```
+```text
 User: "Add user authentication with JWT"
 
 ❌ Bad (fills main context):
@@ -208,7 +224,7 @@ Main: [Implements based on plan with focused context]
 
 ### Example 2: Bug Investigation
 
-```
+```text
 User: "The login endpoint returns 500, investigate"
 
 ✅ Good approach:
@@ -221,7 +237,7 @@ Main: [Spawns test-agent: "Verify login endpoint works"]
 
 ### Example 3: Parallel Code Review
 
-```
+```text
 User: "Review this PR"
 
 ✅ Parallel approach (use ONE message with multiple Task calls):
@@ -239,12 +255,14 @@ Main: [Presents consolidated review]
 ### 1. Keep Main Context for Coordination Only
 
 Main Claude should:
+
 - Make high-level decisions
 - Coordinate between agents
 - Interact with user
 - Implement final changes after receiving summaries
 
 Main Claude should NOT:
+
 - Do extensive file searching
 - Read dozens of files
 - Perform deep research
@@ -252,7 +270,7 @@ Main Claude should NOT:
 
 ### 2. Use `/clear` Between Major Tasks
 
-```
+```text
 User: "Add authentication" → Complete
 User: "Now add rate limiting" → /clear first!
 
@@ -263,13 +281,14 @@ Clear between unrelated tasks.
 ### 3. Session Management
 
 For related multi-step work that spans multiple sessions:
+
 - Agents can capture session IDs
 - Resume sessions to maintain context
 - Fork sessions to explore different approaches
 
 ### 4. Delegate Research to Agents
 
-```
+```text
 ❌ Don't fill main context with research:
 Main: [WebSearch for 5 different libraries]
 Main: [WebFetch documentation for each]
@@ -288,6 +307,7 @@ Main: [Implements with clean context]
 Create specialized agents for your common workflows by defining them in the Task tool options:
 
 **Example: Code Review Agent**
+
 ```python
 AgentDefinition(
     description="Expert code reviewer for quality and security",
@@ -297,6 +317,7 @@ AgentDefinition(
 ```
 
 **Example: Documentation Agent**
+
 ```python
 AgentDefinition(
     description="Documentation specialist",
@@ -306,6 +327,7 @@ AgentDefinition(
 ```
 
 **Example: Test Runner Agent**
+
 ```python
 AgentDefinition(
     description="Test execution and analysis specialist",
@@ -360,11 +382,13 @@ You're NOT using agents effectively when:
 ## Integration with Your Automation
 
 Your SessionStart hook and templates already support this workflow:
+
 - CLAUDE.md files can specify preferred agent strategies
 - Hooks can log agent usage for analysis
 - Templates can include agent delegation patterns
 
 **Add to project CLAUDE.md:**
+
 ```markdown
 ## Agent Usage Patterns
 
@@ -389,6 +413,7 @@ This keeps your context window lean, your work parallelized, and your main conve
 ---
 
 **Next Steps:**
+
 1. Try the Explore agent next time you ask "where is X?"
 2. Use parallel agents for your next multi-task request
 3. Add agent delegation patterns to project CLAUDE.md files

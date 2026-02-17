@@ -34,6 +34,7 @@ Key principle: Start minimal, add complexity only when needed.
 <workflow_patterns>
 
 <pattern name="go_ci">
+<!-- markdownlint-disable MD040 MD046 -->
 ```yaml
 name: Go CI
 on:
@@ -127,7 +128,9 @@ jobs:
 
       - name: Run govulncheck
         run: govulncheck ./...
+
 ```
+<!-- markdownlint-enable MD040 MD046 -->
 
 **Go CI Notes:**
 - **`go vet` is redundant** if using golangci-lint with `govet` enabled (check `.golangci.yml`)
@@ -169,9 +172,11 @@ jobs:
       - name: Test
         run: dotnet test --no-build --configuration Release --verbosity normal
 ```
+
 </pattern>
 
 <pattern name="rust_ci">
+<!-- markdownlint-disable MD040 MD046 -->
 ```yaml
 name: Rust CI
 on:
@@ -206,7 +211,9 @@ jobs:
 
       - name: Test
         run: cargo test --all-features
+
 ```
+<!-- markdownlint-enable MD040 MD046 -->
 </pattern>
 
 <pattern name="node_ci">
@@ -237,6 +244,7 @@ jobs:
       - run: npm test
       - run: npm run build
 ```
+
 </pattern>
 
 </workflow_patterns>
@@ -275,6 +283,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
+
 </pattern>
 
 <pattern name="tag_based_release">
@@ -305,6 +314,7 @@ jobs:
             dist/*
           generate_release_notes: true
 ```
+
 </pattern>
 
 <pattern name="goreleaser_config">
@@ -363,6 +373,7 @@ release:
 ```
 
 **GoReleaser v2 Gotchas:**
+
 - Use `ids:` not `builds:` in archives (deprecated)
 - Use `formats:` (list) not `format:` (string) in format_overrides (deprecated)
 - Always validate with `goreleaser check` before committing
@@ -437,6 +448,7 @@ jobs:
 ```
 
 **GoReleaser Docker config** (`.goreleaser.yaml`):
+
 ```yaml
 dockers:
   - id: app-amd64
@@ -482,6 +494,7 @@ sboms:
 ```
 
 **Notes:**
+
 - `docker/setup-buildx-action` is required when `use: buildx` in GoReleaser docker config
 - `docker/login-action` is required for pushing to any container registry
 - `anchore/sbom-action/download-syft` is required when `sboms:` section exists
@@ -492,6 +505,7 @@ sboms:
 </release_patterns>
 
 <security_practices>
+
 - **ALWAYS set explicit `permissions`** at workflow or job level. Never rely on defaults.
 - **ALWAYS pin action versions** to full SHA or major version (`actions/checkout@v4`, not `@main`).
 - **NEVER expose secrets in logs.** Use `${{ secrets.NAME }}` and mask outputs.
@@ -506,6 +520,7 @@ permissions:
   contents: read
   pull-requests: read
 ```
+
 </security_practices>
 
 <caching_optimization>
@@ -519,6 +534,7 @@ Use language-specific caching to speed up workflows:
 | Node.js | `actions/setup-node@v4` | `cache: npm` (built-in) |
 
 For custom caching:
+
 ```yaml
 - uses: actions/cache@v4
   with:
@@ -528,6 +544,7 @@ For custom caching:
     restore-keys: |
       ${{ runner.os }}-custom-
 ```
+
 </caching_optimization>
 
 <common_patterns>
@@ -548,6 +565,7 @@ steps:
     with:
       go-version: ${{ matrix.go-version }}
 ```
+
 </pattern>
 
 <pattern name="conditional_jobs">
@@ -576,6 +594,7 @@ jobs:
     steps:
       # ...
 ```
+
 </pattern>
 
 <pattern name="reusable_workflows">
@@ -603,6 +622,7 @@ jobs:
 ```
 
 Call it from another workflow:
+
 ```yaml
 jobs:
   ci:
@@ -610,6 +630,7 @@ jobs:
     with:
       go-version: '1.22'
 ```
+
 </pattern>
 
 </common_patterns>
@@ -633,6 +654,7 @@ Inject version metadata at build time using ldflags:
 ```
 
 **Notes:**
+
 - `${GITHUB_SHA::7}` gives short commit hash (bash substring), matching `git rev-parse --short HEAD`
 - `shell: bash` is required for `date -u` and `${VAR::N}` to work on Windows runners
 - Use a `VERSION_PKG` variable to keep ldflags lines under 80 characters
@@ -712,6 +734,7 @@ equivalent) cleanup step after any build step that modifies tracked files.
 </critical_lessons>
 
 <anti_patterns>
+
 - **Monolithic workflows**: Split build, test, lint into separate jobs for parallelism and clearer failure signals
 - **Missing `fail-fast: false`**: Matrix builds default to cancelling all jobs if one fails. Set `fail-fast: false` for independent tests.
 - **Hardcoded versions**: Use `go-version-file: go.mod` or `.nvmrc` instead of hardcoding language versions
@@ -722,10 +745,12 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 ```
+
 </anti_patterns>
 
 <success_criteria>
 A well-configured GitHub Actions setup:
+
 - Runs on every push to main and every PR
 - Builds, tests, and lints the project
 - Uses caching for fast execution

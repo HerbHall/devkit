@@ -4,6 +4,7 @@ Complete checklist of information to gather when creating new requirements. Use 
 
 <project_identity>
 **Project Identity**
+
 - [ ] Project name
 - [ ] One-sentence description
 - [ ] Project type (CLI, library, GUI, web, mobile, other)
@@ -20,6 +21,7 @@ Complete checklist of information to gather when creating new requirements. Use 
 
 <problem_space>
 **Problem Space**
+
 - [ ] Core problem being solved
 - [ ] Current solution (if any) and its limitations
 - [ ] Success metrics (how do we know it's working?)
@@ -28,6 +30,7 @@ Complete checklist of information to gather when creating new requirements. Use 
 
 <functional_needs>
 **Functional Needs**
+
 - [ ] Core features (must work for MVP)
 - [ ] Secondary features (important but not critical)
 - [ ] Nice-to-have features (if time permits)
@@ -38,6 +41,7 @@ Complete checklist of information to gather when creating new requirements. Use 
 
 <non_functional_needs>
 **Non-Functional Needs**
+
 - [ ] Performance expectations (speed, throughput, latency)
 - [ ] Scalability requirements (users, data volume)
 - [ ] Reliability requirements (uptime, error tolerance)
@@ -48,6 +52,7 @@ Complete checklist of information to gather when creating new requirements. Use 
 
 <technical_context>
 **Technical Context**
+
 - [ ] Required technologies/languages
 - [ ] Prohibited technologies (if any)
 - [ ] Dependencies/libraries preferences
@@ -68,6 +73,7 @@ Complete checklist of information to gather when creating new requirements. Use 
 
 <explicit_exclusions>
 **Explicit Exclusions**
+
 - [ ] Features explicitly NOT in scope
 - [ ] Platforms NOT supported
 - [ ] Use cases NOT addressed

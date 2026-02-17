@@ -7,6 +7,7 @@ Comprehensive session retrospective. Extracts all learnings, syncs to MCP Memory
 ### 1. Gather Session Context
 
 Identify the scope of the session:
+
 - What tasks were worked on?
 - What files were created or modified?
 - Were there any errors, failures, or corrections?
@@ -18,40 +19,47 @@ Identify the scope of the session:
 Scan the full conversation for each category:
 
 **Corrections** (highest priority):
+
 - Code that didn't compile and was fixed
 - Commands that failed and were retried differently
 - Wrong assumptions that were corrected
 - CI failures that were diagnosed and fixed
 
 **Gotchas** (high priority):
+
 - Platform-specific issues encountered
 - Library or tool quirks discovered
 - Configuration issues that were non-obvious
 - Environment differences (local vs CI)
 
 **Patterns** (high priority):
+
 - Code patterns that proved effective
 - Testing approaches that worked well
 - Workflow sequences that were efficient
 - Tool usage patterns worth repeating
 
 **Decisions** (medium priority):
+
 - Architecture or design choices made
 - Library or tool selections with rationale
 - Trade-offs resolved and why
 
 **Preferences** (store once):
+
 - New user preferences expressed during the session
 - Workflow adjustments requested by the user
 
 ### 3. Cross-Reference with MCP Memory
 
 For each extracted artifact:
-```
+
+```text
 search_nodes with relevant keywords
 ```
 
 Categorize each as:
+
 - **New**: No existing entity -- needs to be created
 - **Update**: Existing entity -- add observation
 - **Duplicate**: Already stored with same information -- skip
@@ -60,7 +68,8 @@ Categorize each as:
 ### 4. Store New Entities
 
 Create entities for all NEW findings:
-```
+
+```text
 create_entities: [
   { name: "...", entityType: "...", observations: ["[date] (source: ...) ..."] },
   ...
@@ -68,7 +77,8 @@ create_entities: [
 ```
 
 Add observations for UPDATE findings:
-```
+
+```text
 add_observations: [
   { entityName: "...", contents: ["[date] ..."] },
   ...
@@ -78,7 +88,8 @@ add_observations: [
 ### 5. Create Relations
 
 Link learnings to their context:
-```
+
+```text
 create_relations: [
   { from: "<learning>", to: "<project>", relationType: "DISCOVERED_IN" },
   { from: "<correction>", to: "<error-pattern>", relationType: "FIXES" },
@@ -90,11 +101,13 @@ create_relations: [
 ### 6. Update Rules Files
 
 Read current rules files:
+
 - `~/.claude/rules/autolearn-patterns.md`
 - `~/.claude/rules/known-gotchas.md`
 - `~/.claude/rules/workflow-preferences.md`
 
 For each HIGH-confidence finding that should be in rules:
+
 1. Check if it's already in the appropriate file
 2. If not, append a new numbered entry
 3. Update the `entry_count` in YAML frontmatter
@@ -106,7 +119,7 @@ Keep rules files concise. If a file exceeds 30 entries, consider archiving older
 
 Present a comprehensive summary:
 
-```
+```text
 ## Session Review Summary
 
 ### Tasks Completed

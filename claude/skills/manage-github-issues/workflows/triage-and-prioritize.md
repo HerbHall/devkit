@@ -1,5 +1,6 @@
 <required_reading>
 **Read these reference files NOW:**
+
 1. references/label-conventions.md
 </required_reading>
 
@@ -28,11 +29,13 @@ gh issue list --state open --limit 200 --json number,title,labels,milestone,crea
 ```
 
 Filter the results to find issues that:
+
 - Have no priority label (none of P0-P3 or equivalent)
 - Or have a `needs-design` label pending resolution
 - Or have no milestone assigned
 
 Also fetch recently created issues (last 14 days) that may need review:
+
 ```bash
 gh issue list --state open --limit 50 --json number,title,labels,milestone,createdAt,body --sort created
 ```
@@ -40,6 +43,7 @@ gh issue list --state open --limit 50 --json number,title,labels,milestone,creat
 **Step 3: Read Current Phase Context (if available)**
 
 If the project has a roadmap file (from config), read it to understand:
+
 - Which phase/milestone is currently active
 - What the current goals are
 - Which items are blocking progress
@@ -52,7 +56,7 @@ For each untriaged issue, recommend a priority using this decision tree:
 
 <priority_decision_tree>
 
-```
+```text
 Is this a security vulnerability or data integrity issue?
   YES -> P0-critical or P1-high
 
@@ -75,6 +79,7 @@ Does this fix a user-facing bug?
 </priority_decision_tree>
 
 Also recommend:
+
 - Area/module label if missing (based on title and body keywords)
 - Milestone if missing (based on phase label or content)
 - Whether the issue should be flagged as `blocked` or `needs-design`
@@ -83,7 +88,7 @@ Also recommend:
 
 Show a table of recommendations for user review:
 
-```
+```text
 ## Triage Recommendations
 
 | Issue | Title | Recommended Priority | Recommended Labels | Notes |
@@ -102,6 +107,7 @@ Show a table of recommendations for user review:
 ```
 
 Ask the user:
+
 - "Should I apply all recommendations as shown?"
 - "Do you want to adjust any priorities before I apply them?"
 
@@ -114,11 +120,13 @@ gh issue edit {NUMBER} --add-label "{PRIORITY_LABEL}"
 ```
 
 If a milestone is also needed:
+
 ```bash
 gh issue edit {NUMBER} --milestone "{MILESTONE}"
 ```
 
 If additional labels are needed:
+
 ```bash
 gh issue edit {NUMBER} --add-label "{AREA_LABEL}"
 ```
@@ -126,13 +134,14 @@ gh issue edit {NUMBER} --add-label "{AREA_LABEL}"
 **Step 7: Identify Blocking Chains**
 
 After triage, check for blocking relationships:
+
 - Issues labeled `blocked` -- do they reference what blocks them?
 - P1-high issues -- are their dependencies also prioritized?
 - Any circular dependencies?
 
 If blocking chains are found, present them:
 
-```
+```text
 ## Dependency Chain
 #32 (P1-high) -> blocked by #15 (P2-medium)
   Recommendation: Elevate #15 to P1-high since it blocks #32
@@ -142,7 +151,7 @@ If blocking chains are found, present them:
 
 Summarize all changes:
 
-```
+```text
 Triage complete:
 - Prioritized N issues
 - Added area/module labels to N issues
@@ -161,6 +170,7 @@ Current phase backlog:
 
 <success_criteria>
 This workflow is complete when:
+
 - [ ] Project context discovered
 - [ ] Untriaged issues identified and fetched
 - [ ] Current phase context read (if roadmap exists)

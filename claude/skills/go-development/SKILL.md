@@ -41,6 +41,7 @@ func (e *ScanError) Unwrap() error { return e.Err }
 ```
 
 Key principles:
+
 - Wrap errors with `fmt.Errorf("context: %w", err)` for stack context
 - Use `errors.Is()` and `errors.As()` for error inspection
 - Define sentinel errors at package level for expected conditions
@@ -72,6 +73,7 @@ func ScanHosts(resolver HostResolver, hosts []string) ([]Result, error) {
     // ...
 }
 ```
+
 </idiom>
 
 <idiom name="zero_values">
@@ -84,6 +86,7 @@ var mu sync.Mutex
 // bytes.Buffer zero value is empty buffer - ready to use
 var buf bytes.Buffer
 ```
+
 </idiom>
 
 </idioms>
@@ -91,7 +94,7 @@ var buf bytes.Buffer
 <module_structure>
 Standard Go project layout for CLI tools:
 
-```
+```text
 project/
 ├── cmd/
 │   └── toolname/
@@ -112,6 +115,7 @@ project/
 ```
 
 Key principles:
+
 - `cmd/` contains minimal entry points that wire dependencies together
 - `internal/` for packages private to this module
 - `pkg/` only when explicitly designing a public API
@@ -122,6 +126,7 @@ Key principles:
 <testing>
 
 <pattern name="table_driven_tests">
+<!-- markdownlint-disable MD040 MD046 -->
 ```go
 func TestParsePort(t *testing.T) {
     tests := []struct {
@@ -153,7 +158,9 @@ func TestParsePort(t *testing.T) {
         })
     }
 }
+
 ```
+<!-- markdownlint-enable MD040 MD046 -->
 </pattern>
 
 <pattern name="benchmark_tests">
@@ -192,6 +199,7 @@ func setupTestServer(t *testing.T) (addr string, cleanup func()) {
 </pattern>
 
 <pattern name="mock_interfaces">
+<!-- markdownlint-disable MD040 MD046 -->
 ```go
 // Mock in test file
 type mockResolver struct {
@@ -210,7 +218,9 @@ func TestScanWithResolver(t *testing.T) {
     }
     // use mock in test
 }
+
 ```
+<!-- markdownlint-enable MD040 MD046 -->
 </pattern>
 
 </testing>
@@ -243,9 +253,11 @@ func ScanPorts(host string, ports []int, workers int) []Result {
     return results
 }
 ```
+
 </pattern>
 
 <pattern name="context_timeout">
+<!-- markdownlint-disable MD040 MD046 -->
 ```go
 func ScanWithTimeout(ctx context.Context, target string, timeout time.Duration) (Result, error) {
     ctx, cancel := context.WithTimeout(ctx, timeout)
@@ -258,7 +270,9 @@ func ScanWithTimeout(ctx context.Context, target string, timeout time.Duration) 
     defer conn.Close()
     // ...
 }
+
 ```
+<!-- markdownlint-enable MD040 MD046 -->
 </pattern>
 
 <pattern name="input_validation">
@@ -283,6 +297,7 @@ func ValidatePortRange(start, end int) error {
     return nil
 }
 ```
+
 </pattern>
 
 </network_security_patterns>
@@ -301,6 +316,7 @@ Common golangci-lint failures to avoid proactively:
 
 <success_criteria>
 Go code produced with this skill should:
+
 - Pass `go vet ./...` with no warnings
 - Pass `golangci-lint run` with standard linters
 - Have test coverage for exported functions

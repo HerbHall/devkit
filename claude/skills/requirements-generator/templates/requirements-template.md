@@ -9,6 +9,7 @@
 ## Changelog
 
 ### [{VERSION}] - {DATE}
+
 - Initial requirements document
 
 ---
@@ -16,12 +17,15 @@
 ## 1. Project Overview
 
 ### 1.1 Description
+
 {One paragraph describing what this project is and does}
 
 ### 1.2 Problem Statement
+
 {What problem does this solve? Why does this project need to exist?}
 
 ### 1.3 Success Criteria
+
 {How do we know the project is successful? What metrics matter?}
 
 ---

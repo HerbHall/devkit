@@ -122,6 +122,7 @@ Use these MCP-provided tools proactively when relevant:
 ### GitHub Operations (MCP_DOCKER)
 
 Full GitHub API access -- use these when `gh` CLI is insufficient:
+
 - **Search**: `search_code`, `search_issues`, `search_repositories`,
   `search_users`
 - **Issues**: `list_issues`, `create_issue`, `update_issue`,
@@ -136,6 +137,7 @@ Full GitHub API access -- use these when `gh` CLI is insufficient:
 ### Browser & Automation (MCP_DOCKER)
 
 Full Playwright browser automation in Docker:
+
 - **Navigate**: `browser_navigate`, `browser_navigate_back`,
   `browser_tabs`, `browser_resize`
 - **Interact**: `browser_click`, `browser_type`, `browser_fill_form`,
@@ -150,6 +152,7 @@ Full Playwright browser automation in Docker:
 ### Sandbox & Code Execution (MCP_DOCKER)
 
 Run code in isolated Docker containers:
+
 - **Sandbox**: `sandbox_initialize` -> `sandbox_exec` -> `sandbox_stop`
 - **Node.js**: `run_js` (persistent container), `run_js_ephemeral`
   (disposable, auto-cleanup). Supports npm dependencies.
@@ -163,6 +166,7 @@ Run code in isolated Docker containers:
 ### MCP Server Management (MCP_DOCKER)
 
 Discover and add new MCP servers at runtime:
+
 - `mcp-find` -> search MCP catalog for servers by capability
 - `mcp-add` -> enable a discovered server
 - `mcp-remove` / `mcp-config-set` -> manage server configs

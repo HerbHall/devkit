@@ -1,5 +1,6 @@
 <required_reading>
 **Read these reference files NOW:**
+
 1. references/intake-checklist.md
 2. references/requirements-template.md
 3. references/requirements-questions-guide.md
@@ -12,6 +13,7 @@
 Ask these key questions using AskUserQuestion:
 
 <key_questions>
+
 1. **Project name and one-sentence description** - What are we building?
 2. **Project type** - CLI tool, library/API, Windows GUI app, or other?
 3. **Primary users** - Who will use this? (developers, end users, admins)
@@ -39,6 +41,7 @@ Using `templates/requirements-template.md`, create the requirements.md file:
 **Step 4: Review with User**
 
 Present the draft and ask:
+
 - "Are any requirements missing?"
 - "Are priorities correct?"
 - "Should anything move to out-of-scope?"
@@ -48,6 +51,7 @@ Iterate until user approves.
 **Step 5: Identify Open Questions**
 
 Review the requirements.md draft and identify areas where:
+
 - Multiple implementation approaches exist
 - Technical decisions affect architecture
 - User preferences aren't yet known
@@ -55,6 +59,7 @@ Review the requirements.md draft and identify areas where:
 - Ambiguity remains after initial requirements
 
 Group questions by priority:
+
 1. **BLOCKER**: Must decide before Phase 1 (MVP scope, core architecture, critical tech choices)
 2. **HIGH**: Affects Phase 1 but has reasonable defaults (permissions, error handling, formats)
 3. **MEDIUM**: UX enhancements for Phase 2 (notifications, background behavior, export formats)
@@ -77,6 +82,7 @@ Using `templates/requirements-questions-template.md`, create REQUIREMENTS_QUESTI
 6. Include response template for stakeholder to fill in
 
 **Guidelines from `references/requirements-questions-guide.md`:**
+
 - Focus on "how" to implement, not "what" to build (that's in requirements.md)
 - Provide actionable options, not open-ended questions
 - Show what can be changed later vs locked in
@@ -88,11 +94,13 @@ Using `templates/requirements-questions-template.md`, create REQUIREMENTS_QUESTI
 Present both documents and ask:
 
 For requirements.md:
+
 - "Are any requirements missing?"
 - "Are priorities correct?"
 - "Should anything move to out-of-scope?"
 
 For REQUIREMENTS_QUESTIONS.md:
+
 - "Do these questions capture the key decision points?"
 - "Are there other implementation questions I'm missing?"
 - "Which questions can you answer now vs research later?"
@@ -102,10 +110,12 @@ Iterate until user approves both documents.
 **Step 8: Write Files**
 
 Write both files to the project directory:
+
 1. `requirements.md` - The "what" (features, acceptance criteria, scope)
 2. `REQUIREMENTS_QUESTIONS.md` - The "how" (decisions, trade-offs, options)
 
 **Note**: Some projects may not need a questions document if:
+
 - Requirements are crystal clear with no ambiguity
 - Simple prototype/proof-of-concept
 - Single developer making all decisions
@@ -117,6 +127,7 @@ Ask user: "Do you want me to generate a REQUIREMENTS_QUESTIONS.md document along
 
 <success_criteria>
 This workflow is complete when:
+
 - [ ] Key questions answered
 - [ ] Checklist items captured
 - [ ] requirements.md created with all sections

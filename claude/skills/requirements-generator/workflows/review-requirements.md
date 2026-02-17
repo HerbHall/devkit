@@ -1,5 +1,6 @@
 <required_reading>
 **Read these reference files NOW:**
+
 1. references/quality-checklist.md
 </required_reading>
 
@@ -12,6 +13,7 @@ Read the requirements.md file to review.
 **Step 2: Structure Audit**
 
 Check for required sections:
+
 - [ ] Project Overview present and complete
 - [ ] Stakeholders identified
 - [ ] Constraints documented
@@ -25,6 +27,7 @@ Check for required sections:
 **Step 3: Quality Audit**
 
 For each requirement, verify using quality checklist:
+
 - **Specific**: Is the language clear and unambiguous?
 - **Measurable**: Can this be verified through testing?
 - **Achievable**: Is this technically feasible?
@@ -34,6 +37,7 @@ For each requirement, verify using quality checklist:
 **Step 4: Priority Audit**
 
 Check MoSCoW assignments:
+
 - Are Must-haves truly critical?
 - Are Should-haves correctly prioritized?
 - Are there too many Must-haves? (typical ratio: 60% Must, 20% Should, 20% Could)
@@ -42,6 +46,7 @@ Check MoSCoW assignments:
 **Step 5: Completeness Audit**
 
 Check for gaps:
+
 - Do all Must/Should requirements have acceptance criteria?
 - Are edge cases considered?
 - Are error handling requirements defined?
@@ -53,16 +58,19 @@ Check for gaps:
 Present findings organized by severity:
 
 **Critical Issues** (must fix)
+
 - Missing required sections
 - Requirements without priorities
 - Must-haves without acceptance criteria
 
 **Warnings** (should fix)
+
 - Vague or ambiguous requirements
 - Missing non-functional requirements
 - Unbalanced priority distribution
 
 **Suggestions** (could improve)
+
 - Requirements that could be more specific
 - Potential missing edge cases
 - Documentation improvements
@@ -78,6 +86,7 @@ If yes, switch to update-requirements workflow for each fix.
 
 <success_criteria>
 This workflow is complete when:
+
 - [ ] Document structure audited
 - [ ] Each requirement quality-checked
 - [ ] Priority distribution analyzed

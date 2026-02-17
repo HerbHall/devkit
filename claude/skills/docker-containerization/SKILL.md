@@ -6,6 +6,7 @@ description: Docker and container best practices for production workloads. Cover
 <essential_principles>
 
 **Core Philosophy**
+
 - Containers are immutable artifacts. Build once, run anywhere.
 - Minimal images reduce attack surface and startup time.
 - Every layer matters. Order instructions by change frequency (least → most).
@@ -131,6 +132,7 @@ EXPOSE 80
 ```
 
 **Key Principles:**
+
 - Always start with `# syntax=docker/dockerfile:1` to enable BuildKit features
 - Copy dependency manifests first, then source (maximizes cache hits)
 - Use `--mount=type=cache` for package manager caches
@@ -144,6 +146,7 @@ EXPOSE 80
 **Non-Negotiable Security Practices:**
 
 1. **Run as non-root:**
+
 ```dockerfile
 # For distroless: use the nonroot tag
 FROM gcr.io/distroless/static-debian12:nonroot
@@ -153,7 +156,8 @@ RUN groupadd -r appuser && useradd -r -g appuser -s /usr/sbin/nologin appuser
 USER appuser
 ```
 
-2. **Never embed secrets in images:**
+1. **Never embed secrets in images:**
+
 ```dockerfile
 # WRONG -- secret baked into layer history
 COPY .env /app/.env
@@ -168,7 +172,8 @@ RUN --mount=type=secret,id=db_password \
 # docker run -v /secrets/db_password:/run/secrets/db_password:ro app
 ```
 
-3. **Read-only root filesystem:**
+1. **Read-only root filesystem:**
+
 ```yaml
 # docker-compose.yml
 services:
@@ -179,7 +184,8 @@ services:
       - /var/run
 ```
 
-4. **Drop all capabilities, add only what's needed:**
+1. **Drop all capabilities, add only what's needed:**
+
 ```yaml
 services:
   app:
@@ -189,12 +195,14 @@ services:
       - NET_BIND_SERVICE  # only if binding to ports < 1024
 ```
 
-5. **Pin image digests for reproducibility:**
+1. **Pin image digests for reproducibility:**
+
 ```dockerfile
 FROM golang:1.24-bookworm@sha256:abc123...
 ```
 
-6. **Scan images for vulnerabilities:**
+1. **Scan images for vulnerabilities:**
+
 ```bash
 # Trivy (recommended)
 trivy image myapp:latest
@@ -206,8 +214,9 @@ docker scout cves myapp:latest
 snyk container test myapp:latest
 ```
 
-7. **Use `.dockerignore`:**
-```
+1. **Use `.dockerignore`:**
+
+```text
 .git
 .env
 .env.*
@@ -221,6 +230,7 @@ __pycache__
 ```
 
 **Security Checklist:**
+
 - [ ] Non-root user in runtime image
 - [ ] No secrets in Dockerfile or image layers
 - [ ] `.dockerignore` excludes sensitive files
@@ -384,6 +394,7 @@ services:
 ```
 
 **Conventions:**
+
 - Always define `healthcheck` for services with `depends_on`
 - Use `depends_on.condition: service_healthy` instead of bare `depends_on`
 - Use named volumes for persistent data, never bind mounts in production
@@ -439,6 +450,7 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 ```
 
 **Health Check Guidelines:**
+
 - `start_period`: time to wait before first check (allow startup)
 - `interval`: time between checks (30s is a good default)
 - `timeout`: max time for a single check (5s)
@@ -484,6 +496,7 @@ COPY --from=builder /bin/app /app
 ```
 
 **Key Variables:**
+
 - `BUILDPLATFORM`: Platform of the build host (e.g., `linux/amd64`)
 - `TARGETPLATFORM`: Platform being built for (e.g., `linux/arm64`)
 - `TARGETOS` / `TARGETARCH`: OS and architecture components
@@ -501,6 +514,7 @@ COPY --from=builder /bin/app /app
 1. **Use multi-stage builds** (covered above) -- biggest win
 2. **Choose minimal base images** (scratch/distroless for compiled languages)
 3. **Combine RUN commands** to reduce layers:
+
 ```dockerfile
 # GOOD: single layer
 RUN apt-get update && \
@@ -513,9 +527,10 @@ RUN apt-get install -y curl ca-certificates
 RUN rm -rf /var/lib/apt/lists/*
 ```
 
-4. **Use `--no-install-recommends`** with apt-get
-5. **Clean up in the same layer** (apt lists, temp files, caches)
-6. **Strip binaries:**
+1. **Use `--no-install-recommends`** with apt-get
+2. **Clean up in the same layer** (apt lists, temp files, caches)
+3. **Strip binaries:**
+
 ```dockerfile
 # Go: strip debug symbols
 RUN go build -ldflags="-s -w" -o /bin/app ./cmd/app/
@@ -524,7 +539,7 @@ RUN go build -ldflags="-s -w" -o /bin/app ./cmd/app/
 RUN upx --best /bin/app
 ```
 
-7. **Use `.dockerignore`** to exclude unnecessary context files
+1. **Use `.dockerignore`** to exclude unnecessary context files
 
 ### Analyzing Image Size
 
@@ -618,6 +633,7 @@ jobs:
 ```
 
 **CI/CD Conventions:**
+
 - Use `docker/build-push-action` with `cache-from: type=gha` for GitHub Actions cache
 - Use `docker/metadata-action` for consistent tagging (semver, SHA, branch)
 - Scan images with Trivy in CI before deployment
@@ -646,6 +662,7 @@ jobs:
 
 <success_criteria>
 A well-containerized application:
+
 - Multi-stage Dockerfile with build and runtime stages separated
 - Minimal runtime image (scratch/distroless for compiled, slim for interpreted)
 - Non-root user in final stage

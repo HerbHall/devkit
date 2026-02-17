@@ -32,6 +32,7 @@ Replace all `{PLACEHOLDER}` values with actual content.
 <guidelines>
 
 When filling the template:
+
 - Description should reference the specific docs section that drives this feature
 - Acceptance criteria should be 3-8 items; if more, break into sub-issues
 - Always include test coverage as a criterion

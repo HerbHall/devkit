@@ -7,6 +7,7 @@ description: Reviews project roadmaps and requirements to generate, audit, and t
 
 **Issue Quality Criteria**
 Every issue must be:
+
 - **Specific**: Clear title and description that a developer can act on without additional context
 - **Scoped**: One deliverable per issue; break epics into sub-tasks
 - **Labeled**: Type, priority, area/module, and phase/milestone labels applied
@@ -14,11 +15,13 @@ Every issue must be:
 - **Testable**: Acceptance criteria that define "done"
 
 **Context Conservation**
+
 - Read ONLY the specific docs needed for the current task
 - Use the project config file (`.claude/github-issues-config.md`) to find which docs to read
 - Never read multiple requirements/planning files in a single workflow run
 
 **Duplicate Prevention**
+
 - Always fetch existing issues with `gh issue list` before creating new ones
 - Match by title keywords and labels to detect duplicates
 - Present batch to user for review before creating any issues
@@ -35,6 +38,7 @@ See `references/label-conventions.md` for full details.
 
 **GitHub CLI Usage**
 All GitHub operations use the `gh` CLI. Key commands:
+
 - `gh issue list --label LABEL --state STATE --limit N`
 - `gh issue create --title TITLE --body BODY --label L1,L2 --milestone M`
 - `gh issue edit NUMBER --add-label LABEL --milestone M`
@@ -64,6 +68,7 @@ This skill adapts to any GitHub project. Configuration is discovered in this ord
 **Config File Format**
 
 The optional `.claude/github-issues-config.md` file should contain:
+
 - Project name and description
 - Phase/milestone definitions with descriptions
 - Module/area labels with scopes
@@ -100,29 +105,35 @@ What would you like to do?
 All domain knowledge in references/:
 
 **Quality Standards**:
+
 - issue-quality-standards.md (writing effective issues, best practices)
 - label-conventions.md (label categories, labeling rules, conventions)
 </reference_index>
 
 <workflows_index>
+
 | Workflow | Purpose |
 |----------|---------|
 | generate-phase-issues.md | Read roadmap phase, create missing GitHub Issues |
 | audit-issues.md | Compare open issues against roadmap, find gaps |
 | triage-and-prioritize.md | Review untriaged issues, suggest and apply priorities |
+
 </workflows_index>
 
 <templates_index>
+
 | Template | Purpose |
 |----------|---------|
 | feature-issue.md | Feature or enhancement issue body |
 | bug-issue.md | Bug report issue body |
 | epic-issue.md | Epic/parent issue with task checklist |
+
 </templates_index>
 
 <error_handling>
 
 **When `gh` commands fail:**
+
 - Check authentication: `gh auth status`
 - Check repo context: `gh repo view` (must be in a git repo with a GitHub remote)
 - If rate-limited: wait and retry, or reduce `--limit` on list commands
@@ -132,11 +143,13 @@ All domain knowledge in references/:
 
 **When labels don't exist yet:**
 Create missing labels before issue creation:
+
 ```bash
 gh label create "{LABEL_NAME}" --color "{HEX_COLOR}" --description "{DESCRIPTION}"
 ```
 
 **When milestones don't exist yet:**
+
 ```bash
 gh api repos/{owner}/{repo}/milestones -f title="{MILESTONE_NAME}" -f state=open
 ```
@@ -155,6 +168,7 @@ gh api repos/{owner}/{repo}/milestones -f title="{MILESTONE_NAME}" -f state=open
 | `/ask-me-questions` | When unclear what phase or scope to generate issues for |
 
 **Typical workflow sequence:**
+
 1. `/requirements_generator` -- ensure requirements are current
 2. `/manage-github-issues` (generate) -- create issues from requirements
 3. `/manage-github-issues` (triage) -- prioritize the backlog
@@ -165,6 +179,7 @@ gh api repos/{owner}/{repo}/milestones -f title="{MILESTONE_NAME}" -f state=open
 
 <success_criteria>
 A successful workflow run produces:
+
 - [ ] Project configuration discovered (config file, CLAUDE.md, or user input)
 - [ ] Relevant planning/requirements docs read for context
 - [ ] Existing issues fetched and checked for duplicates

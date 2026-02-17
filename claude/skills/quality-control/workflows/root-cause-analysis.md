@@ -5,6 +5,7 @@ When the same type of CI failure occurs repeatedly, dig deeper to find and fix t
 ## Trigger Conditions
 
 Perform root cause analysis when:
+
 - The same lint error type appears in multiple PRs
 - A fix resolves CI, but a similar failure appears in the next PR
 - You notice a pattern: "we keep having to add nolint directives for X"
@@ -23,6 +24,7 @@ gh run view <run_id> --log-failed 2>&1 | grep -E "##\[error\]" | head -10
 ```
 
 **Classify the recurring pattern:**
+
 - Same linter rule failing? (e.g., bodyclose, noctx, gocritic)
 - Same file type affected? (e.g., *_test.go)
 - Same code pattern triggering it? (e.g., HTTP requests, channel operations)
@@ -38,6 +40,7 @@ gh run view <run_id> --log-failed 2>&1 | grep -E "##\[error\]" | head -10
 | Build | `go build ./...` | `go build` with specific GOOS/GOARCH |
 
 **Common mismatches:**
+
 | Symptom | Root Cause | Prevention |
 |---------|------------|------------|
 | Local lint passes, CI fails | Makefile runs `go vet` but CI runs `golangci-lint` | Update Makefile to run `golangci-lint` |
@@ -49,12 +52,14 @@ gh run view <run_id> --log-failed 2>&1 | grep -E "##\[error\]" | head -10
 For each pattern type, identify the preventive action:
 
 **Tooling mismatch:**
+
 ```bash
 # Check what the Makefile lint target does
 grep -A2 "^lint:" Makefile
 # Compare to CI workflow
 cat .github/workflows/ci.yml | grep -A5 "golangci-lint"
 ```
+
 **Fix:** Update Makefile/scripts to match CI tooling.
 
 **Missing pre-commit checks:**
@@ -68,7 +73,9 @@ If local config differs from CI config, consolidate to a single source of truth 
 After identifying the root cause, implement one of these preventive measures:
 
 #### Option A: Update Makefile/Build Scripts
+
 Make local dev tools match CI:
+
 ```makefile
 lint:
     @which golangci-lint > /dev/null 2>&1 || (echo "golangci-lint not found" && exit 1)
@@ -76,7 +83,9 @@ lint:
 ```
 
 #### Option B: Add to Learned Patterns
+
 Update `~/.claude/rules/autolearn-patterns.md` with the pattern:
+
 ```markdown
 ## N. <Pattern Name>
 **Category:** <lint-fix|ci-config|tooling-mismatch>
@@ -86,9 +95,11 @@ Update `~/.claude/rules/autolearn-patterns.md` with the pattern:
 ```
 
 #### Option C: Update CI Failure Patterns
+
 Add to `references/ci-failure-patterns.md` so future runs catch it faster.
 
 #### Option D: Add Pre-commit Hook
+
 Create `.claude/hooks/pre-commit` to run checks before commit.
 
 ### Step 5: Document the Learning
@@ -129,6 +140,7 @@ After completing analysis, provide this summary:
 ## Success Criteria
 
 Root cause analysis is complete when:
+
 - [ ] Pattern is clearly identified with examples
 - [ ] Local vs CI mismatch explained (if applicable)
 - [ ] Systemic cause documented

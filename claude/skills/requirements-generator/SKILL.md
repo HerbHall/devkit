@@ -6,6 +6,7 @@ description: Creates and maintains requirements.md files for programming project
 <essential_principles>
 
 **MoSCoW Prioritization**
+
 - **Must have**: Critical requirements without which the project fails
 - **Should have**: Important but not critical; workarounds exist
 - **Could have**: Nice-to-have features; include if time permits
@@ -13,6 +14,7 @@ description: Creates and maintains requirements.md files for programming project
 
 **Requirements Quality Criteria**
 Every requirement must be:
+
 - **Specific**: Clear, unambiguous language
 - **Measurable**: Verifiable through testing or observation
 - **Achievable**: Technically feasible within constraints
@@ -20,6 +22,7 @@ Every requirement must be:
 - **Traceable**: Linked to a business need or user story
 
 **Version Control**
+
 - Track all changes with version numbers (MAJOR.MINOR)
 - MAJOR: Scope changes, new features, removed requirements
 - MINOR: Clarifications, refinements, acceptance criteria updates
@@ -27,6 +30,7 @@ Every requirement must be:
 
 **Document Structure**
 All requirements.md files follow this structure:
+
 1. Project Overview
 2. Stakeholders and Constraints
 3. Functional Requirements
@@ -62,28 +66,34 @@ What would you like to do?
 All domain knowledge in references/:
 
 **Templates**:
+
 - requirements-template.md
 - requirements-questions-template.md (ADR/RFC-style decision capture)
 
 **Checklists**:
+
 - intake-checklist.md
 - quality-checklist.md
 
 **Patterns**:
+
 - requirement-patterns.md
 - requirements-questions-guide.md (How to create effective decision documents)
 </reference_index>
 
 <workflows_index>
+
 | Workflow | Purpose |
 |----------|---------|
 | create-requirements.md | Gather info and create new requirements.md |
 | update-requirements.md | Modify requirements with proper versioning |
 | review-requirements.md | Audit requirements for completeness |
+
 </workflows_index>
 
 <success_criteria>
 A complete requirements.md has:
+
 - [ ] Valid version number and changelog
 - [ ] All sections from document structure
 - [ ] Every requirement prioritized (MoSCoW)
@@ -92,6 +102,7 @@ A complete requirements.md has:
 - [ ] Out-of-scope items explicitly listed
 
 Optional REQUIREMENTS_QUESTIONS.md has:
+
 - [ ] Open decisions prioritized (BLOCKER/HIGH/MEDIUM/LOW)
 - [ ] Each question with clear context and options
 - [ ] Recommended defaults for non-blockers

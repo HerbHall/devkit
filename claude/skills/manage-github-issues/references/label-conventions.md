@@ -29,6 +29,7 @@ This defines the standard label categories for GitHub Issues. Project-specific l
 These are project-specific. Define them in `.claude/github-issues-config.md`.
 
 Common naming conventions:
+
 - `mod:{name}` -- for modular architectures (e.g., `mod:auth`, `mod:api`)
 - `area:{name}` -- for area-based organization (e.g., `area:frontend`, `area:backend`)
 - `component:{name}` -- for component-based projects (e.g., `component:sidebar`)
@@ -40,6 +41,7 @@ Each label should have a clear, non-overlapping scope.
 These are project-specific. Define them in `.claude/github-issues-config.md`.
 
 Common naming conventions:
+
 - `phase:{N}` -- for phased development (e.g., `phase:1`, `phase:2`)
 - `sprint:{N}` -- for sprint-based development (e.g., `sprint:5`)
 - `milestone:{name}` -- for milestone-based planning (e.g., `milestone:mvp`)

@@ -26,6 +26,7 @@ git fetch origin && git status -uno
 ```
 
 **Pass criteria:**
+
 - On `main` branch (or user-specified release branch)
 - `git status --porcelain` produces no output
 - Branch is up to date with `origin/main`
@@ -37,6 +38,7 @@ git fetch origin && git status -uno
 Check that common build artifacts are gitignored to prevent GoReleaser dirty-state errors.
 
 **Required patterns** (check `.gitignore` contains these):
+
 - `*.tsbuildinfo` -- TypeScript incremental build cache
 - `coverage/` or `web/coverage/` -- test coverage output
 - `dist/` -- build output (check both root and `web/dist/`)
@@ -85,6 +87,7 @@ Verify the GitHub Actions release workflow has all required steps based on GoRel
 | N/A (always) | `goreleaser/goreleaser-action` | Grep release workflow |
 
 **Additional checks:**
+
 - If `web/` or `frontend/` directory exists: verify a frontend build step exists
 - If frontend build exists: verify a cleanup step (`git checkout -- web/` or similar) follows it
 - Workflow permissions include `contents: write` (for release creation)
@@ -97,6 +100,7 @@ Verify the GitHub Actions release workflow has all required steps based on GoRel
 Cross-reference ldflags across all sources to ensure consistency.
 
 **Sources to compare:**
+
 1. `.goreleaser.yaml` -- `builds[].ldflags`
 2. `.github/workflows/release.yml` -- ldflags in build steps (if any)
 3. `.github/workflows/ci.yml` -- ldflags in build steps
@@ -105,6 +109,7 @@ Cross-reference ldflags across all sources to ensure consistency.
 **Target:** `internal/version/version.go` (or equivalent) -- extract `var` names
 
 **Check:**
+
 - Every `-X package.Variable` in ldflags must reference an actual `var` in version.go
 - Package path must match the Go module path + package path
 - Variable names must match exactly (case-sensitive): `Version`, `GitCommit`, `BuildDate`
@@ -125,6 +130,7 @@ grep -A 5 'ldflags:' .goreleaser.yaml
 If `Dockerfile.goreleaser` exists, verify it's compatible with GoReleaser config.
 
 **Checks:**
+
 - Dockerfile referenced in `.goreleaser.yaml` `dockers[].dockerfile` exists
 - If Dockerfile uses `COPY` for the binary, the binary name matches `builds[].binary`
 - EXPOSE ports match the application's default ports
@@ -135,7 +141,7 @@ If `Dockerfile.goreleaser` exists, verify it's compatible with GoReleaser config
 
 After running all checks, output a summary table:
 
-```
+```text
 ## Pre-Release Check Results
 
 | # | Check | Status | Details |
@@ -153,7 +159,8 @@ After running all checks, output a summary table:
 If NOT READY, list actionable fix steps in priority order.
 
 If READY, confirm safe to tag:
-```
+
+```text
 All checks passed. Safe to tag and push:
   git tag -a vX.Y.Z -m "vX.Y.Z"
   git push origin vX.Y.Z
