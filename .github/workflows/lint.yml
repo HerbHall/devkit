@@ -1,0 +1,41 @@
+name: Lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  markdown:
+    name: Markdown lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DavidAnson/markdownlint-cli2-action@v19
+        with:
+          config: devspace/.markdownlint.json
+          globs: "**/*.md"
+
+  validate-skills:
+    name: Validate skill routing
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check skill routing targets exist
+        run: |
+          errors=0
+          for skill_md in claude/skills/*/SKILL.md; do
+            skill_dir=$(dirname "$skill_md")
+            for wf in $(grep -oP 'workflows/[a-z0-9-]+\.md' "$skill_md" | sort -u); do
+              if [ ! -f "$skill_dir/$wf" ]; then
+                echo "::error file=$skill_md::References $wf but file not found at $skill_dir/$wf"
+                errors=$((errors + 1))
+              fi
+            done
+          done
+          if [ "$errors" -gt 0 ]; then
+            echo "Found $errors missing workflow file(s)"
+            exit 1
+          fi
+          echo "All skill routing targets exist"

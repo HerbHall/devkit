@@ -71,7 +71,7 @@ claude-edit
 ```
 
 ### `claude-edit-global`
-Edit your global Claude.md configuration.
+Edit your global CLAUDE.md configuration.
 
 ```bash
 claude-edit-global
@@ -127,7 +127,7 @@ Just tell Claude: "Create a CLAUDE.md for this project"
 ## Files Created
 
 ### Templates
-- `~/.claude/Claude.md` - Global configuration (active for all sessions)
+- `~/.claude/CLAUDE.md` - Global configuration (active for all sessions)
 - `~/.claude/CLAUDE.md.template` - Full project template
 - `~/.claude/CLAUDE.local.md.template` - Personal preferences template
 
@@ -141,7 +141,7 @@ Just tell Claude: "Create a CLAUDE.md for this project"
 
 When Claude Code starts, it reads CLAUDE.md files in this order:
 
-1. **Global**: `~/.claude/Claude.md` (your high-level defaults)
+1. **Global**: `~/.claude/CLAUDE.md` (your high-level defaults)
 2. **Project**: `./CLAUDE.md` (project-specific details)
 3. **Personal**: `./CLAUDE.local.md` (your personal preferences, gitignored)
 

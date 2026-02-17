@@ -1,21 +1,20 @@
 {
-  "_comment": "Copy to ~/.claude/settings.json and customize paths for your machine",
+  "_comment": "Copy to ~/.claude/settings.json and customize for your machine",
   "permissions": {
     "allow": [
-      "Bash(command -v:*)",
-      "Bash(git add:*)",
-      "Bash(git fetch:*)",
-      "Bash(git stash:*)",
-      "Bash(git rebase:*)",
-      "Bash(gh run watch:*)",
-      "Bash(gh repo view:*)",
-      "Bash(gh repo edit:*)",
-      "Bash(npx tsc:*)",
-      "Bash(pnpm tsc:*)",
-      "Bash(wc:*)",
-      "Bash(test:*)",
-      "Read(//d/**)"
-    ]
+      "Bash",
+      "Read",
+      "Edit",
+      "Write",
+      "WebFetch",
+      "WebSearch",
+      "Glob",
+      "Grep",
+      "Task",
+      "Skill",
+      "mcp__*"
+    ],
+    "_comment_permissions": "These are broad permissions. For tighter control, replace with granular rules like: Bash(git add:*), Bash(gh run watch:*), Read(/path/to/project/**)"
   },
   "hooks": {
     "UserPromptSubmit": [
@@ -45,18 +44,9 @@
     "plugin-dev@claude-plugins-official": true,
     "claude-code-setup@claude-plugins-official": true,
     "hookify@claude-plugins-official": true,
-    "sentry@claude-plugins-official": true,
-    "playground@claude-plugins-official": true,
-    "gopls-lsp@claude-plugins-official": true,
-    "typescript-lsp@claude-plugins-official": true,
-    "rust-analyzer-lsp@claude-plugins-official": true,
-    "csharp-lsp@claude-plugins-official": true,
-    "pyright-lsp@claude-plugins-official": true,
-    "playwright@claude-plugins-official": true,
-    "frontend-design@claude-plugins-official": true,
-    "Notion@claude-plugins-official": true,
-    "greptile@claude-plugins-official": true,
-    "ralph-loop@claude-plugins-official": true
+    "playground@claude-plugins-official": true
   },
-  "autoUpdatesChannel": "latest"
+  "_comment_plugins": "Add language-specific LSP plugins as needed: gopls-lsp, typescript-lsp, rust-analyzer-lsp, csharp-lsp, pyright-lsp. Add service plugins as needed: sentry, Notion, playwright, greptile, ralph-loop, frontend-design",
+  "autoUpdatesChannel": "latest",
+  "enableAllProjectMcpServers": true
 }

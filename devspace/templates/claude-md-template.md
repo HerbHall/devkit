@@ -37,5 +37,5 @@
 {If using project-local coordination:}
 See `coordination/DASHBOARD.md` for session launchpad.
 
-{If using shared DevSpace coordination:}
-Cross-project coordination lives at `D:\DevSpace\.coordination\`.
+{If using cross-project coordination:}
+Cross-project coordination lives at `.coordination/` (gitignored).

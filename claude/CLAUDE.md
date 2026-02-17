@@ -66,7 +66,7 @@ Do NOT run /reflect automatically -- always let the user trigger it.
 
 ## Environment
 
-- OS: Windows (MSYS_NT)
+- OS: `YOUR_PLATFORM` (run `uname -s` to identify; e.g., MSYS_NT, Darwin, Linux)
 - Shell: Bash available
 - GitHub CLI: Use `gh` for GitHub operations
 
