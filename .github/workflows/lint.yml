@@ -14,8 +14,12 @@ jobs:
       - uses: actions/checkout@v4
       - uses: DavidAnson/markdownlint-cli2-action@v19
         with:
-          config: devspace/.markdownlint.json
-          globs: "**/*.md"
+          globs: |
+            *.md
+            setup/*.md
+            devspace/*.md
+            git-templates/*.md
+            mcp/*.md
 
   validate-skills:
     name: Validate skill routing
