@@ -38,3 +38,35 @@ jobs:
             exit 1
           fi
           echo "All skill routing targets exist"
+
+  verify-skill-count:
+    name: Verify skill counts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: README skill count matches directory count
+        run: |
+          ACTUAL=$(ls -d claude/skills/*/ | wc -l | tr -d ' ')
+          README_COUNT=$(grep -oP '\d+(?= skills)' README.md | head -1)
+          if [ "$ACTUAL" != "$README_COUNT" ]; then
+            echo "::error file=README.md::README says $README_COUNT skills but claude/skills/ has $ACTUAL directories. Update README."
+            exit 1
+          fi
+          echo "OK: $ACTUAL skills match README"
+
+      - name: Verify script skill list matches directories
+        run: |
+          LISTED=$(grep 'for skill in' setup/legacy/verify.sh | sed 's/.*for skill in //;s/;.*//' | tr ' ' '\n' | sort)
+          PRESENT=$(ls claude/skills/ | sort)
+
+          MISSING=$(comm -23 <(echo "$LISTED") <(echo "$PRESENT"))
+          if [ -n "$MISSING" ]; then
+            echo "::error file=setup/legacy/verify.sh::Skills listed in verify.sh but not found in claude/skills/: $MISSING"
+            exit 1
+          fi
+
+          UNLISTED=$(comm -13 <(echo "$LISTED") <(echo "$PRESENT"))
+          if [ -n "$UNLISTED" ]; then
+            echo "::warning::Skills in claude/skills/ not listed in verify.sh: $UNLISTED"
+          fi
+          echo "OK: verify.sh skill list is accurate"

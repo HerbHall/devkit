@@ -10,6 +10,11 @@
 - Cross-references to gotcha numbers updated in autolearn-patterns.md and workflow-preferences.md
 - AGENT-WORKFLOW-GUIDE.md: replaced Python pseudo-code agent examples with correct `.claude/agents/*.md` format
 
+### Added
+
+- CI: README skill count accuracy check (fails if count doesn't match `claude/skills/` directories)
+- CI: verify.sh skill list accuracy check (fails on missing directories, warns on unlisted skills)
+
 ### Changed
 
 - Bash setup scripts moved to `setup/legacy/` with deprecation headers (PowerShell primary)
