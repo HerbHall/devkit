@@ -35,6 +35,8 @@
 - `project-templates/concept-brief.md`: project vision capture template for Kit 3 scaffolding
 - `project-templates/claude-md-template.md`: fallback CLAUDE.md template for new projects
 - `project-templates/github-labels.json`: standard label set (13 labels) for new GitHub repos
+- `profiles/go-cli.md`: base Go profile (winget, linters, VS Code extensions, cross-compilation)
+- `profiles/go-web.md`: extended Go+Web profile (buf, gRPC, REST client, Docker deployment)
 
 ### Changed
 
