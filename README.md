@@ -42,7 +42,7 @@ Setup copies rules, skills, agents, and hooks to `~/.claude/`, installs workspac
 | File | Purpose |
 |------|---------|
 | `claude/settings.template.json` | Claude Code settings — adjust permissions and plugins |
-| `devspace/CLAUDE.md` | Workspace CLAUDE.md template — fill in your projects |
+| `project-templates/workspace-claude-md-template.md` | Workspace CLAUDE.md template — fill in your projects |
 | `mcp/memory-seeds.md` | MCP Memory bootstrap — replace with your profile |
 | `mcp/claude-desktop.template.json` | MCP server config — fill in tokens and paths |
 
@@ -55,9 +55,13 @@ Setup copies rules, skills, agents, and hooks to `~/.claude/`, installs workspac
 | Directory | Purpose |
 |-----------|---------|
 | `claude/` | Global Claude Code config — CLAUDE.md, 5 rules files (70+ patterns), 15 skills, 6 agent templates, hooks |
-| `devspace/` | Workspace shared configs — .editorconfig, .markdownlint.json, project templates, VS Code fragments |
+| `devspace/` | Workspace shared configs — .editorconfig, .markdownlint.json, VS Code fragments |
+| `docs/` | Human-readable guides — architecture decisions, profile format spec |
+| `machine/` | Machine state snapshots — VS Code extensions, tool versions |
 | `mcp/` | MCP server inventory, config templates (no secrets), Memory bootstrap guide |
-| `setup/` | Setup scripts — `setup.ps1` (primary) and `legacy/` bash scripts |
+| `profiles/` | Kit 2 stack profiles — project type definitions (Go, React, IoT, etc.) |
+| `project-templates/` | Kit 3 scaffolding — workspace CLAUDE.md template, project starter files |
+| `setup/` | Setup scripts — PowerShell stubs (`*.ps1`, `lib/*.ps1`) and `legacy/` bash scripts |
 | `METHODOLOGY.md` | Development process — phases, gates, decision framework |
 
 ## Manual Setup

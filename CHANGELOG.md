@@ -14,11 +14,16 @@
 
 - CI: README skill count accuracy check (fails if count doesn't match `claude/skills/` directories)
 - CI: verify.sh skill list accuracy check (fails on missing directories, warns on unlisted skills)
+- `profiles/` directory for Kit 2 stack profiles
+- `project-templates/` directory for Kit 3 scaffolding
+- `docs/` and `machine/` directories for guides and snapshots
+- PowerShell stub files: setup.ps1, bootstrap.ps1, stack.ps1, new-project.ps1, verify.ps1, lib/*.ps1
 
 ### Changed
 
 - Bash setup scripts moved to `setup/legacy/` with deprecation headers (PowerShell primary)
 - SKILLS-ECOSYSTEM.md: expanded Chat skill installation guide with rationale and sync process
+- `devspace/CLAUDE.md` moved to `project-templates/workspace-claude-md-template.md`
 
 ### Removed
 

@@ -23,15 +23,20 @@ devkit/
 ├── claude/              - Claude Code config (rules, skills, agents, hooks)
 │   ├── CLAUDE.md        - Global instructions (installed to ~/.claude/)
 │   ├── rules/           - Auto-loaded pattern files (5 files, 70+ patterns)
-│   ├── skills/          - Invokable skills (9 skills with workflow files)
+│   ├── skills/          - Invokable skills (15 skills with workflow files)
 │   ├── agents/          - Agent templates (6 agents)
 │   └── hooks/           - SessionStart hook
-├── devspace/            - Workspace shared configs
-│   ├── CLAUDE.md        - Workspace CLAUDE.md template
+├── devspace/            - Workspace shared configs (.editorconfig, VS Code)
 │   ├── templates/       - Project starter templates (ADR, design, test plan)
 │   └── shared-vscode/   - VS Code setting fragments
+├── docs/                - Architecture decisions and guides
+├── machine/             - Machine state snapshots
 ├── mcp/                 - MCP server inventory and config templates
-├── setup/               - Setup scripts (setup.ps1 primary, legacy/ bash)
+├── profiles/            - Kit 2 stack profiles (project type definitions)
+├── project-templates/   - Kit 3 scaffolding templates
+├── setup/               - PowerShell stubs (*.ps1, lib/*.ps1)
+│   ├── lib/             - Shared PowerShell libraries
+│   └── legacy/          - Deprecated bash scripts
 ├── METHODOLOGY.md       - 6-phase development process
 └── CHANGELOG.md         - Version history
 ```
@@ -49,7 +54,7 @@ devkit/
 **IMPORTANT**:
 
 - `claude/CLAUDE.md` is the *global* config installed to `~/.claude/CLAUDE.md` — it is NOT this project's config
-- `devspace/CLAUDE.md` is a *template* for workspace roots — not used directly by this project
+- `project-templates/workspace-claude-md-template.md` is a *template* for workspace roots — not used directly by this project
 - Skill workflow files referenced in SKILL.md routing tables must exist on disk (CI validates this)
 - `settings.template.json` must be valid JSON — easy to break with missing commas
 - Rules files (`claude/rules/*.md`) are loaded into Claude Code's system prompt every session — keep them concise
