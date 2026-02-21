@@ -304,37 +304,69 @@ Main: [Implements with clean context]
 
 ## Setting Up Custom Agents
 
-Create specialized agents for your common workflows by defining them in the Task tool options:
+Agents are Markdown files in `.claude/agents/` with YAML frontmatter and a prompt body. Claude Code discovers them automatically.
 
-**Example: Code Review Agent**
+### Agent File Format
 
-```python
-AgentDefinition(
-    description="Expert code reviewer for quality and security",
-    prompt="Review code for: security vulnerabilities, best practices, performance issues, test coverage",
-    tools=["Read", "Glob", "Grep"]
-)
+````markdown
+---
+name: my-agent
+description: What this agent does and when to use it
+tools: Read, Write, Edit, Glob, Grep, Bash
+model: sonnet
+---
+
+You are a specialized agent for [purpose].
+
+[System prompt and instructions for the agent]
+````
+
+**Frontmatter fields:**
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `name` | Yes | Agent name (used for `/name` invocation) |
+| `description` | Yes | When to use this agent (Claude routes based on this) |
+| `tools` | No | Comma-separated tool list. If omitted, inherits parent's tools |
+| `model` | No | Model override (`sonnet`, `opus`, `haiku`). Defaults to parent model |
+
+### Example: Planning Agent
+
+```markdown
+---
+name: planning-agent
+description: Helps evaluate new project concepts using Phase 0 methodology. Use when starting a new project idea.
+tools: Read, Glob, Grep, WebSearch, WebFetch
+model: sonnet
+---
+
+You are a project evaluation specialist. Help the user assess whether a new project idea is worth pursuing.
+
+For each concept, work through:
+
+1. **Problem clarity** -- Is the problem well-defined? Who has it?
+2. **Existing solutions** -- Search GitHub and the web for competitors
+3. **Differentiator** -- What would make this better than alternatives?
+4. **Kill criteria** -- What conditions should stop this project?
+5. **Effort estimate** -- Small (weekend), Medium (2-4 weeks), Large (1+ months)
+
+Output a completed concept brief following the template in METHODOLOGY.md Phase 0.
+Be honest about kill criteria -- killing early saves weeks.
 ```
 
-**Example: Documentation Agent**
+### Scope
 
-```python
-AgentDefinition(
-    description="Documentation specialist",
-    prompt="Update documentation to match code changes. Follow existing doc patterns.",
-    tools=["Read", "Glob", "Edit", "Write"]
-)
-```
+- **Project-local**: `.claude/agents/my-agent.md` -- available only in that project
+- **Global**: `~/.claude/agents/my-agent.md` -- available in all projects
 
-**Example: Test Runner Agent**
+### Creating an Agent
 
-```python
-AgentDefinition(
-    description="Test execution and analysis specialist",
-    prompt="Run tests, analyze failures, provide actionable debugging info",
-    tools=["Bash", "Read", "Grep"]
-)
-```
+1. Create the file: `.claude/agents/my-agent.md`
+2. Write YAML frontmatter with `name` and `description`
+3. Write the system prompt in the body
+4. Invoke with `/my-agent` in Claude Code
+
+Claude also routes to agents automatically based on the `description` field when a task matches.
 
 ## Measuring Success
 
