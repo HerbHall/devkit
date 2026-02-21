@@ -1,0 +1,24 @@
+# Git configuration template for devkit bootstrap
+# Copy to ~/.gitconfig and replace YOUR_NAME / YOUR_EMAIL placeholders.
+# bootstrap.ps1 does this automatically during Phase 3.
+
+[user]
+    name = YOUR_NAME
+    email = YOUR_EMAIL
+
+[core]
+    autocrlf = input
+    editor = code --wait
+
+[pull]
+    rebase = false
+
+[init]
+    defaultBranch = main
+    templateDir = ~/.git-templates
+
+[filter "lfs"]
+    process = git-lfs filter-process
+    required = true
+    clean = git-lfs clean -- %f
+    smudge = git-lfs smudge -- %f
