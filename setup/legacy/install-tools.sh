@@ -1,8 +1,13 @@
 #!/usr/bin/env bash
+# ⚠ DEPRECATED: This script is superseded by setup.ps1 (PowerShell).
+# It still works in Git Bash but is no longer maintained.
+# Use: pwsh -File setup/setup.ps1
+# Last maintained: v1.0
+#
 # Install development tools required by devkit
 # Supports: Windows (winget/choco), macOS (brew), Linux (apt/dnf)
 #
-# Usage: ./setup/install-tools.sh
+# Usage: ./setup/legacy/install-tools.sh
 
 set -euo pipefail
 
@@ -128,4 +133,4 @@ else
 fi
 
 echo ""
-echo "Install missing tools, then re-run setup/setup.sh"
+echo "Install missing tools, then re-run setup/legacy/setup.sh"

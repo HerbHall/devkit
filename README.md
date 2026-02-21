@@ -4,19 +4,23 @@ Personal development methodology and Claude Code configuration. Clone this repo 
 
 ## Quick Start
 
-```bash
+**Primary (PowerShell):**
+
+```powershell
 # 1. Clone into your workspace root
 cd ~/workspace  # or wherever your projects live
 git clone https://github.com/HerbHall/devkit.git
 
-# 2. Check prerequisites (git, node, gh required)
-bash devkit/setup/install-tools.sh
+# 2. Install everything
+pwsh -File devkit/setup/setup.ps1
+```
 
-# 3. Install everything
-bash devkit/setup/setup.sh
+**Legacy (Git Bash):**
 
-# 4. Verify
-bash devkit/setup/verify.sh
+```bash
+bash devkit/setup/legacy/install-tools.sh
+bash devkit/setup/legacy/setup.sh
+bash devkit/setup/legacy/verify.sh
 ```
 
 Setup copies rules, skills, agents, and hooks to `~/.claude/`, installs workspace configs (`.editorconfig`, `.markdownlint.json`), and runs verification.
@@ -31,7 +35,7 @@ Setup copies rules, skills, agents, and hooks to `~/.claude/`, installs workspac
 | Skills (invoke with `/skill-name`) | 15 skills | `claude/skills/` |
 | Agent templates | 6 agents | `claude/agents/` |
 | SessionStart hook | 1 | `claude/hooks/` |
-| Setup + verification scripts | 3 | `setup/` |
+| Setup + verification scripts | 3 | `setup/legacy/` |
 
 ### Templates (customize per user/machine)
 
@@ -53,7 +57,7 @@ Setup copies rules, skills, agents, and hooks to `~/.claude/`, installs workspac
 | `claude/` | Global Claude Code config — CLAUDE.md, 5 rules files (70+ patterns), 15 skills, 6 agent templates, hooks |
 | `devspace/` | Workspace shared configs — .editorconfig, .markdownlint.json, project templates, VS Code fragments |
 | `mcp/` | MCP server inventory, config templates (no secrets), Memory bootstrap guide |
-| `setup/` | Automated setup scripts for new machines |
+| `setup/` | Setup scripts — `setup.ps1` (primary) and `legacy/` bash scripts |
 | `METHODOLOGY.md` | Development process — phases, gates, decision framework |
 
 ## Manual Setup
@@ -136,7 +140,7 @@ Changes flow in two directions:
 ```bash
 cd ~/workspace/devkit
 git pull
-bash setup/setup.sh  # Re-runs setup (safe, backs up existing files)
+bash setup/legacy/setup.sh  # Re-runs setup (safe, backs up existing files)
 ```
 
 ### Machine to repo (capture changes)

@@ -1,14 +1,19 @@
 #!/usr/bin/env bash
+# ⚠ DEPRECATED: This script is superseded by setup.ps1 (PowerShell).
+# It still works in Git Bash but is no longer maintained.
+# Use: pwsh -File setup/setup.ps1
+# Last maintained: v1.0
+#
 # devkit setup script
 # Installs Claude Code configuration, shared configs, and development templates
 #
-# Usage: ./setup/setup.sh [--workspace-root /path/to/workspace]
+# Usage: ./setup/legacy/setup.sh [--workspace-root /path/to/workspace]
 # Default workspace root: parent directory of this repo
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+REPO_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 CLAUDE_HOME="$HOME/.claude"
 WORKSPACE_ROOT="${1:-$(dirname "$REPO_DIR")}"
 
@@ -62,7 +67,7 @@ else
 fi
 
 if [ "$MISSING" -eq 1 ]; then
-    error "Missing required tools. Run setup/install-tools.sh first."
+    error "Missing required tools. Run setup/legacy/install-tools.sh first."
     exit 1
 fi
 

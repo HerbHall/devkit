@@ -6,7 +6,7 @@ How skills are organized across the three Claude surfaces.
 
 | Surface | Skill Location | Install Method | Scope |
 |---------|---------------|----------------|-------|
-| **Claude Code** | `~/.claude/skills/` | `setup.sh` (auto) | Development sessions |
+| **Claude Code** | `~/.claude/skills/` | `setup.ps1` or `setup/legacy/setup.sh` | Development sessions |
 | **Cowork** | `~/.claude/skills/` | Same as Code (shared) | Task automation |
 | **Chat (claude.ai)** | Anthropic cloud | Settings → Skills UI | Research / general |
 
@@ -57,21 +57,43 @@ Chat has its own separate skill store managed through the claude.ai UI.
 ## Adding a New Skill
 
 1. Create `claude/skills/{name}/SKILL.md` in this repo
-2. Run `setup/setup.sh` to deploy to `~/.claude/skills/`
+2. Run `setup/setup.ps1` (or `setup/legacy/setup.sh`) to deploy to `~/.claude/skills/`
 3. For Chat: upload the skill folder via Settings → Skills in claude.ai
-4. Update `setup/verify.sh` skill list
+4. Update `setup/legacy/verify.sh` skill list
 5. Update `README.md` skills table and `SKILLS-ECOSYSTEM.md` classification table
 
 ## Chat Skill Installation
 
 Since Chat and Code/Cowork don't share skills, the SKILL.md files in this repo
-serve as the single source of truth. To install in Chat:
+serve as the single source of truth.
+
+### Recommended Chat Skills
+
+Install these in priority order based on research/general use pattern:
+
+| Priority | Skill | Rationale |
+|----------|-------|-----------|
+| 1 | `requirements-generator` | Requirements gathering and MoSCoW prioritization -- useful for planning conversations |
+| 2 | `systematic-debugging` | Problem-solving methodology that works without a codebase context |
+| 3 | `windows-development` | Windows registry, shell patterns, and platform-specific guidance |
+| 4 | `server-management` | UnRAID, Proxmox, infrastructure decision-making |
+| 5 | `bash-linux` | Terminal patterns for remote server troubleshooting |
+
+### Installation Steps
 
 1. Go to claude.ai → Settings → Skills
 2. Click "Add Skill" → "Upload folder"
-3. Upload the relevant skill folder from `claude/skills/`
-4. Repeat for each skill you want available in Chat
+3. Navigate to your local `devkit/claude/skills/` directory
+4. Select a skill folder (e.g., `requirements-generator/`)
+5. Upload -- the skill appears in the Skills list with green status
+6. Repeat for each skill from the recommended list above
 
-Recommended Chat skills based on research/general use pattern:
-`requirements-generator`, `systematic-debugging`, `windows-development`,
-`server-management`, `bash-linux`
+### Keeping Chat Skills in Sync
+
+Chat skills do not auto-update when you pull new versions of devkit.
+After updating the repo:
+
+1. Check `claude/skills/` for modified SKILL.md files (`git diff --name-only`)
+2. In claude.ai → Settings → Skills, remove the outdated version
+3. Re-upload the updated skill folder
+4. Verify the skill still appears with green status
