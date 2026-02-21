@@ -8,6 +8,7 @@
 - METHODOLOGY.md: added Windows warning for BMAD/Spec Kit tools (see known-gotchas #42-44)
 - known-gotchas.md: renumbered contiguously 1-46 (was non-contiguous with gaps at 8-9, 13, 40, 42, 44 and #47 out of order)
 - Cross-references to gotcha numbers updated in autolearn-patterns.md and workflow-preferences.md
+- AGENT-WORKFLOW-GUIDE.md: replaced Python pseudo-code agent examples with correct `.claude/agents/*.md` format
 
 ### Removed
 
