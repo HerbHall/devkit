@@ -1,0 +1,67 @@
+[
+  {
+    "name": "feat",
+    "color": "0075ca",
+    "description": "New feature or enhancement"
+  },
+  {
+    "name": "fix",
+    "color": "d73a4a",
+    "description": "Bug fix"
+  },
+  {
+    "name": "chore",
+    "color": "e4e669",
+    "description": "Maintenance, refactor, tooling, dependencies"
+  },
+  {
+    "name": "docs",
+    "color": "0075ca",
+    "description": "Documentation"
+  },
+  {
+    "name": "test",
+    "color": "bfd4f2",
+    "description": "Tests and test infrastructure"
+  },
+  {
+    "name": "phase-1",
+    "color": "a2eeef",
+    "description": "Phase 1 work"
+  },
+  {
+    "name": "phase-2",
+    "color": "a2eeef",
+    "description": "Phase 2 work"
+  },
+  {
+    "name": "phase-3",
+    "color": "a2eeef",
+    "description": "Phase 3 work"
+  },
+  {
+    "name": "phase-4",
+    "color": "a2eeef",
+    "description": "Phase 4 work"
+  },
+  {
+    "name": "blocked",
+    "color": "b60205",
+    "description": "Waiting on something external or internal"
+  },
+  {
+    "name": "question",
+    "color": "d876e3",
+    "description": "Needs clarification, decision, or design review"
+  },
+  {
+    "name": "good-first-issue",
+    "color": "7057ff",
+    "description": "Good for newcomers to the project"
+  },
+  {
+    "name": "help-wanted",
+    "color": "33aa3f",
+    "description": "Actively seeking contributions"
+  }
+]
