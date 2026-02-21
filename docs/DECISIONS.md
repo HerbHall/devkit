@@ -162,6 +162,7 @@ dependencies on the new PowerShell implementation. They should be done first or 
 - These are quick, self-contained changes — no reason to wait for Phase 1
 
 **Suggested order for a new Code session:**
+
 1. Fix #21 (platform placeholder, BMAD warning, skill contamination, gotcha renumber)
 2. Fix #22 (agent workflow guide)
 3. Fix #23 (deprecate bash, document Chat skills)

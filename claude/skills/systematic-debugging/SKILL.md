@@ -7,11 +7,13 @@ allowed-tools: Read, Glob, Grep
 # Systematic Debugging
 
 ## Overview
+
 This skill provides a structured approach to debugging that prevents random guessing and ensures problems are properly understood before solving.
 
 ## 4-Phase Debugging Process
 
 ### Phase 1: Reproduce
+
 Before fixing, reliably reproduce the issue.
 
 ```markdown
@@ -28,6 +30,7 @@ Before fixing, reliably reproduce the issue.
 ```
 
 ### Phase 2: Isolate
+
 Narrow down the source.
 
 ```markdown
@@ -40,6 +43,7 @@ Narrow down the source.
 ```
 
 ### Phase 3: Understand
+
 Find the root cause, not just symptoms.
 
 ```markdown
@@ -53,6 +57,7 @@ Find the root cause, not just symptoms.
 ```
 
 ### Phase 4: Fix & Verify
+
 Fix and verify it's truly fixed.
 
 ```markdown
