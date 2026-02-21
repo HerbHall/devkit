@@ -39,6 +39,7 @@
 - `profiles/go-web.md`: extended Go+Web profile (buf, gRPC, REST client, Docker deployment)
 - `profiles/iot-embedded.md`: ESP32/ESPHome profile (uv-managed tools, OTA/serial flashing, sensor patterns)
 - `setup/stack.ps1`: Kit 2 profile selection and installer (-List, -ShowProfile, -Install, -Force flags)
+- `setup/new-project.ps1` steps 1-2: concept collection (interactive + file), project scaffolding (git, GitHub, directories, labels, workspace)
 
 ### Changed
 
