@@ -23,6 +23,10 @@
 - `setup/lib/install.ps1`: winget and manual install wrappers (Install-WingetPackage/Packages, Install-VSCodeExtension/Extensions, Invoke-ManualInstall, Export-WingetManifest, Export-VSCodeExtensions)
 - `setup/lib/credentials.ps1`: Windows Credential Manager integration (Set/Get/Test/Remove-DevkitCredential, Invoke-CredentialCollection with validation and secure input)
 - `setup/setup.ps1`: main menu entry point with -Kit parameter for direct dispatch, version display, quick status check
+- `machine/winget.json`: curated winget export (25 dev packages, personal apps removed)
+- `machine/git-config.template`: gitconfig template with YOUR_NAME/YOUR_EMAIL placeholders
+- `machine/manual-requirements.md`: reference for non-automatable setup steps (Hyper-V, WSL2, Docker config, Dev Mode)
+- `setup/backup.ps1`: refresh machine snapshot files from current state with diff summary
 
 ### Changed
 
