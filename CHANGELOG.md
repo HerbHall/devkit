@@ -18,6 +18,7 @@
 - `project-templates/` directory for Kit 3 scaffolding
 - `docs/` and `machine/` directories for guides and snapshots
 - PowerShell stub files: setup.ps1, bootstrap.ps1, stack.ps1, new-project.ps1, verify.ps1, lib/*.ps1
+- `setup/lib/ui.ps1`: console output library (Write-Section/Step/OK/Warn/Fail, Write-VerifyTable, Read-Required/Confirm/Menu, Invoke-ManualChecklist)
 
 ### Changed
 
