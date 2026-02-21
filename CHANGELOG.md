@@ -27,6 +27,7 @@
 - `machine/git-config.template`: gitconfig template with YOUR_NAME/YOUR_EMAIL placeholders
 - `machine/manual-requirements.md`: reference for non-automatable setup steps (Hyper-V, WSL2, Docker config, Dev Mode)
 - `setup/backup.ps1`: refresh machine snapshot files from current state with diff summary
+- `setup/bootstrap.ps1` phases 1-2: pre-flight checks (Windows version, Hyper-V, WSL2, virtualization, Developer Mode) and core tool installs from machine/winget.json + vscode-extensions.txt
 
 ### Changed
 
