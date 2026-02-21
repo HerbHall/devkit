@@ -30,6 +30,7 @@
 - `setup/bootstrap.ps1` phases 1-2: pre-flight checks (Windows version, Hyper-V, WSL2, virtualization, Developer Mode) and core tool installs from machine/winget.json + vscode-extensions.txt
 - `setup/bootstrap.ps1` phases 3-4: git config from template, devspace directory setup with ~/.devkit-config.json, PowerShell profile alias, credentials collection via Windows Credential Manager
 - `setup/bootstrap.ps1` phases 5-6: AI layer deploy (Claude Code npm install, skills/rules/agents/hooks with hash-based overwrite, CLAUDE.md placeholder substitution) and full verification table with next steps
+- `docs/BOOTSTRAP.md`: step-by-step new machine setup guide with troubleshooting section
 
 ### Changed
 
