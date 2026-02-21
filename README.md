@@ -28,7 +28,7 @@ Setup copies rules, skills, agents, and hooks to `~/.claude/`, installs workspac
 | Component | Count | Location |
 |-----------|-------|----------|
 | Rules (auto-loaded every session) | 5 files | `claude/rules/` |
-| Skills (invoke with `/skill-name`) | 9 skills | `claude/skills/` |
+| Skills (invoke with `/skill-name`) | 15 skills | `claude/skills/` |
 | Agent templates | 6 agents | `claude/agents/` |
 | SessionStart hook | 1 | `claude/hooks/` |
 | Setup + verification scripts | 3 | `setup/` |
@@ -50,7 +50,7 @@ Setup copies rules, skills, agents, and hooks to `~/.claude/`, installs workspac
 
 | Directory | Purpose |
 |-----------|---------|
-| `claude/` | Global Claude Code config — CLAUDE.md, 5 rules files (70+ patterns), 9 skills, 6 agent templates, hooks |
+| `claude/` | Global Claude Code config — CLAUDE.md, 5 rules files (70+ patterns), 15 skills, 6 agent templates, hooks |
 | `devspace/` | Workspace shared configs — .editorconfig, .markdownlint.json, project templates, VS Code fragments |
 | `mcp/` | MCP server inventory, config templates (no secrets), Memory bootstrap guide |
 | `setup/` | Automated setup scripts for new machines |
@@ -178,17 +178,26 @@ git push
 
 ### Skills (invoke with /skill-name)
 
-| Skill | Purpose |
-|-------|---------|
-| autolearn | Session learning capture and reflection |
-| quality-control | CI verification and PR health checks |
-| manage-github-issues | Issue generation, audit, and triage |
-| requirements-generator | Requirements.md creation |
-| setup-github-actions | CI/CD workflow generation |
-| go-development | Go patterns and conventions |
-| react-frontend-development | React + TypeScript patterns |
-| docker-containerization | Docker best practices |
-| windows-development | Windows-specific patterns |
+Skills live in `claude/skills/` and install globally to `~/.claude/skills/` for Claude Code and Cowork.
+Claude.ai Chat uses a separate skill store - install via Settings > Skills in the UI.
+
+| Skill | Purpose | Best In |
+|-------|---------|---------|
+| autolearn | Session learning capture and reflection | Code |
+| quality-control | CI verification and PR health checks | Code |
+| manage-github-issues | Issue generation, audit, and triage | Code |
+| requirements-generator | Requirements.md creation | Code/Chat |
+| setup-github-actions | CI/CD workflow generation | Code |
+| go-development | Go patterns and conventions | Code |
+| react-frontend-development | React + TypeScript patterns | Code |
+| docker-containerization | Docker best practices | Code |
+| windows-development | Windows registry and shell integration | Code |
+| bash-linux | Bash/Linux terminal patterns (UnRAID, Proxmox, Debian) | Code/Cowork |
+| powershell-windows | PowerShell syntax, pitfalls, error handling | Code/Cowork |
+| security-review | Security checklist: auth, input validation, secrets | Code |
+| server-management | Process management, monitoring, scaling decisions | Code/Cowork |
+| systematic-debugging | 4-phase debugging with root cause analysis | Code/Chat |
+| webapp-testing | E2E testing, Playwright, deep audit strategies | Code |
 
 ### Agent Templates
 
