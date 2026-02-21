@@ -21,6 +21,7 @@
 - `setup/lib/ui.ps1`: console output library (Write-Section/Step/OK/Warn/Fail, Write-VerifyTable, Read-Required/Confirm/Menu, Invoke-ManualChecklist)
 - `setup/lib/checks.ps1`: prerequisite and tool detection library (Test-Tool, Test-HyperV, Test-WSL2, Test-Virtualization, Test-DeveloperMode, Test-WindowsVersion, Test-ClaudeAuth/Skill/MCP, Test-DockerRunning/WSLBackend, Test-Credential, Get-PreflightStatus)
 - `setup/lib/install.ps1`: winget and manual install wrappers (Install-WingetPackage/Packages, Install-VSCodeExtension/Extensions, Invoke-ManualInstall, Export-WingetManifest, Export-VSCodeExtensions)
+- `setup/lib/credentials.ps1`: Windows Credential Manager integration (Set/Get/Test/Remove-DevkitCredential, Invoke-CredentialCollection with validation and secure input)
 
 ### Changed
 
