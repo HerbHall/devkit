@@ -40,6 +40,7 @@
 - `profiles/iot-embedded.md`: ESP32/ESPHome profile (uv-managed tools, OTA/serial flashing, sensor patterns)
 - `setup/stack.ps1`: Kit 2 profile selection and installer (-List, -ShowProfile, -Install, -Force flags)
 - `setup/new-project.ps1` steps 1-2: concept collection (interactive + file), project scaffolding (git, GitHub, directories, labels, workspace)
+- `setup/new-project.ps1` steps 3-4: Claude-generated CLAUDE.md (with template fallback), Phase 0 issue creation, workspace open
 
 ### Changed
 

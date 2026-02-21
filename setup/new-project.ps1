@@ -1,10 +1,8 @@
 #Requires -Version 7.0
-# setup/new-project.ps1 -- Kit 3: New project scaffolder (Steps 1-2)
+# setup/new-project.ps1 -- Kit 3: New project scaffolder (Steps 1-4)
 #
-# Collects project concept, creates directory structure, and initializes
-# the git repo and GitHub remote.
-#
-# Steps 3-4 (CLAUDE.md generation and workspace open) will be added in issue #20.
+# Collects project concept, creates directory structure, initializes
+# the git repo and GitHub remote, generates CLAUDE.md, and opens VS Code.
 #
 # Usage:
 #   .\setup\new-project.ps1                                  # Fully interactive
@@ -851,6 +849,351 @@ logger:
 }
 
 # ---------------------------------------------------------------------------
+# STEP 3: CLAUDE.md Generation
+# ---------------------------------------------------------------------------
+
+function Invoke-ClaudeMdGeneration {
+    <#
+    .SYNOPSIS
+        Generates a project CLAUDE.md using Claude Code or a template fallback.
+    .PARAMETER Data
+        Hashtable returned by Invoke-ConceptCollection.
+    .PARAMETER ScaffoldResult
+        Hashtable returned by Invoke-Scaffolding.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [hashtable]$Data,
+
+        [Parameter(Mandatory)]
+        [hashtable]$ScaffoldResult
+    )
+
+    Write-Section 'Step 3: CLAUDE.md Generation'
+
+    $projectName = $Data.Name
+    $githubUser  = $Data.GitHubUser
+    $targetDir   = $ScaffoldResult.TargetDir
+    $concept     = $Data.Concept
+    $profiles    = @($Data.Profiles)
+    $primaryProfile = if ($profiles.Count -gt 0) { $profiles[0] } else { '' }
+
+    $claudeMdPath = Join-Path $targetDir 'CLAUDE.md'
+    $claudeMdWritten = $false
+    $issueCreated    = $false
+    $issueUrl        = ''
+
+    # ------------------------------------------------------------------
+    # 3.1 Check Claude auth and choose generation path
+    # ------------------------------------------------------------------
+
+    $authResult = Test-ClaudeAuth
+    $useClaudeAi = $authResult.Met
+
+    if ($useClaudeAi) {
+        Write-Step 'Claude Code authenticated -- generating CLAUDE.md with AI'
+
+        # Build profile body text for the prompt
+        $profileBody = ''
+        if ($primaryProfile -ne '') {
+            $profileObj = Get-Profile -Name $primaryProfile
+            if ($null -ne $profileObj -and $profileObj.Body) {
+                $profileBody = $profileObj.Body
+            }
+        }
+
+        # Read the global CLAUDE.md as format reference
+        $globalClaudeMd = ''
+        $globalClaudeMdPath = Join-Path $script:RepoRoot 'claude' 'CLAUDE.md'
+        if (Test-Path $globalClaudeMdPath) {
+            $globalClaudeMd = Get-Content $globalClaudeMdPath -Raw
+        }
+
+        # Build features and non-goals as text
+        $featuresText = if ($concept.Features.Count -gt 0) {
+            ($concept.Features | ForEach-Object { "- $_" }) -join "`n"
+        } else {
+            '(not specified)'
+        }
+        $nonGoalsText = if ($concept.NonGoals.Count -gt 0) {
+            ($concept.NonGoals | ForEach-Object { "- $_" }) -join "`n"
+        } else {
+            '(not specified)'
+        }
+
+        $prompt = @"
+Generate a project CLAUDE.md for a new software project. Include: project context, goals and non-goals, tech stack and conventions, build commands, key constraints, and suggested first steps.
+
+PROJECT CONCEPT BRIEF:
+Name: $projectName
+Description: $($concept.Description)
+Problem: $($concept.Problem)
+Features:
+$featuresText
+Non-goals:
+$nonGoalsText
+Profile: $primaryProfile
+GitHub: https://github.com/$githubUser/$projectName
+
+PROFILE DETAILS:
+$profileBody
+
+FORMAT REFERENCE (follow the structure and style of this global CLAUDE.md):
+$globalClaudeMd
+
+Generate only the CLAUDE.md content. Do not include any preamble or explanation.
+"@
+
+        $generatedContent = $null
+        $accepted = $false
+
+        while (-not $accepted) {
+            Write-Step 'Calling Claude Code to generate CLAUDE.md...'
+            try {
+                $rawOutput = & claude --print -p $prompt 2>&1 | Out-String
+                if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($rawOutput)) {
+                    Write-Warn "Claude returned exit code $LASTEXITCODE or empty output -- falling back to template"
+                    $useClaudeAi = $false
+                    break
+                }
+                $generatedContent = $rawOutput.Trim()
+            } catch {
+                Write-Warn "Claude Code call failed: $_ -- falling back to template"
+                $useClaudeAi = $false
+                break
+            }
+
+            # Display result
+            Write-Host ''
+            Write-Host "${script:Bold}--- Generated CLAUDE.md ---${script:Reset}"
+            Write-Host $generatedContent
+            Write-Host "${script:Bold}--- End of CLAUDE.md ---${script:Reset}"
+            Write-Host ''
+
+            $choice = Read-Host -Prompt '  Accept this CLAUDE.md? [Y/n/edit]'
+            $choice = $choice.Trim().ToLower()
+
+            if ($choice -eq '' -or $choice -eq 'y') {
+                $accepted = $true
+            } elseif ($choice -eq 'n') {
+                Write-Step 'Regenerating...'
+                # Loop again
+            } elseif ($choice -eq 'edit') {
+                $tempFile = Join-Path ([System.IO.Path]::GetTempPath()) "claude-md-$projectName.md"
+                Set-Content -Path $tempFile -Value $generatedContent -Encoding utf8NoBOM
+                Write-Step "Opening in VS Code: $tempFile"
+                & code --wait $tempFile
+                if (Test-Path $tempFile) {
+                    $generatedContent = Get-Content $tempFile -Raw
+                }
+                $accepted = $true
+            } else {
+                Write-Warn "Unrecognized choice '$choice'. Press Enter or type y to accept, n to regenerate, edit to open in VS Code."
+            }
+        }
+
+        if ($useClaudeAi -and $accepted -and $null -ne $generatedContent) {
+            try {
+                Set-Content -Path $claudeMdPath -Value $generatedContent -Encoding utf8NoBOM
+                Write-OK 'CLAUDE.md written from AI generation'
+                $claudeMdWritten = $true
+            } catch {
+                Write-Warn "Could not write CLAUDE.md: $_"
+            }
+        }
+    }
+
+    # ------------------------------------------------------------------
+    # 3.2 Fallback: template substitution
+    # ------------------------------------------------------------------
+
+    if (-not $claudeMdWritten) {
+        Write-Warn 'Claude Code not authenticated -- using template fallback'
+
+        $templatePath = Join-Path $script:RepoRoot 'project-templates' 'claude-md-template.md'
+        if (-not (Test-Path $templatePath)) {
+            Write-Warn "Template not found: $templatePath -- skipping CLAUDE.md creation"
+        } else {
+            # Map profile to file extension
+            $profileExt = switch ($primaryProfile) {
+                'go-cli'      { 'go' }
+                'go-web'      { 'go' }
+                'iot-embedded' { 'yaml' }
+                default        { 'ts' }
+            }
+
+            $machine = if ($env:COMPUTERNAME) { $env:COMPUTERNAME } else { hostname }
+
+            $templateContent = Get-Content $templatePath -Raw
+            $templateContent = $templateContent -replace '\{\{PROJECT_NAME\}\}',    $projectName
+            $templateContent = $templateContent -replace '\{\{PROJECT_DESCRIPTION\}\}', $concept.Description
+            $templateContent = $templateContent -replace '\{\{PROFILE\}\}',         $primaryProfile
+            $templateContent = $templateContent -replace '\{\{DEVSPACE\}\}',        $Data.DevSpace
+            $templateContent = $templateContent -replace '\{\{AUTHOR\}\}',          $githubUser
+            $templateContent = $templateContent -replace '\{\{MACHINE\}\}',         $machine
+            $templateContent = $templateContent -replace '\{\{PROFILE_EXT\}\}',     $profileExt
+
+            try {
+                Set-Content -Path $claudeMdPath -Value $templateContent -Encoding utf8NoBOM
+                Write-OK 'CLAUDE.md written from template'
+                $claudeMdWritten = $true
+            } catch {
+                Write-Warn "Could not write CLAUDE.md: $_"
+            }
+        }
+    }
+
+    # ------------------------------------------------------------------
+    # 3.3 Create Phase 0 GitHub issue
+    # ------------------------------------------------------------------
+
+    if ($ScaffoldResult.GitHubCreated) {
+        Write-Step 'Creating Phase 0 GitHub issue...'
+
+        $featuresSection = if ($concept.Features.Count -gt 0) {
+            ($concept.Features | ForEach-Object { "- $_" }) -join "`n"
+        } else {
+            '- (not specified)'
+        }
+        $nonGoalsSection = if ($concept.NonGoals.Count -gt 0) {
+            ($concept.NonGoals | ForEach-Object { "- $_" }) -join "`n"
+        } else {
+            '- (not specified)'
+        }
+
+        $issueBody = @"
+## Concept
+
+$($concept.Description)
+
+## Problem statement
+
+$($concept.Problem)
+
+## Core features
+
+$featuresSection
+
+## Non-goals
+
+$nonGoalsSection
+
+## Acceptance criteria
+
+- [ ] Concept validated with at least one potential user
+- [ ] Tech stack confirmed appropriate for the problem
+- [ ] Non-goals agreed upon by stakeholders
+- [ ] CLAUDE.md reviewed and updated with any corrections
+
+## Next steps
+
+1. Review and refine this concept brief
+2. Set up the development environment (`.\setup\stack.ps1`)
+3. Create architecture doc in `docs/ARCHITECTURE.md`
+4. Break the concept into implementable issues
+"@
+
+        try {
+            $ghIssueOutput = & gh issue create `
+                -R "$githubUser/$projectName" `
+                --title "Phase 0 -- Concept validation: $projectName" `
+                --body $issueBody `
+                --label 'chore' `
+                --label 'phase-1' 2>&1 | Out-String
+            $ghIssueExit = $LASTEXITCODE
+
+            if ($ghIssueExit -eq 0) {
+                $issueUrl = $ghIssueOutput.Trim()
+                Write-OK "Phase 0 issue created: $issueUrl"
+                $issueCreated = $true
+            } else {
+                Write-Warn "Could not create GitHub issue (exit $ghIssueExit): $ghIssueOutput"
+            }
+        } catch {
+            Write-Warn "gh issue create threw exception: $_"
+        }
+    }
+
+    return @{
+        ClaudeMdWritten = $claudeMdWritten
+        IssueCreated    = $issueCreated
+        IssueUrl        = $issueUrl
+    }
+}
+
+# ---------------------------------------------------------------------------
+# STEP 4: Workspace Open
+# ---------------------------------------------------------------------------
+
+function Invoke-WorkspaceOpen {
+    <#
+    .SYNOPSIS
+        Displays the project summary and opens VS Code.
+    .PARAMETER Data
+        Hashtable returned by Invoke-ConceptCollection.
+    .PARAMETER ScaffoldResult
+        Hashtable returned by Invoke-Scaffolding.
+    .PARAMETER ClaudeMdResult
+        Hashtable returned by Invoke-ClaudeMdGeneration.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [hashtable]$Data,
+
+        [Parameter(Mandatory)]
+        [hashtable]$ScaffoldResult,
+
+        [Parameter(Mandatory)]
+        [hashtable]$ClaudeMdResult
+    )
+
+    $projectName = $Data.Name
+    $targetDir   = $ScaffoldResult.TargetDir
+
+    Write-Section "Project ready: $projectName"
+
+    Write-Host "  Location: $targetDir"
+    if ($ScaffoldResult.GitHubCreated) {
+        Write-Host "  GitHub:   $($ScaffoldResult.RepoUrl)"
+    }
+    if ($ClaudeMdResult.IssueCreated) {
+        Write-Host "  Issue #1: $($ClaudeMdResult.IssueUrl)"
+    }
+    Write-Host ''
+
+    # Open VS Code workspace
+    $workspacePath = Join-Path $targetDir "$projectName.code-workspace"
+    if (Test-Path $workspacePath) {
+        Write-Step "Opening VS Code: $workspacePath"
+        try {
+            & code $workspacePath
+        } catch {
+            Write-Warn "Could not open VS Code: $_"
+            Write-Host "  Manual: code `"$workspacePath`""
+        }
+    } else {
+        Write-Step "Opening VS Code: $targetDir"
+        try {
+            & code $targetDir
+        } catch {
+            Write-Warn "Could not open VS Code: $_"
+            Write-Host "  Manual: code `"$targetDir`""
+        }
+    }
+
+    Write-Host ''
+    Write-Host '  Next steps:'
+    Write-Host "  1. Review CLAUDE.md in $targetDir"
+    if ($ClaudeMdResult.IssueCreated) {
+        Write-Host "  2. Open GitHub issue #1 to review the concept: $($ClaudeMdResult.IssueUrl)"
+    }
+    Write-Host "  3. Run \`claude\` in the project directory to begin planning"
+    Write-Host ''
+}
+
+# ---------------------------------------------------------------------------
 # Main entry point
 # ---------------------------------------------------------------------------
 
@@ -858,25 +1201,7 @@ Write-Section 'Kit 3: New Project'
 Write-Host '  Collects project concept and creates directory structure.'
 Write-Host ''
 
-$conceptData   = Invoke-ConceptCollection
+$conceptData    = Invoke-ConceptCollection
 $scaffoldResult = Invoke-Scaffolding -Data $conceptData
-
-# ---------------------------------------------------------------------------
-# Final summary
-# ---------------------------------------------------------------------------
-
-Write-Section 'Done'
-Write-OK "Project scaffolded: $($scaffoldResult.TargetDir)"
-
-if ($scaffoldResult.GitHubCreated) {
-    Write-OK "GitHub repo: $($scaffoldResult.RepoUrl)"
-}
-
-Write-Host ''
-Write-Host '  Next steps:'
-Write-Host "  1. cd `"$($scaffoldResult.TargetDir)`""
-Write-Host '  2. Run .\setup\stack.ps1 to install toolchain for your chosen profiles'
-Write-Host '  3. Steps 3-4 (CLAUDE.md generation and workspace open) coming in issue #20'
-Write-Host ''
-
-# Steps 3-4 (CLAUDE.md generation and workspace open) will be added in issue #20
+$claudeMdResult = Invoke-ClaudeMdGeneration -Data $conceptData -ScaffoldResult $scaffoldResult
+Invoke-WorkspaceOpen -Data $conceptData -ScaffoldResult $scaffoldResult -ClaudeMdResult $claudeMdResult
