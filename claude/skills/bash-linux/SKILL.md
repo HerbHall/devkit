@@ -15,7 +15,7 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 ### Chaining Commands
 
 | Operator | Meaning | Example |
-|----------|---------|---------| 
+|----------|---------|---------|
 | `;` | Run sequentially | `cmd1; cmd2` |
 | `&&` | Run if previous succeeded | `npm install && npm run dev` |
 | `\|\|` | Run if previous failed | `npm test \|\| echo "Tests failed"` |
@@ -61,7 +61,7 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 ### Core Tools
 
 | Tool | Purpose | Example |
-|------|---------|---------| 
+|------|---------|---------|
 | `grep` | Search | `grep -rn "TODO" src/` |
 | `sed` | Replace | `sed -i 's/old/new/g' file.txt` |
 | `awk` | Extract columns | `awk '{print $1}' file.txt` |

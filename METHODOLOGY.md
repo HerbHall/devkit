@@ -290,4 +290,8 @@ The methodology should evolve. Version 1 is a starting point, not a final answer
 | Learning capture | `/reflect` (autolearn) | Manual rules file update |
 | Competitive research | `gh api` + blog aggregation | Project-specific `/research-mode` skill |
 
+> **Windows users**: See known-gotchas.md #42-44 before using BMAD or Spec Kit.
+> `npx bmad-method` generates 42 commands; `specify init` hangs on MSYS.
+> Use `/requirements-generator` as the Windows-safe alternative.
+
 **Default**: Use Claude Code native capabilities (plan mode, subagents, skills) for most work. External tools (BMAD, Spec Kit) are optional supplements for complex scenarios.

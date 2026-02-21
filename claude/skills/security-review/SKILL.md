@@ -31,6 +31,7 @@ if apiKey == "" {
 ```
 
 Verification:
+
 - [ ] No hardcoded API keys, tokens, or passwords
 - [ ] All secrets in environment variables
 - [ ] .env files in .gitignore

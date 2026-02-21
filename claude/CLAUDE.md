@@ -66,7 +66,9 @@ Do NOT run /reflect automatically -- always let the user trigger it.
 
 ## Environment
 
-- OS: `YOUR_PLATFORM` (run `uname -s` to identify; e.g., MSYS_NT, Darwin, Linux)
+- OS: Windows 11 (MSYS_NT on Git Bash / MINGW64)
+  <!-- bootstrap.ps1 substitutes {{PLATFORM}} on fresh installs -->
+  <!-- Update manually if using on a different machine before bootstrap -->
 - Shell: Bash available
 - GitHub CLI: Use `gh` for GitHub operations
 

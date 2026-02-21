@@ -29,7 +29,7 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 
 ## 2. Testing Pyramid for Web
 
-```
+```text
         /\          E2E (Few)
        /  \         Critical user flows
       /----\
@@ -103,7 +103,7 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 
 ### File Structure
 
-```
+```text
 tests/
 ├── e2e/           # Full user flows
 ├── integration/   # API, data

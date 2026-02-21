@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.2.0 -- 2026-02-21
+
+### Fixed
+
+- claude/CLAUDE.md: replaced `YOUR_PLATFORM` placeholder with actual value and substitution note
+- METHODOLOGY.md: added Windows warning for BMAD/Spec Kit tools (see known-gotchas #42-44)
+- known-gotchas.md: renumbered contiguously 1-46 (was non-contiguous with gaps at 8-9, 13, 40, 42, 44 and #47 out of order)
+- Cross-references to gotcha numbers updated in autolearn-patterns.md and workflow-preferences.md
+
+### Removed
+
+- go-development SKILL.md: removed network_security_patterns section (SubNetree-specific content)
+
 ## v1.1.0 -- 2026-02-17
 
 ### Removed
