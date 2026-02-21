@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git:*)",
+      "Bash(gh:*)",
+      "Bash(pwsh:*)",
+      "Bash(pwsh.exe:*)",
+      "Bash(powershell:*)",
+      "Bash(powershell.exe:*)",
+      "Bash(winget:*)",
+      "Bash(npx:*)",
+      "Bash(python:*)",
+      "Bash(Select-String:*)",
+      "Read(**)",
+      "Edit(**)",
+      "Write(**)",
+      "Glob(**)",
+      "Grep(**)"
+    ],
+    "deny": [
+      "Bash(rm -rf:*)",
+      "Bash(Remove-Item -Recurse -Force C:\\:*)"
+    ]
+  },
+  "_comment": "Project-level permissions for devkit implementation. Allows PowerShell, git, gh CLI, and file operations. Denies destructive system-wide deletes."
+}
