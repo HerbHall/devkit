@@ -3,7 +3,8 @@
 # Phases:
 #   1: Pre-flight checks (Windows version, winget, Hyper-V, WSL2, virtualization, dev mode)
 #   2: Core tool installs (winget packages from machine/winget.json, VS Code extensions)
-#   3-4: Git config, devspace setup, credentials (TODO: issue #11)
+#   3: Git config, devspace directory, PowerShell profile
+#   4: Credentials (Windows Credential Manager)
 #   5-6: AI layer deploy and verification (TODO: issue #12)
 
 #Requires -Version 7.0
@@ -25,7 +26,8 @@ $ErrorActionPreference = 'Stop'
 # ---------------------------------------------------------------------------
 
 $repoRoot = Split-Path -Path $PSScriptRoot -Parent
-. "$PSScriptRoot\lib\install.ps1"  # also sources checks.ps1 and ui.ps1
+. "$PSScriptRoot\lib\install.ps1"      # also sources checks.ps1 and ui.ps1
+. "$PSScriptRoot\lib\credentials.ps1"  # Set/Get/Test/Remove-DevkitCredential, Invoke-CredentialCollection
 
 # ============================= Phase 1 =====================================
 
@@ -453,20 +455,216 @@ function Invoke-Phase2 {
     }
 }
 
-# ============================= Phase 3-6 Placeholders ======================
+# ============================= Phase 3 =====================================
 
-# Phase 3: Git configuration and devspace setup
-# - Configure git user.name, user.email, core.editor
-# - Set up init.templateDir for git templates
-# - Configure global gitignore
-# - Set up SSH keys for GitHub
-# TODO: Implement in issue #11
+function Invoke-Phase3 {
+    <#
+    .SYNOPSIS
+        Configures git, devspace directory, and PowerShell profile.
+    .DESCRIPTION
+        Phase 3 handles interactive configuration:
+        - Writes ~/.gitconfig from machine/git-config.template with user values
+        - Creates the devspace root directory and stores path in ~/.devkit-config.json
+        - Appends devkit alias to PowerShell profile (with confirmation)
+    .OUTPUTS
+        Hashtable with keys: GitConfigured (bool), DevspacePath (string or $null),
+        ProfileUpdated (bool).
+    #>
+    [CmdletBinding()]
+    param()
 
-# Phase 4: Credential and secret management
-# - Configure Windows Credential Manager entries
-# - Set up GPG signing for git commits
-# - Store API keys / tokens securely
-# TODO: Implement in issue #11
+    Write-Section 'Phase 3: Configuration'
+
+    $gitConfigured = $false
+    $devspacePath = $null
+    $profileUpdated = $false
+
+    # --- 3a. Git config ---
+
+    Write-Step 'Setting up git configuration...'
+
+    $existingName  = & git config --global --get user.name 2>$null
+    $existingEmail = & git config --global --get user.email 2>$null
+
+    if ($existingName -and $existingEmail) {
+        Write-OK "Git already configured: $existingName <$existingEmail>"
+        $gitConfigured = $true
+    }
+    else {
+        $templatePath = Join-Path $repoRoot 'machine' 'git-config.template'
+        if (-not (Test-Path $templatePath)) {
+            Write-Fail "Git config template not found at $templatePath"
+        }
+        else {
+            $userName  = Read-Required -Prompt 'Enter your full name for git commits'
+            $userEmail = Read-Required -Prompt 'Enter your email address for git commits'
+
+            $template = Get-Content $templatePath -Raw
+            $gitConfig = $template `
+                -replace 'YOUR_NAME', $userName `
+                -replace 'YOUR_EMAIL', $userEmail
+
+            $gitconfigPath = Join-Path $HOME '.gitconfig'
+            Set-Content -Path $gitconfigPath -Value $gitConfig -Encoding utf8
+            Write-OK "~/.gitconfig written ($userName <$userEmail>)"
+            $gitConfigured = $true
+        }
+    }
+
+    # --- 3b. Devspace directory ---
+
+    Write-Host ''
+    Write-Step 'Setting up devspace root directory...'
+
+    $defaultDevspace = 'D:\DevSpace'
+    $configFile = Join-Path $HOME '.devkit-config.json'
+
+    # Check for existing config
+    if (Test-Path $configFile) {
+        try {
+            $existingConfig = Get-Content $configFile -Raw | ConvertFrom-Json
+            if ($existingConfig.devspacePath -and (Test-Path $existingConfig.devspacePath)) {
+                Write-OK "Devspace already configured: $($existingConfig.devspacePath)"
+                $devspacePath = $existingConfig.devspacePath
+            }
+        }
+        catch {
+            # Invalid config file -- re-prompt
+        }
+    }
+
+    if (-not $devspacePath) {
+        Write-Host "  Default: $defaultDevspace"
+        $inputPath = Read-Host -Prompt "  Enter devspace root path [$defaultDevspace]"
+        if ([string]::IsNullOrWhiteSpace($inputPath)) {
+            $inputPath = $defaultDevspace
+        }
+
+        if (-not (Test-Path $inputPath)) {
+            $null = New-Item -ItemType Directory -Path $inputPath -Force
+            Write-OK "$inputPath created"
+        }
+        else {
+            Write-OK "$inputPath already exists"
+        }
+
+        $devspacePath = $inputPath
+
+        # Store config
+        $config = @{ devspacePath = $devspacePath }
+        $config | ConvertTo-Json | Set-Content -Path $configFile -Encoding utf8
+        Write-OK "Config saved to ~/.devkit-config.json"
+    }
+
+    # --- 3c. PowerShell profile ---
+
+    Write-Host ''
+    Write-Step 'Checking PowerShell profile...'
+
+    $profilePath = $PROFILE.CurrentUserAllHosts
+    $aliasBlock = @"
+
+# devkit aliases (added by bootstrap)
+function devkit { pwsh -File `"$devspacePath\devkit\setup\setup.ps1`" @args }
+"@
+
+    $profileExists = Test-Path $profilePath
+    $alreadyHasAlias = $false
+
+    if ($profileExists) {
+        $profileContent = Get-Content $profilePath -Raw
+        $alreadyHasAlias = $profileContent -match 'function devkit'
+    }
+
+    if ($alreadyHasAlias) {
+        Write-OK 'devkit alias already in PowerShell profile'
+        $profileUpdated = $true
+    }
+    else {
+        Write-Host '  Will add to PowerShell profile:'
+        Write-Host "    function devkit { pwsh -File `"$devspacePath\devkit\setup\setup.ps1`" @args }"
+        Write-Host ''
+
+        $confirm = Read-Confirm -Prompt 'Add devkit alias to PowerShell profile?'
+        if ($confirm) {
+            if (-not $profileExists) {
+                $profileDir = Split-Path $profilePath -Parent
+                if (-not (Test-Path $profileDir)) {
+                    $null = New-Item -ItemType Directory -Path $profileDir -Force
+                }
+            }
+            Add-Content -Path $profilePath -Value $aliasBlock -Encoding utf8
+            Write-OK 'devkit alias added to PowerShell profile'
+            $profileUpdated = $true
+        }
+        else {
+            Write-Warn 'PowerShell profile update skipped'
+        }
+    }
+
+    return @{
+        GitConfigured  = $gitConfigured
+        DevspacePath   = $devspacePath
+        ProfileUpdated = $profileUpdated
+    }
+}
+
+# ============================= Phase 4 =====================================
+
+function Invoke-Phase4 {
+    <#
+    .SYNOPSIS
+        Collects and stores credentials in Windows Credential Manager.
+    .DESCRIPTION
+        Phase 4 uses Invoke-CredentialCollection to interactively gather
+        API tokens and secrets. Already-stored credentials are skipped.
+        Optional credentials can be skipped by pressing Enter.
+    .OUTPUTS
+        Hashtable with keys: Stored (int), Skipped (int), Failed (int).
+    #>
+    [CmdletBinding()]
+    param()
+
+    Write-Section 'Phase 4: Credentials'
+    Write-Step 'Storing credentials in Windows Credential Manager...'
+
+    $credentialDefs = @(
+        [PSCustomObject]@{
+            Name           = 'devkit/github-pat'
+            Label          = 'GitHub Personal Access Token'
+            Instructions   = 'Create at https://github.com/settings/tokens -- needs scopes: repo, workflow, read:org'
+            ValidateFn     = { param($v) $v -match '^gh[ps]_' -or $v -match '^github_pat_' }
+            ValidationNote = 'Token should start with ghp_, ghs_, or github_pat_'
+            Optional       = $false
+        },
+        [PSCustomObject]@{
+            Name           = 'devkit/anthropic-key'
+            Label          = 'Anthropic API Key'
+            Instructions   = 'Create at https://console.anthropic.com/settings/keys'
+            ValidateFn     = { param($v) $v -match '^sk-ant-' }
+            ValidationNote = 'Key should start with sk-ant-'
+            Optional       = $false
+        },
+        [PSCustomObject]@{
+            Name           = 'devkit/docker-hub'
+            Label          = 'Docker Hub Access Token'
+            Instructions   = 'Create at https://hub.docker.com/settings/security -- for private image pulls'
+            ValidateFn     = $null
+            ValidationNote = $null
+            Optional       = $true
+        }
+    )
+
+    $result = Invoke-CredentialCollection -Credentials $credentialDefs
+
+    Write-Host ''
+    Write-Section 'Phase 4 Summary'
+    Write-Step "$($result.Stored) stored, $($result.Skipped) already configured, $($result.Failed) failed"
+
+    return $result
+}
+
+# ============================= Phase 5-6 Placeholders ======================
 
 # Phase 5: AI layer deployment
 # - Install Claude Code (npm install -g @anthropic/claude-code)
@@ -488,7 +686,7 @@ function Invoke-Bootstrap {
         Runs the machine bootstrap process.
     .DESCRIPTION
         Executes bootstrap phases in sequence. Use -Phase to run a single phase,
-        or omit to run all implemented phases (currently 1-2).
+        or omit to run all implemented phases (currently 1-4).
     .PARAMETER Phase
         Phase number to run (1-6). Use 0 to run all implemented phases.
     .PARAMETER Force
@@ -509,6 +707,8 @@ function Invoke-Bootstrap {
 
     $shouldRunPhase1 = ($Phase -eq 0) -or ($Phase -eq 1)
     $shouldRunPhase2 = ($Phase -eq 0) -or ($Phase -eq 2)
+    $shouldRunPhase3 = ($Phase -eq 0) -or ($Phase -eq 3)
+    $shouldRunPhase4 = ($Phase -eq 0) -or ($Phase -eq 4)
 
     # Phase 1
     if ($shouldRunPhase1) {
@@ -519,7 +719,7 @@ function Invoke-Bootstrap {
             Write-Host ''
             Write-Warn 'Stopping after Phase 1 due to blocking failures.'
             Write-Warn 'Fix the issues above, or re-run with -Force to continue.'
-            return @{ Phase1 = $phase1Result; Phase2 = $null }
+            return @{ Phase1 = $phase1Result; Phase2 = $null; Phase3 = $null; Phase4 = $null }
         }
     }
 
@@ -528,25 +728,36 @@ function Invoke-Bootstrap {
         $phase2Result = Invoke-Phase2
     }
 
-    # Phases 3-6: not yet implemented
-    foreach ($futurePhase in @(3, 4, 5, 6)) {
+    # Phase 3
+    if ($shouldRunPhase3) {
+        $phase3Result = Invoke-Phase3
+    }
+
+    # Phase 4
+    if ($shouldRunPhase4) {
+        $phase4Result = Invoke-Phase4
+    }
+
+    # Phases 5-6: not yet implemented
+    foreach ($futurePhase in @(5, 6)) {
         if ($Phase -eq $futurePhase) {
-            Write-Warn "Phase $futurePhase is not yet implemented. See issues #11 and #12."
+            Write-Warn "Phase $futurePhase is not yet implemented. See issue #12."
         }
     }
 
     # Final summary
     if ($Phase -eq 0) {
         Write-Host ''
-        Write-Section 'Bootstrap Complete (Phases 1-2)'
-        Write-Host '  Phases 3-6 not yet implemented.'
-        Write-Host '  See: https://github.com/HerbHall/devkit/issues/11 (phases 3-4)'
+        Write-Section 'Bootstrap Complete (Phases 1-4)'
+        Write-Host '  Phases 5-6 not yet implemented.'
         Write-Host '  See: https://github.com/HerbHall/devkit/issues/12 (phases 5-6)'
     }
 
     return @{
         Phase1 = if ($shouldRunPhase1) { $phase1Result } else { $null }
         Phase2 = if ($shouldRunPhase2) { $phase2Result } else { $null }
+        Phase3 = if ($shouldRunPhase3) { $phase3Result } else { $null }
+        Phase4 = if ($shouldRunPhase4) { $phase4Result } else { $null }
     }
 }
 
