@@ -32,6 +32,9 @@
 - `setup/bootstrap.ps1` phases 5-6: AI layer deploy (Claude Code npm install, skills/rules/agents/hooks with hash-based overwrite, CLAUDE.md placeholder substitution) and full verification table with next steps
 - `docs/BOOTSTRAP.md`: step-by-step new machine setup guide with troubleshooting section
 - `setup/lib/profiles.ps1`: profile format parser with YAML frontmatter, dependency resolution, and cycle detection
+- `project-templates/concept-brief.md`: project vision capture template for Kit 3 scaffolding
+- `project-templates/claude-md-template.md`: fallback CLAUDE.md template for new projects
+- `project-templates/github-labels.json`: standard label set (13 labels) for new GitHub repos
 
 ### Changed
 
