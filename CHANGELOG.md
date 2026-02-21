@@ -38,6 +38,7 @@
 - `profiles/go-cli.md`: base Go profile (winget, linters, VS Code extensions, cross-compilation)
 - `profiles/go-web.md`: extended Go+Web profile (buf, gRPC, REST client, Docker deployment)
 - `profiles/iot-embedded.md`: ESP32/ESPHome profile (uv-managed tools, OTA/serial flashing, sensor patterns)
+- `setup/stack.ps1`: Kit 2 profile selection and installer (-List, -ShowProfile, -Install, -Force flags)
 
 ### Changed
 
