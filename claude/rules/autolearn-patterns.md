@@ -105,7 +105,7 @@ print(json.loads(resp.read()).get('response', ''))
 " < "$file"
 ```
 
-**Note:** Combine with Windows Python path detection (see known-gotchas.md #13).
+**Note:** Combine with Windows Python path detection (see known-gotchas.md #8).
 
 ## 12. Astro Image Optimization: src/assets vs public/
 
@@ -565,7 +565,7 @@ grep -r "<keyword>" --include="*.svg" --include="*.png" --include="*.md" .
 ## 48. Parallel Agents Self-Recover from Shared Working Tree
 
 **Category:** workflow-pattern
-**Context:** When parallel background agents share the same git working directory (known gotcha #28), agents can autonomously detect and recover from file/branch interference without main context intervention. Previously required main context to sort files after agents completed.
+**Context:** When parallel background agents share the same git working directory (known gotcha #25), agents can autonomously detect and recover from file/branch interference without main context intervention. Previously required main context to sort files after agents completed.
 **Pattern:** Agents detect leaked files from other agents via `git status` or unexpected file contents, then clean up with `git checkout -- <leaked files>`. Agents on the wrong branch detect it and recover with `git stash && git checkout <correct-branch> && git stash pop`.
 **Key enabler:** Agent prompts must clearly specify: (1) target branch name, (2) exact files to create/modify, (3) `git checkout <branch>` as the first step. With this context, agents self-heal.
 **Example:** v0.6.0 Wave 2: Agent D found Agent E's `internal/insight/*` files and ran `git checkout -- internal/insight/handlers.go internal/insight/store.go`. Agent E found itself on D's branch and ran `git stash && git checkout feature/issue-282-analytics-dashboard && git stash pop`. Both completed successfully.
@@ -710,7 +710,7 @@ factors = append(factors, HealthScoreFactor{Name: "rtt", ...},
 ## 63. Recharts Custom Tooltip Needs Partial Props
 
 **Category:** frontend-pattern
-**Context:** When passing a custom React tooltip component as JSX to recharts `<Tooltip content={<CustomTooltip />} />`, the component initially receives empty props `{}` before recharts injects `active`, `payload`, etc. Using `TooltipContentProps` directly causes TypeScript error: "Type '{}' is missing required properties". This extends gotcha #31.
+**Context:** When passing a custom React tooltip component as JSX to recharts `<Tooltip content={<CustomTooltip />} />`, the component initially receives empty props `{}` before recharts injects `active`, `payload`, etc. Using `TooltipContentProps` directly causes TypeScript error: "Type '{}' is missing required properties". This extends gotcha #28.
 **Fix:** Use `Partial<TooltipContentProps<number, string>>` for the function signature.
 **Example:**
 

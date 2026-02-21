@@ -73,7 +73,7 @@ This catches runtime issues (missing embeds, config collisions, broken routes) t
 - Each subagent gets fresh 200k context -- no bleed between plans
 - Main context reserved for orchestration only (~5-10% usage per plan)
 - Proven on Phase 01-topology: 3 plans, 7 tasks, 10 new files + 5 modified, 37 tests -- all clean on first pass
-- **Wave execution**: Launch up to 3 agents in parallel per wave when files don't overlap. Sort changes into correct branches via stash/pop after all agents complete (see gotcha #28). Proven: v0.4.1 sprint, 2 waves x 3 agents = 6 PRs, 12 issues, all CI-green first pass.
+- **Wave execution**: Launch up to 3 agents in parallel per wave when files don't overlap. Sort changes into correct branches via stash/pop after all agents complete (see gotcha #25). Proven: v0.4.1 sprint, 2 waves x 3 agents = 6 PRs, 12 issues, all CI-green first pass.
 
 ## 9. Global CLAUDE.md Scope
 
