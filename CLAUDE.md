@@ -4,15 +4,16 @@ Personal development methodology and Claude Code configuration, packaged as a po
 
 ## Quick Start
 
+```powershell
+# Primary (PowerShell)
+pwsh -File setup/setup.ps1
+```
+
 ```bash
-# Check prerequisites
-bash setup/install-tools.sh
-
-# Install everything to ~/.claude/
-bash setup/setup.sh
-
-# Verify installation
-bash setup/verify.sh
+# Legacy (Git Bash)
+bash setup/legacy/install-tools.sh
+bash setup/legacy/setup.sh
+bash setup/legacy/verify.sh
 ```
 
 ## Project Structure
@@ -30,7 +31,7 @@ devkit/
 │   ├── templates/       - Project starter templates (ADR, design, test plan)
 │   └── shared-vscode/   - VS Code setting fragments
 ├── mcp/                 - MCP server inventory and config templates
-├── setup/               - Install, setup, and verify scripts
+├── setup/               - Setup scripts (setup.ps1 primary, legacy/ bash)
 ├── METHODOLOGY.md       - 6-phase development process
 └── CHANGELOG.md         - Version history
 ```
@@ -83,7 +84,7 @@ grep -r "HerbHall\|SubNetree\|D:\\\\DevSpace" claude/ devspace/ mcp/ setup/
 
 1. Create `claude/skills/{name}/SKILL.md` with YAML frontmatter
 2. Create `claude/skills/{name}/workflows/*.md` for each routing target
-3. Update `setup/verify.sh` to include the new skill name
+3. Update `setup/legacy/verify.sh` to include the new skill name
 4. Update `README.md` skills table
 
 **Add a new rule pattern:**

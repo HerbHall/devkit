@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+# ⚠ DEPRECATED: This script is superseded by setup.ps1 (PowerShell).
+# It still works in Git Bash but is no longer maintained.
+# Use: pwsh -File setup/setup.ps1
+# Last maintained: v1.0
+#
 # Verify devkit installation
 # Checks that all configuration files are in place
 
@@ -70,7 +75,7 @@ echo ""
 echo "Results: $PASS passed, $FAIL failed"
 
 if [ "$FAIL" -gt 0 ]; then
-    echo "Some items are missing. Re-run setup/setup.sh to fix."
+    echo "Some items are missing. Re-run setup/legacy/setup.sh to fix."
     exit 1
 else
     echo "All checks passed."

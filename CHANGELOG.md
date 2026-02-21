@@ -10,6 +10,11 @@
 - Cross-references to gotcha numbers updated in autolearn-patterns.md and workflow-preferences.md
 - AGENT-WORKFLOW-GUIDE.md: replaced Python pseudo-code agent examples with correct `.claude/agents/*.md` format
 
+### Changed
+
+- Bash setup scripts moved to `setup/legacy/` with deprecation headers (PowerShell primary)
+- SKILLS-ECOSYSTEM.md: expanded Chat skill installation guide with rationale and sync process
+
 ### Removed
 
 - go-development SKILL.md: removed network_security_patterns section (SubNetree-specific content)
