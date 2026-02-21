@@ -121,6 +121,7 @@ Bootstrap Phase 4 prompts for three credentials stored in Windows Credential Man
 ### GitHub Personal Access Token (Required)
 
 Needed for:
+
 - `gh` CLI (push code, manage PRs)
 - Claude Code (fetch documentation)
 - Git operations over HTTPS
@@ -128,6 +129,7 @@ Needed for:
 **Create at:** [https://github.com/settings/tokens/new](https://github.com/settings/tokens/new)
 
 **Required scopes:**
+
 - `repo` (read/write code)
 - `workflow` (manage GitHub Actions)
 - `read:org` (read organization metadata)
@@ -139,6 +141,7 @@ When bootstrap prompts, paste the token. It should start with `ghp_`, `ghs_`, or
 ### Anthropic API Key (Required)
 
 Needed for:
+
 - Claude Code CLI operations
 - Any Claude API calls from your scripts
 
