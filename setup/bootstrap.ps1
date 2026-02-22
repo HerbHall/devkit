@@ -717,7 +717,18 @@ function Invoke-Phase5 {
     $hasVsCodeExt = $false
     if ($codeCheck.Met) {
         try {
-            $extList = & code --list-extensions 2>&1 | Out-String
+            $tmpIn   = [System.IO.Path]::GetTempFileName()
+            $tmpFile = [System.IO.Path]::GetTempFileName()
+            $tmpErr  = [System.IO.Path]::GetTempFileName()
+            $proc = Start-Process -FilePath 'code' `
+                -ArgumentList '--list-extensions' `
+                -NoNewWindow -PassThru `
+                -RedirectStandardInput  $tmpIn `
+                -RedirectStandardOutput $tmpFile `
+                -RedirectStandardError  $tmpErr
+            $proc.WaitForExit(15000) | Out-Null
+            $extList = if (Test-Path $tmpFile) { Get-Content $tmpFile -Raw } else { '' }
+            $tmpIn, $tmpFile, $tmpErr | Remove-Item -Force -ErrorAction SilentlyContinue
             $hasVsCodeExt = $extList -match 'anthropic\.claude-code'
         } catch { }
     }

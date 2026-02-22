@@ -64,12 +64,23 @@ function Install-WingetPackage {
         }
     }
 
-    # Attempt winget install
+    # Attempt winget install with progress spinner
     Write-Step "Installing $Id via winget..."
+    $stdoutFile = [IO.Path]::GetTempFileName()
+    $stderrFile = [IO.Path]::GetTempFileName()
     try {
-        $output = & winget install --id $Id --silent --accept-source-agreements --accept-package-agreements 2>&1 |
-            Out-String
-        $exitCode = $LASTEXITCODE
+        $proc = Start-Process -FilePath 'winget' `
+            -ArgumentList 'install', '--id', $Id, '--silent', '--accept-source-agreements', '--accept-package-agreements' `
+            -NoNewWindow -PassThru `
+            -RedirectStandardOutput $stdoutFile `
+            -RedirectStandardError $stderrFile
+
+        Wait-ProcessWithSpinner -Process $proc -Label "winget install $Id"
+
+        $output = ''
+        if (Test-Path $stdoutFile) { $output += Get-Content $stdoutFile -Raw -ErrorAction SilentlyContinue }
+        if (Test-Path $stderrFile) { $output += Get-Content $stderrFile -Raw -ErrorAction SilentlyContinue }
+        $exitCode = $proc.ExitCode
     }
     catch {
         Write-Fail "$Id -- winget threw an exception: $_"
@@ -78,6 +89,9 @@ function Install-WingetPackage {
             AlreadyInstalled = $false
             Version          = $null
         }
+    }
+    finally {
+        Remove-Item $stdoutFile, $stderrFile -Force -ErrorAction SilentlyContinue
     }
 
     # -1978335189 (0x8A150011) = no upgrade available (already installed at latest)
@@ -213,16 +227,20 @@ function Install-VSCodeExtension {
     }
 
     Write-Step "Installing VS Code extension $Id..."
+    $stdinFile  = [IO.Path]::GetTempFileName()
     $stdoutFile = [IO.Path]::GetTempFileName()
     $stderrFile = [IO.Path]::GetTempFileName()
     try {
-        # Use Start-Process to avoid VS Code treating output as stdin pipe
-        # (which opens temp editor tabs for each extension install)
+        # Redirect all three streams to fully decouple from VS Code's IPC
+        # (without stdin redirect, VS Code opens temp editor tabs)
         $proc = Start-Process -FilePath 'code' `
             -ArgumentList '--install-extension', $Id, '--force' `
-            -NoNewWindow -Wait -PassThru `
+            -NoNewWindow -PassThru `
+            -RedirectStandardInput  $stdinFile `
             -RedirectStandardOutput $stdoutFile `
-            -RedirectStandardError $stderrFile
+            -RedirectStandardError  $stderrFile
+
+        Wait-ProcessWithSpinner -Process $proc -Label "VS Code ext $Id"
         $exitCode = $proc.ExitCode
     }
     catch {
@@ -233,7 +251,7 @@ function Install-VSCodeExtension {
         $output = ''
         if (Test-Path $stdoutFile) { $output += Get-Content $stdoutFile -Raw -ErrorAction SilentlyContinue }
         if (Test-Path $stderrFile) { $output += Get-Content $stderrFile -Raw -ErrorAction SilentlyContinue }
-        Remove-Item $stdoutFile, $stderrFile -Force -ErrorAction SilentlyContinue
+        $stdinFile, $stdoutFile, $stderrFile | Remove-Item -Force -ErrorAction SilentlyContinue
     }
 
     if ($exitCode -ne 0) {
@@ -291,27 +309,25 @@ function Install-VSCodeExtensions {
 function Invoke-ManualInstall {
     <#
     .SYNOPSIS
-        Guides the user through a manual install step with verification.
+        Auto-executes an install command with error checking and verification.
     .DESCRIPTION
-        Displays the install command in a highlighted box for easy copy-paste,
-        then waits for the user to press Enter after running it. If a verification
-        command is provided, checks whether installation succeeded and reports
-        pass or fail.
+        Runs the install command directly in a child process, captures output,
+        and verifies success via the check command. Falls back to displaying
+        the command for manual execution only if auto-execution fails.
     .PARAMETER Label
         Human-readable name for the tool being installed.
     .PARAMETER Command
-        The command string to display for the user to run.
+        The command string to execute.
     .PARAMETER Check
-        Optional verification command passed to Test-Tool after the user confirms.
+        Optional verification command passed to Test-Tool after install.
     .PARAMETER Note
-        Optional additional guidance shown below the command box.
+        Optional additional guidance shown on failure.
     .OUTPUTS
         Hashtable with key: Success (bool).
     .EXAMPLE
         Invoke-ManualInstall -Label "golangci-lint" `
             -Command "go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest" `
-            -Check "golangci-lint" `
-            -Note "Requires Go to be installed first"
+            -Check "golangci-lint"
     #>
     [CmdletBinding()]
     param(
@@ -328,44 +344,63 @@ function Invoke-ManualInstall {
         [string]$Note
     )
 
-    # Display the command in a visible box
-    $border = '+' + ('-' * ($Command.Length + 4)) + '+'
-    $padded = "|  $Command  |"
+    Write-Step "Installing $Label..."
 
-    Write-Step "Manual install: $Label"
-    Write-Host ''
-    Write-Host $border
-    Write-Host $padded
-    Write-Host $border
-    Write-Host ''
+    # Refresh PATH so tools installed earlier in this session are visible
+    $machinePath = [Environment]::GetEnvironmentVariable('PATH', 'Machine')
+    $userPath    = [Environment]::GetEnvironmentVariable('PATH', 'User')
+    $env:PATH    = "$machinePath;$userPath"
 
-    if ($Note) {
-        Write-Warn "Note: $Note"
-    }
+    # Execute in a child process to isolate failures and capture output
+    $stdoutFile = [IO.Path]::GetTempFileName()
+    $stderrFile = [IO.Path]::GetTempFileName()
 
-    Write-Host 'Run the command above, then press Enter to continue...' -NoNewline
     try {
-        [void][System.Console]::ReadLine()
+        $proc = Start-Process -FilePath 'pwsh' `
+            -ArgumentList '-NoProfile', '-Command', $Command `
+            -NoNewWindow -PassThru `
+            -RedirectStandardOutput $stdoutFile `
+            -RedirectStandardError $stderrFile
+
+        Wait-ProcessWithSpinner -Process $proc -Label $Label
+
+        $stderr = if (Test-Path $stderrFile) { (Get-Content $stderrFile -Raw).Trim() } else { '' }
+
+        if ($proc.ExitCode -ne 0) {
+            Write-Fail "$Label install failed (exit code $($proc.ExitCode))"
+            if ($stderr) { Write-Host "  $stderr" -ForegroundColor Red }
+            if ($Note)   { Write-Warn "Note: $Note" }
+            return @{ Success = $false }
+        }
     }
     catch {
-        # Non-interactive session -- skip the wait
+        Write-Fail "$Label install error: $($_.Exception.Message)"
+        if ($Note) { Write-Warn "Note: $Note" }
+        return @{ Success = $false }
     }
+    finally {
+        Remove-Item $stdoutFile, $stderrFile -Force -ErrorAction SilentlyContinue
+    }
+
+    # Refresh PATH again -- the install may have added new entries
+    $machinePath = [Environment]::GetEnvironmentVariable('PATH', 'Machine')
+    $userPath    = [Environment]::GetEnvironmentVariable('PATH', 'User')
+    $env:PATH    = "$machinePath;$userPath"
 
     # Verify if a check command was provided
     if ($Check) {
         $testResult = Test-Tool $Check
         if ($testResult.Met) {
-            Write-OK "$Label verified ($($testResult.Version))"
+            Write-OK "$Label installed ($($testResult.Version))"
             return @{ Success = $true }
         }
         else {
-            Write-Warn "$Label not detected after install -- you may need to restart your terminal"
+            Write-Warn "$Label installed but not found on PATH -- you may need to restart your terminal"
             return @{ Success = $false }
         }
     }
 
-    # No verification command -- trust the user
-    Write-OK "$Label step completed"
+    Write-OK "$Label installed"
     return @{ Success = $true }
 }
 
@@ -404,13 +439,27 @@ function Export-WingetManifest {
         $null = New-Item -ItemType Directory -Path $parentDir -Force
     }
 
+    $stdoutFile = [IO.Path]::GetTempFileName()
+    $stderrFile = [IO.Path]::GetTempFileName()
     try {
-        $output = & winget export -o $Path --include-versions 2>&1 | Out-String
-        $exitCode = $LASTEXITCODE
+        $proc = Start-Process -FilePath 'winget' `
+            -ArgumentList 'export', '-o', $Path, '--include-versions' `
+            -NoNewWindow -PassThru `
+            -RedirectStandardOutput $stdoutFile `
+            -RedirectStandardError $stderrFile
+
+        Wait-ProcessWithSpinner -Process $proc -Label "winget export"
+
+        $output = ''
+        if (Test-Path $stderrFile) { $output = Get-Content $stderrFile -Raw -ErrorAction SilentlyContinue }
+        $exitCode = $proc.ExitCode
     }
     catch {
         Write-Fail "Winget export failed: $_"
         return @{ Success = $false; Path = $Path }
+    }
+    finally {
+        Remove-Item $stdoutFile, $stderrFile -Force -ErrorAction SilentlyContinue
     }
 
     if ($exitCode -ne 0) {
@@ -460,8 +509,18 @@ function Export-VSCodeExtensions {
     }
 
     try {
-        $extensions = & code --list-extensions 2>&1
-        $exitCode = $LASTEXITCODE
+        $tmpIn   = [System.IO.Path]::GetTempFileName()
+        $tmpFile = [System.IO.Path]::GetTempFileName()
+        $tmpErr  = [System.IO.Path]::GetTempFileName()
+        $proc = Start-Process -FilePath 'code' `
+            -ArgumentList '--list-extensions' `
+            -NoNewWindow -PassThru `
+            -RedirectStandardInput  $tmpIn `
+            -RedirectStandardOutput $tmpFile `
+            -RedirectStandardError  $tmpErr
+        $proc.WaitForExit(15000) | Out-Null
+        $exitCode = $proc.ExitCode
+        $tmpIn, $tmpErr | Remove-Item -Force -ErrorAction SilentlyContinue
     }
     catch {
         Write-Fail "VS Code extension list failed: $_"
@@ -469,12 +528,14 @@ function Export-VSCodeExtensions {
     }
 
     if ($exitCode -ne 0) {
+        Remove-Item $tmpFile -Force -ErrorAction SilentlyContinue
         Write-Fail "VS Code extension list exited with code $exitCode"
         return @{ Success = $false; Path = $Path }
     }
 
     try {
-        $extensions | Out-File -FilePath $Path -Encoding utf8
+        Copy-Item -Path $tmpFile -Destination $Path -Force
+        Remove-Item $tmpFile -Force -ErrorAction SilentlyContinue
     }
     catch {
         Write-Fail "Failed to write extensions to $Path -- $_"

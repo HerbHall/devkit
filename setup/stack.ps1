@@ -8,14 +8,14 @@
 #   .\setup\stack.ps1 -Install go-cli,go-web # Non-interactive install
 #   .\setup\stack.ps1 -Install go-cli -Force # Skip confirmation prompt
 
-Set-StrictMode -Version Latest
-
 param(
     [switch]$List,
     [string]$ShowProfile,
     [string]$Install,
     [switch]$Force
 )
+
+Set-StrictMode -Version Latest
 
 # ---------------------------------------------------------------------------
 # Dot-source dependencies
@@ -44,14 +44,24 @@ function Get-InstalledVSCodeExtensions {
         return $result
     }
     try {
-        $list = & code --list-extensions 2>&1
-        if ($LASTEXITCODE -eq 0) {
-            foreach ($ext in $list) {
-                if ($ext -is [string] -and $ext.Trim() -ne '') {
-                    $null = $result.Add($ext.Trim())
+        $tmpIn   = [System.IO.Path]::GetTempFileName()
+        $tmpFile = [System.IO.Path]::GetTempFileName()
+        $tmpErr  = [System.IO.Path]::GetTempFileName()
+        $proc = Start-Process -FilePath 'code' `
+            -ArgumentList '--list-extensions' `
+            -NoNewWindow -PassThru `
+            -RedirectStandardInput  $tmpIn `
+            -RedirectStandardOutput $tmpFile `
+            -RedirectStandardError  $tmpErr
+        $proc.WaitForExit(15000) | Out-Null
+        if ($proc.ExitCode -eq 0 -and (Test-Path $tmpFile)) {
+            foreach ($line in (Get-Content $tmpFile)) {
+                if ($line.Trim() -ne '') {
+                    $null = $result.Add($line.Trim())
                 }
             }
         }
+        $tmpIn, $tmpFile, $tmpErr | Remove-Item -Force -ErrorAction SilentlyContinue
     } catch {
         # Non-fatal -- return empty set
     }

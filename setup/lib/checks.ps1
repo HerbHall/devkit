@@ -55,7 +55,23 @@ function _ExtractVersion {
     }
 
     try {
-        $output = & $Path @versionArgs 2>&1 | Out-String
+        # Run version command with timeout to avoid hanging on Windows Store aliases
+        # (py.exe, python.exe in WindowsApps are stubs that hang indefinitely)
+        $job = Start-Job -ScriptBlock {
+            param($p, $a)
+            & $p @a 2>&1 | Out-String
+        } -ArgumentList $Path, $versionArgs
+
+        $completed = $job | Wait-Job -Timeout 5
+        if (-not $completed) {
+            $job | Stop-Job
+            $job | Remove-Job -Force
+            return $null
+        }
+
+        $output = $job | Receive-Job
+        $job | Remove-Job -Force
+
         # Match semver-like patterns: 2.47.1, 20.11.0, 1.9.2
         if ($output -match '(\d+\.\d+(?:\.\d+)+)') {
             return $Matches[1]
