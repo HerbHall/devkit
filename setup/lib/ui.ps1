@@ -119,6 +119,46 @@ function Write-Fail {
     Write-Host "  ${script:Red}${script:CrossMark}${script:Reset} $Message"
 }
 
+# ============================ Progress Spinner ===============================
+
+function Wait-ProcessWithSpinner {
+    <#
+    .SYNOPSIS
+        Waits for a process to exit while showing an animated spinner with elapsed time.
+    .PARAMETER Process
+        The System.Diagnostics.Process object (from Start-Process -PassThru).
+    .PARAMETER Label
+        Text shown next to the spinner.
+    .OUTPUTS
+        Nothing. Returns when the process exits.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [System.Diagnostics.Process]$Process,
+
+        [Parameter(Mandatory)]
+        [string]$Label
+    )
+
+    $frames = @('|', '/', '-', '\')
+    $i = 0
+    $sw = [System.Diagnostics.Stopwatch]::StartNew()
+
+    while (-not $Process.HasExited) {
+        $elapsed = $sw.Elapsed.ToString('mm\:ss')
+        $frame = $frames[$i % $frames.Count]
+        Write-Host -NoNewline "`r  $frame $Label ($elapsed) "
+        Start-Sleep -Milliseconds 250
+        $i++
+    }
+    $sw.Stop()
+
+    $elapsed = $sw.Elapsed.ToString('mm\:ss')
+    # Clear the spinner line
+    Write-Host -NoNewline "`r$(' ' * ($Label.Length + 20))`r"
+}
+
 # ============================ Verify Table ==================================
 
 function Write-VerifyTable {

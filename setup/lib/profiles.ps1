@@ -208,10 +208,10 @@ function Get-ProfileFromFile {
         })
     }
 
-    # Normalize string arrays (default to empty)
-    $requires        = if ($parsed.ContainsKey('requires'))         { @($parsed['requires']) }         else { @() }
-    $vsCodeExt       = if ($parsed.ContainsKey('vscode-extensions')){ @($parsed['vscode-extensions']) } else { @() }
-    $claudeSkills    = if ($parsed.ContainsKey('claude-skills'))    { @($parsed['claude-skills']) }    else { @() }
+    # Normalize string arrays (default to empty, filter out nulls)
+    $requires        = @(if ($parsed.ContainsKey('requires')          -and $null -ne $parsed['requires'])         { @($parsed['requires']) }         else { @() })
+    $vsCodeExt       = @(if ($parsed.ContainsKey('vscode-extensions') -and $null -ne $parsed['vscode-extensions']){ @($parsed['vscode-extensions']) } else { @() })
+    $claudeSkills    = @(if ($parsed.ContainsKey('claude-skills')     -and $null -ne $parsed['claude-skills'])    { @($parsed['claude-skills']) }    else { @() })
 
     return @{
         Name             = if ($parsed.ContainsKey('name'))        { $parsed['name'] }        else { '' }
