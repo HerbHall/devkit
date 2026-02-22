@@ -239,12 +239,13 @@ function Test-ClaudeAuth {
         }
     }
 
-    # Check ~/.claude/auth* or credentials files
+    # Check ~/.claude/ for auth or credentials files (including dotfiles)
     $claudeDir = Join-Path $userHome '.claude'
     if (Test-Path $claudeDir) {
-        $authFiles = Get-ChildItem -Path $claudeDir -Filter 'auth*' -File -ErrorAction SilentlyContinue
-        $credFiles = Get-ChildItem -Path $claudeDir -Filter 'credentials*' -File -ErrorAction SilentlyContinue
-        if ($authFiles -or $credFiles) {
+        $authFiles = Get-ChildItem -Path $claudeDir -Filter 'auth*' -File -Force -ErrorAction SilentlyContinue
+        $credFiles = Get-ChildItem -Path $claudeDir -Filter 'credentials*' -File -Force -ErrorAction SilentlyContinue
+        $dotCredFiles = Get-ChildItem -Path $claudeDir -Filter '.credentials*' -File -Force -ErrorAction SilentlyContinue
+        if ($authFiles -or $credFiles -or $dotCredFiles) {
             return @{ Met = $true }
         }
     }
@@ -401,7 +402,7 @@ function Get-PreflightStatus {
     $results = [System.Collections.ArrayList]::new()
 
     # Core tools
-    $coreTools = @('git', 'node', 'npm', 'gh', 'docker', 'claude', 'winget', 'code')
+    $coreTools = @('git', 'gh', 'docker', 'winget', 'code')
     foreach ($tool in $coreTools) {
         $check = Test-Tool $tool
         $null = $results.Add(@{

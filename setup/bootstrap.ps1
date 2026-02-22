@@ -141,7 +141,11 @@ function Invoke-Phase1 {
     # Hardware virtualization (informational -- can't enable from Windows)
     Write-Step 'Checking hardware virtualization...'
     $virtCheck = Test-Virtualization
-    if ($virtCheck.Met) {
+    # If Hyper-V is enabled, virtualization must be active (firmware probe
+    # returns false when the hypervisor is already running).
+    $hyperVMet = $false
+    try { $hyperVMet = (Test-HyperV).Met } catch { }
+    if ($virtCheck.Met -or $hyperVMet) {
         Write-OK 'Hardware virtualization (VT-x / AMD-V) enabled'
         $passed++
         $items.Add([PSCustomObject]@{ Name = 'Virtualization'; Status = 'OK'; Version = '-' })
@@ -218,6 +222,7 @@ function _CheckManualRequirement {
         [string]$Why,
 
         [Parameter(Mandatory)]
+        [AllowEmptyString()]
         [string[]]$Instructions,
 
         [Parameter()]
@@ -702,42 +707,34 @@ function Invoke-Phase5 {
     }
     Write-OK '~/.claude/ directory structure ready'
 
-    # --- 5b. Install Claude Code via npm ---
+    # --- 5b. Check Claude Code availability ---
 
     Write-Host ''
     Write-Step 'Checking Claude Code...'
+    # Claude Code can be installed as a VS Code extension or via npm globally
     $claudeCheck = Test-Tool 'claude'
+    $codeCheck   = Test-Tool 'code'
+    $hasVsCodeExt = $false
+    if ($codeCheck.Met) {
+        try {
+            $extList = & code --list-extensions 2>&1 | Out-String
+            $hasVsCodeExt = $extList -match 'anthropic\.claude-code'
+        } catch { }
+    }
+
     if ($claudeCheck.Met) {
-        Write-OK "Claude Code already installed ($($claudeCheck.Version))"
+        Write-OK "Claude Code installed (CLI: $($claudeCheck.Version))"
+        $claudeInstalled = $true
+    }
+    elseif ($hasVsCodeExt) {
+        Write-OK 'Claude Code installed (VS Code extension)'
         $claudeInstalled = $true
     }
     else {
-        $nodeCheck = Test-Tool 'node'
-        if (-not $nodeCheck.Met) {
-            Write-Warn 'Node.js not found -- cannot install Claude Code via npm'
-            Write-Warn '  Install Node.js first (Phase 2), then re-run Phase 5'
-            $claudeInstalled = $false
-        }
-        else {
-            Write-Step 'Installing Claude Code via npm...'
-            try {
-                $output = & npm install -g @anthropic-ai/claude-code 2>&1 | Out-String
-                $exitCode = $LASTEXITCODE
-                if ($exitCode -eq 0) {
-                    Write-OK 'Claude Code installed'
-                    $claudeInstalled = $true
-                }
-                else {
-                    Write-Fail "npm install failed (exit $exitCode)"
-                    Write-Warn "Output:`n$output"
-                    $claudeInstalled = $false
-                }
-            }
-            catch {
-                Write-Fail "Claude Code install exception: $_"
-                $claudeInstalled = $false
-            }
-        }
+        Write-Warn 'Claude Code not found'
+        Write-Warn '  Install via: VS Code Extensions > "Claude Code" by Anthropic'
+        Write-Warn '  Or via npm: npm install -g @anthropic-ai/claude-code'
+        $claudeInstalled = $false
     }
 
     # --- 5c. Deploy CLAUDE.md with placeholder substitution ---
@@ -961,6 +958,11 @@ function Invoke-Phase6 {
 
     Write-Section 'Phase 6: Verification'
 
+    # Refresh PATH from registry so tools installed during this session are found
+    $machinePath = [Environment]::GetEnvironmentVariable('PATH', 'Machine')
+    $userPath    = [Environment]::GetEnvironmentVariable('PATH', 'User')
+    $env:PATH    = "$machinePath;$userPath"
+
     $total   = 0
     $passed  = 0
     $failed  = 0
@@ -973,10 +975,8 @@ function Invoke-Phase6 {
         @{ Name = 'git';     Check = 'git' },
         @{ Name = 'gh';      Check = 'gh' },
         @{ Name = 'go';      Check = 'go' },
-        @{ Name = 'node';    Check = 'node' },
         @{ Name = 'docker';  Check = 'docker' },
         @{ Name = 'code';    Check = 'code' },
-        @{ Name = 'claude';  Check = 'claude' },
         @{ Name = 'pwsh';    Check = 'pwsh' },
         @{ Name = 'rustup';  Check = 'rustup' },
         @{ Name = 'cmake';   Check = 'cmake' }
@@ -1022,12 +1022,15 @@ function Invoke-Phase6 {
     })
 
     $virt = Test-Virtualization
+    # If Hyper-V is enabled, virtualization must be active (firmware probe
+    # returns false when the hypervisor is already running).
+    $virtMet = $virt.Met -or $hyperv.Met
     $total++
-    if ($virt.Met) { $passed++ } else { $failed++ }
+    if ($virtMet) { $passed++ } else { $failed++ }
     $featureRows.Add([PSCustomObject]@{
         Name    = 'Virtualization'
-        Status  = if ($virt.Met) { 'OK' } else { 'FAIL' }
-        Version = if ($virt.Met) { 'enabled' } else { 'disabled' }
+        Status  = if ($virtMet) { 'OK' } else { 'FAIL' }
+        Version = if ($virtMet) { 'enabled' } else { 'disabled' }
     })
 
     $devmode = Test-DeveloperMode
@@ -1209,4 +1212,4 @@ function Invoke-Bootstrap {
 }
 
 # Run bootstrap with parameters from the command line
-Invoke-Bootstrap -Phase $Phase -Force:$Force
+$null = Invoke-Bootstrap -Phase $Phase -Force:$Force
