@@ -80,6 +80,17 @@ function Install-WingetPackage {
         }
     }
 
+    # -1978335189 (0x8A150011) = no upgrade available (already installed at latest)
+    # -1978335184 (0x8A150016) = already installed
+    if ($exitCode -eq -1978335189 -or $exitCode -eq -1978335184) {
+        Write-OK "$Id already installed (up to date)"
+        return @{
+            Success          = $true
+            AlreadyInstalled = $true
+            Version          = $null
+        }
+    }
+
     if ($exitCode -ne 0) {
         Write-Fail "$Id -- winget exited with code $exitCode"
         Write-Warn "Winget output:`n$output"
@@ -202,13 +213,27 @@ function Install-VSCodeExtension {
     }
 
     Write-Step "Installing VS Code extension $Id..."
+    $stdoutFile = [IO.Path]::GetTempFileName()
+    $stderrFile = [IO.Path]::GetTempFileName()
     try {
-        $output = & code --install-extension $Id --force 2>&1 | Out-String
-        $exitCode = $LASTEXITCODE
+        # Use Start-Process to avoid VS Code treating output as stdin pipe
+        # (which opens temp editor tabs for each extension install)
+        $proc = Start-Process -FilePath 'code' `
+            -ArgumentList '--install-extension', $Id, '--force' `
+            -NoNewWindow -Wait -PassThru `
+            -RedirectStandardOutput $stdoutFile `
+            -RedirectStandardError $stderrFile
+        $exitCode = $proc.ExitCode
     }
     catch {
         Write-Fail "VS Code extension $Id -- exception: $_"
         return @{ Success = $false }
+    }
+    finally {
+        $output = ''
+        if (Test-Path $stdoutFile) { $output += Get-Content $stdoutFile -Raw -ErrorAction SilentlyContinue }
+        if (Test-Path $stderrFile) { $output += Get-Content $stderrFile -Raw -ErrorAction SilentlyContinue }
+        Remove-Item $stdoutFile, $stderrFile -Force -ErrorAction SilentlyContinue
     }
 
     if ($exitCode -ne 0) {

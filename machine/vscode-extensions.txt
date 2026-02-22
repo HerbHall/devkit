@@ -10,8 +10,6 @@ codeflow-studio.claude-code-extension
 davidanson.vscode-markdownlint
 dbaeumer.vscode-eslint
 docker.docker
-docker.docker-vscode-extension
-docker.labs-ai-tools-vscode
 drblury.protobuf-vsc
 dunstontc.vscode-go-syntax
 eamodio.gitlens
