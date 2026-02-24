@@ -51,7 +51,7 @@ Use the Task tool to launch the `plan-reviewer` agent. Pass:
 
 Prompt to pass to the agent:
 
-```
+```text
 Review the implementation plan at [PLAN_FILE_PATH].
 
 Relevant source files for context (read these to understand existing code the plan builds on):
@@ -78,13 +78,13 @@ resolved before implementation. Do not proceed until either:
 
 After an APPROVE verdict, note in the session:
 
-```
+```text
 Plan review: APPROVE (round N) — [one-line summary of what was checked]
 ```
 
 After a user override of REJECT:
 
-```
+```text
 Plan review: OVERRIDE by user — [reason provided]
 ```
 

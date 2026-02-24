@@ -51,7 +51,7 @@ Use the Task tool to launch the `review-code` agent. Pass:
 
 Prompt to pass to the agent:
 
-```
+```text
 Review the following changed files before they are committed.
 
 Changed files:
@@ -92,13 +92,13 @@ for a deeper security pass before allowing the commit to proceed.
 
 After an APPROVE verdict, note in the session:
 
-```
+```text
 Code review: APPROVE (round N) — [files reviewed, one-line summary]
 ```
 
 After addressing REQUEST_CHANGES:
 
-```
+```text
 Code review: APPROVE after revision (round N) — [findings addressed]
 ```
 
