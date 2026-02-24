@@ -47,6 +47,7 @@ Structure your review as follows:
 **Findings** (grouped by severity):
 
 For each finding:
+
 - **Severity**: Critical / High / Medium / Low
 - **Area**: Logic | Edge Cases | Security | Performance | Dependencies | Acceptance Criteria | Scope
 - **Issue**: What the problem is, in plain language

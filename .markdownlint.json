@@ -34,7 +34,8 @@
       "guidelines", "idiom", "idioms", "process", "forms",
       "validation", "diagnostics", "performance", "security",
       "testing", "accessibility", "stakeholders",
-      "criterion", "issue", "lesson"
+      "criterion", "issue", "lesson",
+      "scope", "focus_areas", "output_format"
     ]
   },
   "MD034": true,
