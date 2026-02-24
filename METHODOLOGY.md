@@ -9,6 +9,7 @@ A standardized process for taking ideas from concept to release. Designed for a 
 3. **Learn forward** — Every session feeds the autolearn loop. Mistakes become patterns that prevent future mistakes.
 4. **One tool per phase** — Don't combine tools that duplicate work. Pick the best fit for each phase and use it end-to-end.
 5. **Minimum viable ceremony** — Only create artifacts that will actually be referenced. A concept brief can be 5 lines.
+6. **Independent review before investment** — A fresh-context reviewer with no knowledge of how the plan was developed catches what familiarity misses. Require plan review before implementation and code review before every commit. This is not overhead — it is the cheapest form of quality control available.
 
 ## Phases
 
@@ -105,6 +106,12 @@ This project is NOT worth pursuing if:
 
 **Gate**: Can you explain the MVP in one paragraph? Do you know what "done" looks like? If not, keep specifying.
 
+**Review gate**: Before moving to Phase 3 or Phase 4, run `/plan-review` against the specification.
+
+> **Why**: The specification phase produces the plan that all implementation work follows. A fresh-context reviewer with no knowledge of the discussions that shaped the spec will catch logical gaps, missing edge cases, and unstated assumptions that are invisible from inside the planning session.
+>
+> **Exit criteria**: APPROVE verdict from `plan-reviewer`. On REVISE or REJECT, address the findings and resubmit — do not skip to implementation.
+
 ---
 
 ### Phase 3: Prototype
@@ -154,7 +161,9 @@ This project is NOT worth pursuing if:
 2. Break the MVP into features (3-7 features is typical)
 3. For each feature:
    - Write a brief spec (what it does, acceptance criteria)
+   - Run `/plan-review` against the feature spec before writing code
    - Implement with tests
+   - Run `/code-review` before committing (Critical/High findings block the commit)
    - Verify with `/quality-control`
    - Create PR, merge after CI passes
 4. Use subagent parallel execution for independent features
@@ -167,7 +176,7 @@ This project is NOT worth pursuing if:
 - PR merge after CI passes
 - Autolearn after each sprint wave
 
-**Gate**: Does the MVP meet the success criteria from Phase 2? Run the full test suite, Docker QC, and manual verification.
+**Gate**: Does the MVP meet the success criteria from Phase 2? Run the full test suite, Docker QC, and manual verification. All `/code-review` gates for in-scope features must have an APPROVE verdict before release.
 
 ---
 
@@ -286,7 +295,9 @@ The methodology should evolve. Version 1 is a starting point, not a final answer
 | Implementation planning | Claude Code plan mode | Spec Kit `/speckit.plan` |
 | Codebase investigation | BMAD Quick Spec (step 2) | Claude Code Explore agent |
 | CI/CD setup | `/setup-github-actions` skill | Manual workflow writing |
-| Code review | `/quality-control` skill | PR review plugins |
+| Plan review (before implementation) | `/plan-review` skill | Manual review |
+| Code review (before commit) | `/code-review` skill | PR review plugins |
+| Full code review + security | `/quality-control` skill | PR review plugins |
 | Learning capture | `/reflect` (autolearn) | Manual rules file update |
 | Competitive research | `gh api` + blog aggregation | Project-specific `/research-mode` skill |
 
