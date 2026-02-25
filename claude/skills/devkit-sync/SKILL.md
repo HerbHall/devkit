@@ -27,6 +27,7 @@ What sync operation do you need?
 4. **Init** -- Set up symlinks and machine identity (first-time setup)
 5. **Diff** -- Show detailed diff of local changes vs DevKit main
 6. **Unlink** -- Replace symlinks with copies (portable snapshot)
+7. **Resolve conflicts** -- Fix merge conflicts after pull/rebase
 
 Or just type your question about DevKit sync.
 </intake>
@@ -40,6 +41,7 @@ Or just type your question about DevKit sync.
 | 4, "init", "setup", "install", "link" | workflows/init.md |
 | 5, "diff", "changes", "what changed" | workflows/diff.md |
 | 6, "unlink", "copy", "snapshot", "portable" | workflows/unlink.md |
+| 7, "resolve", "conflicts", "conflict", "merge conflict", "rebase conflict" | workflows/resolve-conflicts.md |
 
 **After reading the workflow, follow it exactly.**
 </routing>

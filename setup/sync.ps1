@@ -488,6 +488,64 @@ function Invoke-Status {
     if ($notSymlink -gt 0) { Write-Warn "Real files:        $notSymlink (run -Link to convert)" }
     if ($missing -gt 0)    { Write-Fail "Missing:           $missing" }
     if ($broken -gt 0)     { Write-Fail "Broken:            $broken" }
+
+    # Potential conflicts (local changes overlapping with remote)
+    Write-Host ''
+    Write-Step 'Potential conflicts:'
+    $localChanges = @()
+    $remoteChanges = @()
+    try {
+        $localRaw = & git -C $devKit diff --name-only 2>&1
+        if ($localRaw) {
+            $localChanges = @($localRaw) | Where-Object { $_ -is [string] -and $_.Trim() }
+        }
+        # Include staged changes too
+        $stagedRaw = & git -C $devKit diff --cached --name-only 2>&1
+        if ($stagedRaw) {
+            $staged = @($stagedRaw) | Where-Object { $_ -is [string] -and $_.Trim() }
+            $localChanges = @($localChanges) + @($staged) | Select-Object -Unique
+        }
+    }
+    catch {
+        $localChanges = @()
+    }
+    try {
+        & git -C $devKit fetch origin --quiet 2>&1 | Out-Null
+        $remoteRaw = & git -C $devKit diff --name-only 'HEAD...origin/main' 2>&1
+        if ($remoteRaw) {
+            $remoteChanges = @($remoteRaw) | Where-Object { $_ -is [string] -and $_.Trim() }
+        }
+    }
+    catch {
+        $remoteChanges = @()
+    }
+
+    if ($localChanges.Count -eq 0 -and $remoteChanges.Count -eq 0) {
+        Write-OK 'No local or remote changes detected'
+    }
+    elseif ($localChanges.Count -eq 0) {
+        Write-OK "No local changes ($($remoteChanges.Count) remote-only change(s))"
+    }
+    elseif ($remoteChanges.Count -eq 0) {
+        Write-OK "No remote changes ($($localChanges.Count) local-only change(s))"
+    }
+    else {
+        # Find overlapping files
+        $overlapping = @($localChanges | Where-Object { $remoteChanges -contains $_ })
+        if ($overlapping.Count -gt 0) {
+            Write-Warn "$($overlapping.Count) file(s) modified both locally and on remote:"
+            foreach ($file in $overlapping) {
+                # Check if this is an append-only file
+                $isAppendOnly = $manifest.append_only_files -contains $file
+                $tag = if ($isAppendOnly) { ' (append-only -- renumber entries)' } else { '' }
+                Write-Warn "    $file$tag"
+            }
+            Write-Step 'Run /devkit-sync resolve-conflicts for resolution guidance.'
+        }
+        else {
+            Write-OK "No overlapping changes ($($localChanges.Count) local, $($remoteChanges.Count) remote -- no conflicts expected)"
+        }
+    }
 }
 
 # ---------------------------------------------------------------------------
