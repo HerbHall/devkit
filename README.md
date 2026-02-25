@@ -101,6 +101,10 @@ Local-only files (`*.local.md`, `settings.local.json`, `.credentials*`) are neve
 
 DevKit can track which projects on a machine consume its configuration via a project registry (`~/.devkit-registry.json`). This enables querying which projects have local rules to promote and which need updating after a DevKit change. The registry is machine-local and never committed to DevKit. See [docs/project-registry-schema.md](docs/project-registry-schema.md) for the schema and field descriptions.
 
+### Forge support
+
+DevKit supports GitHub natively via the `gh` CLI. Gitea repositories are supported through `tea` CLI behind a forge-detection wrapper that parses `git remote get-url origin` to choose the right tool automatically. Configure `forge.giteaUrl` in `~/.devkit-config.json` for self-hosted Gitea instances. See [docs/forge-abstraction.md](docs/forge-abstraction.md) for the full design and CLI mapping.
+
 ## Local Overrides
 
 Rules files ending in `.local.md` provide machine-specific overrides that complement the universal rules. Claude Code loads all `*.md` files from `~/.claude/rules/` automatically, so a file like `~/.claude/rules/my-machine.local.md` is picked up alongside the synced rules -- no extra configuration needed.
