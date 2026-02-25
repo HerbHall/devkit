@@ -143,7 +143,7 @@ Present a comprehensive summary:
 - [Suggested follow-up actions]
 
 ### DevKit Sync
-- [If uncommitted DevKit changes exist: "Run `/devkit-sync push` to share session learnings"]
+- [Handled in Step 8 -- prompted user to push or skip]
 ```
 
 ### 8. DevKit Sync Check
@@ -156,8 +156,26 @@ DEVKIT=$(python3 -c "import json; c=json.load(open('$HOME/.devkit-config.json'))
 [ -z "$DEVKIT" ] && for d in "$HOME/DevSpace/devkit" "/d/DevSpace/devkit"; do [ -f "$d/.sync-manifest.json" ] && DEVKIT="$d" && break; done
 
 if [ -n "$DEVKIT" ] && [ -n "$(git -C "$DEVKIT" status --porcelain -- claude/ 2>/dev/null)" ]; then
-    echo "DevKit has uncommitted changes. Run /devkit-sync push to share them."
+    git -C "$DEVKIT" diff --stat -- claude/
 fi
 ```
 
-If changes exist, offer to run the push workflow automatically.
+If changes exist, prompt the user:
+
+```text
+**DevKit sync:** Uncommitted changes detected in DevKit clone.
+
+  (1) Push DevKit changes now
+  (2) Skip -- push later with /devkit-sync push
+```
+
+If the user selects **1**, run the push workflow inline:
+
+1. Read machine ID from `~/.claude/.machine-id` (if missing, tell the user to run `/devkit-sync init` and stop)
+2. `git -C <devkit> add claude/`
+3. `git -C <devkit> commit` with message `chore(sync): <machine-id> session learnings <date>` and co-author tag
+4. `git -C <devkit> push -u origin sync/<machine-id>`
+5. Check for an existing PR with `gh pr list -R HerbHall/devkit --head sync/<machine-id>`; if none, create one with `gh pr create`
+6. Report the PR URL
+
+If the user selects **2**, acknowledge and move on. No further action needed.
