@@ -1,5 +1,70 @@
 #!/bin/bash
-# SessionStart Hook - CLAUDE.md detection for new projects
+# SessionStart Hook
+# 1. Auto-pull DevKit updates (symlinked files update instantly)
+# 2. CLAUDE.md detection for new projects
+
+# ===== DevKit Auto-Pull =====
+# Resolve DevKit clone path from ~/.devkit-config.json or common locations
+devkit_pull() {
+    local devkit_path=""
+
+    # Try ~/.devkit-config.json first
+    local config="$HOME/.devkit-config.json"
+    if [ -f "$config" ]; then
+        # Extract devspace path using simple grep (no jq dependency)
+        local devspace
+        devspace=$(grep -o '"devspace"[[:space:]]*:[[:space:]]*"[^"]*"' "$config" | head -1 | sed 's/.*"devspace"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/' | sed 's|\\\\|/|g')
+        if [ -n "$devspace" ] && [ -f "$devspace/devkit/.sync-manifest.json" ]; then
+            devkit_path="$devspace/devkit"
+        fi
+    fi
+
+    # Fallback: common locations
+    if [ -z "$devkit_path" ]; then
+        for candidate in "$HOME/DevSpace/devkit" "/d/DevSpace/devkit" "$HOME/workspace/devkit"; do
+            if [ -f "$candidate/.sync-manifest.json" ]; then
+                devkit_path="$candidate"
+                break
+            fi
+        done
+    fi
+
+    # No DevKit clone found — skip silently
+    if [ -z "$devkit_path" ]; then
+        return 0
+    fi
+
+    # Skip if working tree is dirty (user has uncommitted changes)
+    if [ -n "$(git -C "$devkit_path" status --porcelain 2>/dev/null)" ]; then
+        echo "DEVKIT_SYNC: Local changes detected — skipping pull"
+        return 0
+    fi
+
+    # Fetch with timeout (5s) to avoid blocking on network issues
+    if ! timeout 5 git -C "$devkit_path" fetch origin 2>/dev/null; then
+        return 0  # Network unavailable — skip silently
+    fi
+
+    # Count commits behind
+    local behind
+    behind=$(git -C "$devkit_path" rev-list HEAD..origin/main --count 2>/dev/null)
+
+    if [ -z "$behind" ] || [ "$behind" -eq 0 ]; then
+        echo "DEVKIT_SYNC: Up to date"
+        return 0
+    fi
+
+    # Pull with rebase
+    if git -C "$devkit_path" pull --rebase origin main 2>/dev/null; then
+        echo "DEVKIT_SYNC: Pulled $behind new commit(s)"
+    else
+        echo "DEVKIT_SYNC: Pull failed — run /devkit-sync pull manually"
+    fi
+}
+
+devkit_pull
+
+# ===== CLAUDE.md Detection =====
 
 # Skip if we're in the home directory
 if [ "$PWD" = "$HOME" ]; then
