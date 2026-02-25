@@ -748,17 +748,81 @@ function Invoke-Phase5 {
         $claudeInstalled = $false
     }
 
-    # --- 5c. Deploy CLAUDE.md with placeholder substitution ---
+    # --- 5c. Deploy via symlinks (sync.ps1 -Link) ---
+    # Replaces the old copy-based steps 5c-5g with symlink-based sync.
+    # Symlinks make ~/.claude/ a live view into the DevKit clone.
 
     Write-Host ''
-    Write-Step 'Deploying CLAUDE.md...'
-    $srcClaudeMd = Join-Path $repoRoot 'claude' 'CLAUDE.md'
-    $destClaudeMd = Join-Path $claudeDir 'CLAUDE.md'
+    Write-Step 'Deploying Claude config via symlinks...'
+    $syncScript = Join-Path $ScriptDir 'sync.ps1'
 
-    if (Test-Path $srcClaudeMd) {
-        $content = Get-Content $srcClaudeMd -Raw
+    if (Test-Path $syncScript) {
+        try {
+            & $syncScript -Link -DevKitPath $repoRoot
+            $skillsDeployed = (Get-ChildItem -Path (Join-Path $claudeDir 'skills') -Directory -ErrorAction SilentlyContinue).Count
+            $rulesDeployed  = (Get-ChildItem -Path (Join-Path $claudeDir 'rules') -File -Filter '*.md' -ErrorAction SilentlyContinue).Count
+            $agentsDeployed = (Get-ChildItem -Path (Join-Path $claudeDir 'agents') -File -Filter '*.md' -ErrorAction SilentlyContinue).Count
+            $hooksDeployed  = (Get-ChildItem -Path (Join-Path $claudeDir 'hooks') -File -ErrorAction SilentlyContinue).Count
+            Write-OK "Symlink deployment complete"
+        }
+        catch {
+            Write-Warn "Symlink deployment failed: $($_.Exception.Message)"
+            Write-Warn 'Falling back to copy-based deployment...'
+            # Fallback: copy files directly (pre-sync behavior)
+            $fallbackCategories = @(
+                @{ Src = 'skills'; Dest = 'skills'; Pattern = $null; IsDir = $true },
+                @{ Src = 'rules';  Dest = 'rules';  Pattern = '*.md'; IsDir = $false },
+                @{ Src = 'agents'; Dest = 'agents'; Pattern = '*.md'; IsDir = $false },
+                @{ Src = 'hooks';  Dest = 'hooks';  Pattern = $null; IsDir = $false }
+            )
+            foreach ($cat in $fallbackCategories) {
+                $srcPath = Join-Path $repoRoot 'claude' $cat.Src
+                $destPath = Join-Path $claudeDir $cat.Dest
+                if (-not (Test-Path $srcPath)) { continue }
+                if ($cat.IsDir) {
+                    $items = Get-ChildItem -Path $srcPath -Directory
+                    foreach ($item in $items) {
+                        Copy-Item -Path $item.FullName -Destination (Join-Path $destPath $item.Name) -Recurse -Force
+                    }
+                    $skillsDeployed = $items.Count
+                }
+                else {
+                    $files = if ($cat.Pattern) {
+                        Get-ChildItem -Path $srcPath -File -Filter $cat.Pattern
+                    } else {
+                        Get-ChildItem -Path $srcPath -File
+                    }
+                    foreach ($file in $files) {
+                        Copy-Item -Path $file.FullName -Destination (Join-Path $destPath $file.Name) -Force
+                    }
+                    switch ($cat.Src) {
+                        'rules'  { $rulesDeployed = $files.Count }
+                        'agents' { $agentsDeployed = $files.Count }
+                        'hooks'  { $hooksDeployed = $files.Count }
+                    }
+                }
+            }
+            # Copy CLAUDE.md as a file (not symlinked in fallback mode)
+            $srcClaudeMd = Join-Path $repoRoot 'claude' 'CLAUDE.md'
+            $destClaudeMd = Join-Path $claudeDir 'CLAUDE.md'
+            if (Test-Path $srcClaudeMd) {
+                Copy-Item -Path $srcClaudeMd -Destination $destClaudeMd -Force
+            }
+            Write-Warn "Fallback copy deployment complete (symlinks preferred)"
+        }
+    }
+    else {
+        Write-Fail "sync.ps1 not found at $syncScript"
+    }
 
-        # Read devspace path from config if available
+    # --- 5d. Generate CLAUDE.local.md with machine-specific content ---
+    # Machine-specific overrides go here instead of modifying the shared CLAUDE.md
+
+    $localClaudeMd = Join-Path $claudeDir 'CLAUDE.local.md'
+    if (-not (Test-Path $localClaudeMd)) {
+        Write-Host ''
+        Write-Step 'Generating CLAUDE.local.md (machine-specific overrides)...'
+
         $configFile = Join-Path $HOME '.devkit-config.json'
         $devspaceVal = 'D:\DevSpace'
         if (Test-Path $configFile) {
@@ -769,12 +833,6 @@ function Invoke-Phase5 {
             catch { }
         }
 
-        # Substitute placeholders
-        $content = $content -replace '\{\{USERNAME\}\}', $env:USERNAME
-        $content = $content -replace '\{\{MACHINE\}\}', $env:COMPUTERNAME
-        $content = $content -replace '\{\{DEVSPACE\}\}', $devspaceVal
-
-        # Platform detection
         try {
             $osCaption = (Get-CimInstance Win32_OperatingSystem).Caption
             $platform = "Windows ($osCaption)"
@@ -782,130 +840,25 @@ function Invoke-Phase5 {
         catch {
             $platform = "Windows ($([System.Environment]::OSVersion.VersionString))"
         }
-        $content = $content -replace '\{\{PLATFORM\}\}', $platform
 
-        Set-Content -Path $destClaudeMd -Value $content -Encoding utf8
-        Write-OK "CLAUDE.md deployed (user: $env:USERNAME, platform: $platform)"
+        $localContent = @"
+# Machine-Specific Overrides (Local)
+
+This file is NOT synced to DevKit. It supplements the shared CLAUDE.md
+with machine-specific context.
+
+## Environment
+
+- User: $env:USERNAME
+- Machine: $env:COMPUTERNAME
+- Platform: $platform
+- DevSpace: $devspaceVal
+"@
+        Set-Content -Path $localClaudeMd -Value $localContent -Encoding utf8
+        Write-OK "CLAUDE.local.md generated (user: $env:USERNAME, machine: $env:COMPUTERNAME)"
     }
     else {
-        Write-Warn "Source CLAUDE.md not found at $srcClaudeMd -- skipping"
-    }
-
-    # --- 5d. Deploy skills ---
-
-    Write-Host ''
-    Write-Step 'Deploying skills...'
-    $srcSkills = Join-Path $repoRoot 'claude' 'skills'
-    $destSkills = Join-Path $claudeDir 'skills'
-
-    if (Test-Path $srcSkills) {
-        $skillDirs = Get-ChildItem -Path $srcSkills -Directory
-        foreach ($skill in $skillDirs) {
-            $destSkill = Join-Path $destSkills $skill.Name
-            if (-not (Test-Path $destSkill)) {
-                $null = New-Item -ItemType Directory -Path $destSkill -Force
-            }
-            # Copy all files, overwrite if hash differs
-            $files = Get-ChildItem -Path $skill.FullName -File -Recurse
-            foreach ($file in $files) {
-                $relPath = $file.FullName.Substring($skill.FullName.Length)
-                $destFile = Join-Path $destSkill $relPath
-                $destDir = Split-Path $destFile -Parent
-                if (-not (Test-Path $destDir)) {
-                    $null = New-Item -ItemType Directory -Path $destDir -Force
-                }
-                $shouldCopy = $true
-                if (Test-Path $destFile) {
-                    $srcHash  = (Get-FileHash $file.FullName -Algorithm SHA256).Hash
-                    $destHash = (Get-FileHash $destFile -Algorithm SHA256).Hash
-                    $shouldCopy = $srcHash -ne $destHash
-                }
-                if ($shouldCopy) {
-                    Copy-Item -Path $file.FullName -Destination $destFile -Force
-                }
-            }
-            $skillsDeployed++
-        }
-        Write-OK "$skillsDeployed skills deployed to ~/.claude/skills/"
-    }
-    else {
-        Write-Warn "Skills directory not found at $srcSkills"
-    }
-
-    # --- 5e. Deploy rules ---
-
-    Write-Host ''
-    Write-Step 'Deploying rules...'
-    $srcRules = Join-Path $repoRoot 'claude' 'rules'
-    $destRules = Join-Path $claudeDir 'rules'
-
-    if (Test-Path $srcRules) {
-        $ruleFiles = Get-ChildItem -Path $srcRules -File -Filter '*.md'
-        foreach ($file in $ruleFiles) {
-            $destFile = Join-Path $destRules $file.Name
-            $shouldCopy = $true
-            if (Test-Path $destFile) {
-                $srcHash  = (Get-FileHash $file.FullName -Algorithm SHA256).Hash
-                $destHash = (Get-FileHash $destFile -Algorithm SHA256).Hash
-                $shouldCopy = $srcHash -ne $destHash
-            }
-            if ($shouldCopy) {
-                Copy-Item -Path $file.FullName -Destination $destFile -Force
-            }
-            $rulesDeployed++
-        }
-        Write-OK "$rulesDeployed rules deployed to ~/.claude/rules/"
-    }
-    else {
-        Write-Warn "Rules directory not found at $srcRules"
-    }
-
-    # --- 5f. Deploy agents ---
-
-    Write-Host ''
-    Write-Step 'Deploying agents...'
-    $srcAgents = Join-Path $repoRoot 'claude' 'agents'
-    $destAgents = Join-Path $claudeDir 'agents'
-
-    if (Test-Path $srcAgents) {
-        $agentFiles = Get-ChildItem -Path $srcAgents -File -Filter '*.md'
-        foreach ($file in $agentFiles) {
-            $destFile = Join-Path $destAgents $file.Name
-            $shouldCopy = $true
-            if (Test-Path $destFile) {
-                $srcHash  = (Get-FileHash $file.FullName -Algorithm SHA256).Hash
-                $destHash = (Get-FileHash $destFile -Algorithm SHA256).Hash
-                $shouldCopy = $srcHash -ne $destHash
-            }
-            if ($shouldCopy) {
-                Copy-Item -Path $file.FullName -Destination $destFile -Force
-            }
-            $agentsDeployed++
-        }
-        Write-OK "$agentsDeployed agents deployed to ~/.claude/agents/"
-    }
-    else {
-        Write-Warn "Agents directory not found at $srcAgents"
-    }
-
-    # --- 5g. Deploy hooks ---
-
-    Write-Host ''
-    Write-Step 'Deploying hooks...'
-    $srcHooks = Join-Path $repoRoot 'claude' 'hooks'
-    $destHooks = Join-Path $claudeDir 'hooks'
-
-    if (Test-Path $srcHooks) {
-        $hookFiles = Get-ChildItem -Path $srcHooks -File
-        foreach ($file in $hookFiles) {
-            $destFile = Join-Path $destHooks $file.Name
-            Copy-Item -Path $file.FullName -Destination $destFile -Force
-            $hooksDeployed++
-        }
-        Write-OK "$hooksDeployed hooks deployed to ~/.claude/hooks/"
-    }
-    else {
-        Write-Warn "Hooks directory not found at $srcHooks"
+        Write-Step 'CLAUDE.local.md already exists (preserved)'
     }
 
     # --- 5h. Claude authentication check ---
