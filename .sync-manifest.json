@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "description": "Defines which DevKit files are shared (symlinked to ~/.claude/) vs local-only (never synced).",
+  "shared": {
+    "files": [
+      "claude/CLAUDE.md",
+      "claude/claude-functions.sh",
+      "claude/settings.template.json"
+    ],
+    "rules": [
+      "claude/rules/autolearn-patterns.md",
+      "claude/rules/known-gotchas.md",
+      "claude/rules/markdown-style.md",
+      "claude/rules/subagent-ci-checklist.md",
+      "claude/rules/workflow-preferences.md"
+    ],
+    "skills": [
+      "claude/skills/autolearn",
+      "claude/skills/bash-linux",
+      "claude/skills/docker-containerization",
+      "claude/skills/go-development",
+      "claude/skills/manage-github-issues",
+      "claude/skills/powershell-windows",
+      "claude/skills/quality-control",
+      "claude/skills/react-frontend-development",
+      "claude/skills/requirements-generator",
+      "claude/skills/security-review",
+      "claude/skills/server-management",
+      "claude/skills/setup-github-actions",
+      "claude/skills/systematic-debugging",
+      "claude/skills/webapp-testing",
+      "claude/skills/windows-development"
+    ],
+    "agents": [
+      "claude/agents/go-test-writer.md",
+      "claude/agents/portfolio-analyzer.md",
+      "claude/agents/review-code.md",
+      "claude/agents/security-analyzer.md",
+      "claude/agents/vscode-test-writer.md",
+      "claude/agents/vscode-translation-manager.md"
+    ],
+    "hooks": [
+      "claude/hooks/SessionStart.sh"
+    ]
+  },
+  "local_only_patterns": [
+    "claude/rules/*.local.md",
+    "claude/CLAUDE.local.md",
+    "claude/settings.local.json",
+    ".credentials*",
+    "projects/",
+    "plans/",
+    "memory/",
+    "history.jsonl",
+    "stats-cache.json",
+    ".machine-id",
+    ".devkit-config.json"
+  ],
+  "append_only_files": [
+    "claude/rules/autolearn-patterns.md",
+    "claude/rules/known-gotchas.md"
+  ]
+}
