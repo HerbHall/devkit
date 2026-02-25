@@ -23,7 +23,7 @@ bash devkit/setup/legacy/setup.sh
 bash devkit/setup/legacy/verify.sh
 ```
 
-Setup copies rules, skills, agents, and hooks to `~/.claude/`, installs workspace configs (`.editorconfig`, `.markdownlint.json`), and runs verification.
+Setup creates symlinks from `~/.claude/` to the DevKit clone (or copies files in legacy mode), installs workspace configs (`.editorconfig`, `.markdownlint.json`), and runs verification.
 
 ## What's Included
 
@@ -63,6 +63,39 @@ Setup copies rules, skills, agents, and hooks to `~/.claude/`, installs workspac
 | `project-templates/` | Kit 3 scaffolding — workspace CLAUDE.md template, project starter files |
 | `setup/` | Setup scripts — PowerShell stubs (`*.ps1`, `lib/*.ps1`) and `legacy/` bash scripts |
 | `METHODOLOGY.md` | Development process — phases, gates, decision framework |
+
+## Synchronization
+
+DevKit uses **symlinks** instead of copies. Files in `~/.claude/` are symbolic links pointing back to the DevKit clone. Editing `~/.claude/rules/autolearn-patterns.md` actually edits `devkit/claude/rules/autolearn-patterns.md`, so `git diff` in the clone shows changes instantly.
+
+### Quick setup
+
+```bash
+# Clone DevKit, then create symlinks
+pwsh -File devkit/setup/sync.ps1 -Link
+```
+
+This backs up any existing files in `~/.claude/`, creates symlinks for all shared files, and generates a machine identity for multi-machine sync.
+
+### Subcommands (`/devkit-sync`)
+
+| Command | Purpose |
+|---------|---------|
+| `/devkit-sync status` | Show symlink health, git status, drift report |
+| `/devkit-sync push` | Commit changes and push to `sync/<machine-id>` branch |
+| `/devkit-sync pull` | Fetch and pull latest from main |
+| `/devkit-sync init` | First-time setup: create symlinks and machine identity |
+| `/devkit-sync diff` | Show detailed diff of local changes vs main |
+| `/devkit-sync unlink` | Replace symlinks with copies (portable snapshot) |
+
+### Multi-machine workflow
+
+1. Clone DevKit on each machine and run `sync.ps1 -Link`
+2. The `SessionStart.sh` hook auto-pulls main at the start of every session
+3. New patterns and gotchas accumulate via symlinks -- `/devkit-sync push` commits and pushes to a `sync/<machine-id>` branch
+4. PRs merge each machine's changes into main, where other machines pick them up on next session start
+
+Local-only files (`*.local.md`, `settings.local.json`, `.credentials*`) are never synced. See [ADR-0011](docs/ADR-0011-sync-architecture.md) for the full rationale and alternatives considered.
 
 ## Manual Setup
 
@@ -137,32 +170,11 @@ cp ~/workspace/.templates/design-template.md docs/designs/DES-001.md
 
 ## Updating
 
-Changes flow in two directions:
+With symlinks active, changes flow automatically:
 
-### Repo to machine (pull updates)
-
-```bash
-cd ~/workspace/devkit
-git pull
-bash setup/legacy/setup.sh  # Re-runs setup (safe, backs up existing files)
-```
-
-### Machine to repo (capture changes)
-
-When you've accumulated new patterns, skills, or config changes:
-
-```bash
-# Copy updated rules back to repo
-cp ~/.claude/rules/*.md ~/workspace/devkit/claude/rules/
-
-# Copy new/updated skills
-cp -r ~/.claude/skills/my-new-skill ~/workspace/devkit/claude/skills/
-
-# Commit and push
-cd ~/workspace/devkit
-git add -A && git commit -m "chore: sync config from workstation"
-git push
-```
+- **Pull**: `SessionStart.sh` auto-pulls main at session start. Manual: `/devkit-sync pull`
+- **Push**: After accumulating patterns, run `/devkit-sync push` to commit and open a PR
+- **Legacy (copy-based)**: `bash setup/legacy/setup.sh` still works if symlinks are not set up
 
 ## What's NOT in This Repo
 
