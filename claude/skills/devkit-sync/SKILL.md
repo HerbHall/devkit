@@ -1,6 +1,6 @@
 ---
 name: devkit-sync
-description: Manual sync operations for DevKit multi-machine synchronization. Status, push, pull, init, diff, unlink, and promote.
+description: Manual sync operations for DevKit multi-machine synchronization. Status, push, pull, init, diff, unlink, promote, and update.
 user_invocable: true
 ---
 
@@ -29,6 +29,7 @@ What sync operation do you need?
 6. **Unlink** -- Replace symlinks with copies (portable snapshot)
 7. **Resolve conflicts** -- Fix merge conflicts after pull/rebase
 8. **Promote** -- Promote local patterns/gotchas to universal rules files
+9. **Update** -- Check version and upgrade to a specific release or latest
 
 Or just type your question about DevKit sync.
 </intake>
@@ -38,12 +39,13 @@ Or just type your question about DevKit sync.
 |----------|----------|
 | 1, "status", "state", "health", "check" | workflows/status.md |
 | 2, "push", "commit", "upload", "share" | workflows/push.md |
-| 3, "pull", "fetch", "update", "download" | workflows/pull.md |
+| 3, "pull", "fetch", "download" | workflows/pull.md |
 | 4, "init", "setup", "install", "link" | workflows/init.md |
 | 5, "diff", "changes", "what changed" | workflows/diff.md |
 | 6, "unlink", "copy", "snapshot", "portable" | workflows/unlink.md |
 | 7, "resolve", "conflicts", "conflict", "merge conflict", "rebase conflict" | workflows/resolve-conflicts.md |
 | 8, "promote", "graduate", "elevate", "local to universal" | workflows/promote.md |
+| 9, "update", "upgrade", "version", "release" | workflows/update.md |
 
 **After reading the workflow, follow it exactly.**
 </routing>
