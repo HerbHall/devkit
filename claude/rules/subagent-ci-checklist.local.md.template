@@ -1,0 +1,46 @@
+# Project-Specific CI Checklist (Local)
+
+This file contains CI checklist items specific to the current project.
+It is NOT synced to DevKit. See `subagent-ci-checklist.md` for shared generic checklists.
+
+Claude Code loads all `*.md` files from `~/.claude/rules/` automatically,
+so both the shared file and this local file are active simultaneously.
+
+## How to Use
+
+Add project-specific CI checklist sections here. These supplement the
+shared checklists with paths, tools, and patterns unique to this project.
+
+## Example: SubNetree Project Additions
+
+Below are example entries for a Go + React project (SubNetree). Adapt for your project.
+
+### Frontend Extras (append to Frontend Agent Checklist)
+
+```text
+Additional frontend CI checks:
+- pnpm-lock.yaml drift: CI uses `--frozen-lockfile`. If you added shadcn/ui components or new deps, `pnpm install` MUST run to update the lockfile.
+- Auth API mocks: When mocking `@/api/auth`, use the shared factory: `vi.mock('@/api/auth', async () => { const { authMockFactory } = await import('@/test/mocks/auth'); return authMockFactory() })`. This includes all 8 exports with correct `isMFAChallenge` type guard. Missing exports cause "X is not a function" runtime errors.
+- Union return type narrowing: `loginApi` returns `TokenPair | MFAChallengeResponse`. Every call site must use `isMFAChallenge()` to narrow before accessing `.access_token`. Applies to both production code and test mocks.
+```
+
+### Go Extras (append to Go Agent Checklist)
+
+```text
+Additional Go CI checks:
+5. If you added/modified HTTP handlers with swagger annotations (@Summary, @Router, @Param, etc.):
+   `go run github.com/swaggo/swag/cmd/swag@v1.16.4 init -g cmd/subnetree/main.go -o api/swagger --parseDependency --parseInternal`
+   Then remove any `x-enum-descriptions` blocks from the 3 generated files (Linux CI drops them).
+   Include the regenerated api/swagger/ files with your other changes.
+
+Additional Go CI failures to watch for:
+- exhaustive: Switch on enum types MUST list ALL cases, even with a default return. Group non-matching cases on 2-3 lines.
+- prealloc: `var slice []T` in a loop body should be `make([]T, 0, len(source))`.
+```
+
+### Cross-Language Extras (append to Combined Agent Checklist)
+
+```text
+Cross-Language:
+- If adding new enum values (e.g., DeviceType), audit ALL Record<Type, ...> maps in frontend AND all switch statements in Go. Both languages enforce exhaustiveness.
+```

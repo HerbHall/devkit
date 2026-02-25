@@ -1,0 +1,18 @@
+# Project-Specific Gotchas (Local)
+
+This file contains gotchas specific to the current project or machine.
+It is NOT synced to DevKit. See `known-gotchas.md` for shared generic gotchas.
+
+Claude Code loads all `*.md` files from `~/.claude/rules/` automatically,
+so both the shared file and this local file are active simultaneously.
+
+## How to Use
+
+When you discover a platform or tool gotcha, decide:
+
+- **Generic** (affects any project using that tool): add to `known-gotchas.md` (shared)
+- **Project-specific** (references project paths, APIs, or config): add here
+
+## Entries
+
+(add project-specific entries below)
