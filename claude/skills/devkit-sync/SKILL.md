@@ -1,6 +1,6 @@
 ---
 name: devkit-sync
-description: Manual sync operations for DevKit multi-machine synchronization. Status, push, pull, init, diff, and unlink.
+description: Manual sync operations for DevKit multi-machine synchronization. Status, push, pull, init, diff, unlink, and promote.
 user_invocable: true
 ---
 
@@ -28,6 +28,7 @@ What sync operation do you need?
 5. **Diff** -- Show detailed diff of local changes vs DevKit main
 6. **Unlink** -- Replace symlinks with copies (portable snapshot)
 7. **Resolve conflicts** -- Fix merge conflicts after pull/rebase
+8. **Promote** -- Promote local patterns/gotchas to universal rules files
 
 Or just type your question about DevKit sync.
 </intake>
@@ -42,6 +43,7 @@ Or just type your question about DevKit sync.
 | 5, "diff", "changes", "what changed" | workflows/diff.md |
 | 6, "unlink", "copy", "snapshot", "portable" | workflows/unlink.md |
 | 7, "resolve", "conflicts", "conflict", "merge conflict", "rebase conflict" | workflows/resolve-conflicts.md |
+| 8, "promote", "graduate", "elevate", "local to universal" | workflows/promote.md |
 
 **After reading the workflow, follow it exactly.**
 </routing>
