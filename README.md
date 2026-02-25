@@ -32,7 +32,7 @@ Setup copies rules, skills, agents, and hooks to `~/.claude/`, installs workspac
 | Component | Count | Location |
 |-----------|-------|----------|
 | Rules (auto-loaded every session) | 5 files | `claude/rules/` |
-| Skills (invoke with `/skill-name`) | 17 skills | `claude/skills/` |
+| Skills (invoke with `/skill-name`) | 18 skills | `claude/skills/` |
 | Agent templates | 6 agents | `claude/agents/` |
 | SessionStart hook | 1 | `claude/hooks/` |
 | Setup + verification scripts | 3 | `setup/legacy/` |
@@ -54,7 +54,7 @@ Setup copies rules, skills, agents, and hooks to `~/.claude/`, installs workspac
 
 | Directory | Purpose |
 |-----------|---------|
-| `claude/` | Global Claude Code config — CLAUDE.md, 5 rules files (70+ patterns), 17 skills, 6 agent templates, hooks |
+| `claude/` | Global Claude Code config — CLAUDE.md, 5 rules files (70+ patterns), 18 skills, 6 agent templates, hooks |
 | `devspace/` | Workspace shared configs — .editorconfig, .markdownlint.json, VS Code fragments |
 | `docs/` | Human-readable guides — architecture decisions, profile format spec |
 | `machine/` | Machine state snapshots — VS Code extensions, tool versions |
