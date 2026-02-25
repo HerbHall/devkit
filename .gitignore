@@ -6,6 +6,7 @@
 
 # Personal Claude overrides (machine-specific)
 CLAUDE.local.md
+*.local.md
 
 # Machine-specific devkit config (written by bootstrap.ps1)
 .devkit-config.json

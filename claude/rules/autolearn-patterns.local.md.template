@@ -1,0 +1,18 @@
+# Project-Specific Learned Patterns (Local)
+
+This file contains patterns specific to the current project or machine.
+It is NOT synced to DevKit. See `autolearn-patterns.md` for shared generic patterns.
+
+Claude Code loads all `*.md` files from `~/.claude/rules/` automatically,
+so both the shared file and this local file are active simultaneously.
+
+## How to Use
+
+When `/reflect` discovers a new pattern, decide:
+
+- **Generic** (useful in any project): add to `autolearn-patterns.md` (shared)
+- **Project-specific** (references project paths, types, or APIs): add here
+
+## Entries
+
+(add project-specific entries below)
