@@ -11,17 +11,21 @@ devkit_pull() {
     # Try ~/.devkit-config.json first
     local config="$HOME/.devkit-config.json"
     if [ -f "$config" ]; then
-        # Extract devspace path using simple grep (no jq dependency)
+        # Extract devspacePath using simple grep (no jq dependency)
+        # Supports both v1 ("devspacePath") and legacy ("devspace") field names
         local devspace
-        devspace=$(grep -o '"devspace"[[:space:]]*:[[:space:]]*"[^"]*"' "$config" | head -1 | sed 's/.*"devspace"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/' | sed 's|\\\\|/|g')
+        devspace=$(grep -o '"devspacePath"[[:space:]]*:[[:space:]]*"[^"]*"' "$config" | head -1 | sed 's/.*"devspacePath"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/' | sed 's|\\\\|/|g')
+        if [ -z "$devspace" ]; then
+            devspace=$(grep -o '"devspace"[[:space:]]*:[[:space:]]*"[^"]*"' "$config" | head -1 | sed 's/.*"devspace"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/' | sed 's|\\\\|/|g')
+        fi
         if [ -n "$devspace" ] && [ -f "$devspace/devkit/.sync-manifest.json" ]; then
             devkit_path="$devspace/devkit"
         fi
     fi
 
-    # Fallback: common locations
+    # Fallback: common locations (no hardcoded drive letters)
     if [ -z "$devkit_path" ]; then
-        for candidate in "$HOME/DevSpace/devkit" "/d/DevSpace/devkit" "$HOME/workspace/devkit"; do
+        for candidate in "$HOME/DevSpace/devkit" "$HOME/workspace/devkit" "$HOME/devkit"; do
             if [ -f "$candidate/.sync-manifest.json" ]; then
                 devkit_path="$candidate"
                 break
