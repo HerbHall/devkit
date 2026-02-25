@@ -88,3 +88,24 @@ Present a brief summary to the user:
 Rules file updates suggested: [Yes/No]
 - If yes, recommend running `/reflect` with "update knowledge" option
 ```
+
+### 6. DevKit Sync Check
+
+After storing learnings, check if the DevKit clone has uncommitted changes (rules files were likely modified via symlinks):
+
+```bash
+# Find DevKit clone
+DEVKIT=$(python3 -c "import json; c=json.load(open('$HOME/.devkit-config.json')); print(c['devspace']+'/devkit')" 2>/dev/null)
+# Fallback paths
+[ -z "$DEVKIT" ] && for d in "$HOME/DevSpace/devkit" "/d/DevSpace/devkit"; do [ -f "$d/.sync-manifest.json" ] && DEVKIT="$d" && break; done
+
+if [ -n "$DEVKIT" ] && [ -n "$(git -C "$DEVKIT" status --porcelain -- claude/ 2>/dev/null)" ]; then
+    echo "DevKit has uncommitted changes. Run /devkit-sync push to share them."
+fi
+```
+
+If changes exist, append to the summary:
+
+```text
+**DevKit sync:** Uncommitted changes detected. Run `/devkit-sync push` to commit and share.
+```

@@ -141,4 +141,23 @@ Present a comprehensive summary:
 
 ### Recommendations
 - [Suggested follow-up actions]
+
+### DevKit Sync
+- [If uncommitted DevKit changes exist: "Run `/devkit-sync push` to share session learnings"]
 ```
+
+### 8. DevKit Sync Check
+
+After the summary, check if the DevKit clone has uncommitted changes:
+
+```bash
+# Find DevKit clone (same logic as quick-reflect step 6)
+DEVKIT=$(python3 -c "import json; c=json.load(open('$HOME/.devkit-config.json')); print(c['devspace']+'/devkit')" 2>/dev/null)
+[ -z "$DEVKIT" ] && for d in "$HOME/DevSpace/devkit" "/d/DevSpace/devkit"; do [ -f "$d/.sync-manifest.json" ] && DEVKIT="$d" && break; done
+
+if [ -n "$DEVKIT" ] && [ -n "$(git -C "$DEVKIT" status --porcelain -- claude/ 2>/dev/null)" ]; then
+    echo "DevKit has uncommitted changes. Run /devkit-sync push to share them."
+fi
+```
+
+If changes exist, offer to run the push workflow automatically.
