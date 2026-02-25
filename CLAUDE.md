@@ -22,9 +22,9 @@ bash setup/legacy/verify.sh
 devkit/
 ├── claude/              - Claude Code config (rules, skills, agents, hooks)
 │   ├── CLAUDE.md        - Global instructions (installed to ~/.claude/)
-│   ├── rules/           - Auto-loaded pattern files (5 files, 70+ patterns)
-│   ├── skills/          - Invokable skills (15 skills with workflow files)
-│   ├── agents/          - Agent templates (6 agents)
+│   ├── rules/           - Auto-loaded pattern files (8 files, 135+ patterns)
+│   ├── skills/          - Invokable skills (18 skills with workflow files)
+│   ├── agents/          - Agent templates (7 agents)
 │   └── hooks/           - SessionStart hook
 ├── devspace/            - Workspace shared configs (.editorconfig, VS Code)
 │   ├── templates/       - Project starter templates (ADR, design, test plan)
@@ -37,6 +37,7 @@ devkit/
 ├── setup/               - PowerShell stubs (*.ps1, lib/*.ps1)
 │   ├── lib/             - Shared PowerShell libraries
 │   └── legacy/          - Deprecated bash scripts
+├── tests/               - E2E tests (review pipeline validation)
 ├── METHODOLOGY.md       - 6-phase development process
 └── CHANGELOG.md         - Version history
 ```
@@ -99,6 +100,8 @@ grep -r "HerbHall\|SubNetree\|D:\\\\DevSpace" claude/ devspace/ mcp/ setup/
 3. Include: category, context, fix, and example
 
 **Sync from a workstation:**
+
+With symlinks active (via `setup/sync.ps1 -Link`), changes to `~/.claude/` are already in the DevKit clone. Run `/devkit-sync push` to commit and push. For manual sync without symlinks:
 
 ```bash
 cp ~/.claude/rules/*.md claude/rules/

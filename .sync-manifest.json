@@ -8,9 +8,12 @@
       "claude/settings.template.json"
     ],
     "rules": [
+      "claude/rules/agent-team-coordination.md",
       "claude/rules/autolearn-patterns.md",
+      "claude/rules/compaction-recovery.md",
       "claude/rules/known-gotchas.md",
       "claude/rules/markdown-style.md",
+      "claude/rules/review-policy.md",
       "claude/rules/subagent-ci-checklist.md",
       "claude/rules/workflow-preferences.md"
     ],
@@ -30,10 +33,13 @@
       "claude/skills/setup-github-actions",
       "claude/skills/systematic-debugging",
       "claude/skills/webapp-testing",
-      "claude/skills/windows-development"
+      "claude/skills/windows-development",
+      "claude/skills/code-review",
+      "claude/skills/plan-review"
     ],
     "agents": [
       "claude/agents/go-test-writer.md",
+      "claude/agents/plan-reviewer.md",
       "claude/agents/portfolio-analyzer.md",
       "claude/agents/review-code.md",
       "claude/agents/security-analyzer.md",

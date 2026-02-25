@@ -31,9 +31,9 @@ Setup creates symlinks from `~/.claude/` to the DevKit clone (or copies files in
 
 | Component | Count | Location |
 |-----------|-------|----------|
-| Rules (auto-loaded every session) | 5 files | `claude/rules/` |
+| Rules (auto-loaded every session) | 8 files | `claude/rules/` |
 | Skills (invoke with `/skill-name`) | 18 skills | `claude/skills/` |
-| Agent templates | 6 agents | `claude/agents/` |
+| Agent templates | 7 agents | `claude/agents/` |
 | SessionStart hook | 1 | `claude/hooks/` |
 | Setup + verification scripts | 3 | `setup/legacy/` |
 
@@ -54,7 +54,7 @@ Setup creates symlinks from `~/.claude/` to the DevKit clone (or copies files in
 
 | Directory | Purpose |
 |-----------|---------|
-| `claude/` | Global Claude Code config — CLAUDE.md, 5 rules files (70+ patterns), 18 skills, 6 agent templates, hooks |
+| `claude/` | Global Claude Code config — CLAUDE.md, 8 rules files (135+ patterns), 18 skills, 7 agent templates, hooks |
 | `devspace/` | Workspace shared configs — .editorconfig, .markdownlint.json, VS Code fragments |
 | `docs/` | Human-readable guides — architecture decisions, profile format spec |
 | `machine/` | Machine state snapshots — VS Code extensions, tool versions |
@@ -190,9 +190,12 @@ With symlinks active, changes flow automatically:
 
 | File | Entries | Purpose |
 |------|---------|---------|
-| `autolearn-patterns.md` | 70+ | Learned patterns: lint fixes, CI config, architecture, testing |
-| `known-gotchas.md` | 47+ | Platform issues: Windows, GitHub, Go, React, Docker |
+| `agent-team-coordination.md` | - | Multi-agent team coordination rules and anti-patterns |
+| `autolearn-patterns.md` | 76 | Learned patterns: lint fixes, CI config, architecture, testing |
+| `compaction-recovery.md` | - | Context compaction recovery rules and loop detection |
+| `known-gotchas.md` | 60 | Platform issues: Windows, GitHub, Go, React, Docker |
 | `markdown-style.md` | - | Markdownlint conventions |
+| `review-policy.md` | - | Independent review policy: mandatory triggers and scope |
 | `subagent-ci-checklist.md` | - | Pre-commit CI validation checklists |
 | `workflow-preferences.md` | 11 | Established conventions: git, commits, testing |
 
@@ -218,12 +221,16 @@ Claude.ai Chat uses a separate skill store - install via Settings > Skills in th
 | server-management | Process management, monitoring, scaling decisions | Code/Cowork |
 | systematic-debugging | 4-phase debugging with root cause analysis | Code/Chat |
 | webapp-testing | E2E testing, Playwright, deep audit strategies | Code |
+| code-review | Independent code review gate before commits | Code |
+| plan-review | Independent plan review gate before implementation | Code |
+| devkit-sync | Multi-machine DevKit sync: status, push, pull, init, diff | Code |
 
 ### Agent Templates
 
 | Agent | Purpose |
 |-------|---------|
 | go-test-writer | Table-driven Go tests, benchmarks, mock interfaces |
+| plan-reviewer | Adversarial plan review with fresh context |
 | review-code | Security + quality review with verdict |
 | security-analyzer | OWASP-focused vulnerability analysis |
 | portfolio-analyzer | Scans all agent/skill locations for overlap and gaps |
