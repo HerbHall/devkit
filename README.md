@@ -97,6 +97,21 @@ This backs up any existing files in `~/.claude/`, creates symlinks for all share
 
 Local-only files (`*.local.md`, `settings.local.json`, `.credentials*`) are never synced. See [ADR-0011](docs/ADR-0011-sync-architecture.md) for the full rationale and alternatives considered.
 
+## Local Overrides
+
+Rules files ending in `.local.md` provide machine-specific overrides that complement the universal rules. Claude Code loads all `*.md` files from `~/.claude/rules/` automatically, so a file like `~/.claude/rules/my-machine.local.md` is picked up alongside the synced rules -- no extra configuration needed.
+
+**How it works:** Universal rules (`autolearn-patterns.md`, `known-gotchas.md`, etc.) are symlinked from DevKit and shared across machines. Local rules (`*.local.md`) are real files that live only on one machine. The sync system never touches them -- `.local.md` files are excluded via `.sync-manifest.json` `local_only_patterns` and `.gitignore`.
+
+**When to use local overrides:**
+
+- Machine-specific paths or tool locations (e.g., Python at a non-standard path)
+- OS-specific gotchas that only apply to one workstation
+- Patterns discovered during project work that aren't yet promoted to universal rules
+- Temporary notes or reminders for the current machine
+
+A starter template is available at [`project-templates/rules-local-template.md`](project-templates/rules-local-template.md). Copy it to `~/.claude/rules/` and rename with a `.local.md` suffix.
+
 ## Manual Setup
 
 If you prefer to set things up yourself:
