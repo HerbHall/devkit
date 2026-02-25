@@ -240,6 +240,59 @@ function Get-LinkPairs {
 }
 
 # ---------------------------------------------------------------------------
+# Machine identity
+# ---------------------------------------------------------------------------
+
+function Get-SanitizedMachineName {
+    <#
+    .SYNOPSIS
+        Derives a machine ID from hostname: lowercase, alphanumeric + hyphens, 3-30 chars.
+    #>
+    $raw = if ($env:COMPUTERNAME) { $env:COMPUTERNAME } else { hostname }
+    $sanitized = $raw.ToLower() -replace '[^a-z0-9-]', '-' -replace '-+', '-' -replace '^-|-$', ''
+    if ($sanitized.Length -lt 3)  { $sanitized = $sanitized.PadRight(3, '0') }
+    if ($sanitized.Length -gt 30) { $sanitized = $sanitized.Substring(0, 30) }
+    return $sanitized
+}
+
+function Set-MachineIdentity {
+    <#
+    .SYNOPSIS
+        Creates or confirms ~/.claude/.machine-id during -Link.
+        Auto-generates from hostname, prompts user to confirm or override.
+    #>
+    $machineIdPath = Join-Path $ClaudeHome '.machine-id'
+
+    # Already exists -- show and skip
+    if (Test-Path $machineIdPath) {
+        $existing = (Get-Content $machineIdPath -Raw).Trim()
+        Write-OK "Machine ID: $existing (existing)"
+        return $existing
+    }
+
+    # Auto-generate default
+    $default = Get-SanitizedMachineName
+    Write-Host ''
+    Write-Step "Machine identity is used in sync branch names and commit messages."
+    Write-Step "Default (from hostname): $default"
+
+    $userInput = Read-Host -Prompt "  Machine ID [$default]"
+    $machineId = if ($userInput.Trim()) { $userInput.Trim() } else { $default }
+
+    # Validate
+    if ($machineId -notmatch '^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$') {
+        Write-Warn "Invalid format. Must be 3-30 chars, lowercase alphanumeric + hyphens."
+        Write-Step "Using default: $default"
+        $machineId = $default
+    }
+
+    # Write (no trailing newline)
+    [IO.File]::WriteAllText($machineIdPath, $machineId)
+    Write-OK "Machine ID set: $machineId"
+    return $machineId
+}
+
+# ---------------------------------------------------------------------------
 # -Link: Create symlinks
 # ---------------------------------------------------------------------------
 
@@ -299,6 +352,9 @@ function Invoke-Link {
     if ($counts['failed'] -gt 0) {
         Write-Fail "Failed:    $($counts['failed'])"
     }
+
+    # Machine identity (create or confirm)
+    Set-MachineIdentity | Out-Null
 }
 
 # ---------------------------------------------------------------------------
