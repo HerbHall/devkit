@@ -17,6 +17,7 @@
     "skills": [
       "claude/skills/autolearn",
       "claude/skills/bash-linux",
+      "claude/skills/devkit-sync",
       "claude/skills/docker-containerization",
       "claude/skills/go-development",
       "claude/skills/manage-github-issues",
