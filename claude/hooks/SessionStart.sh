@@ -4,15 +4,33 @@
 # 2. CLAUDE.md detection for new projects
 
 # ===== DevKit Auto-Pull =====
-# Resolve DevKit clone path from ~/.devkit-config.json or common locations
+# Resolve DevKit clone path from ~/.devkit-config.json or common locations.
+# Hardened: rate-limited (1/hour), lock-file aware, logs last 10 results.
 devkit_pull() {
     local devkit_path=""
+    local claude_dir="$HOME/.claude"
+    local last_pull_file="$claude_dir/.devkit-last-pull"
+    local log_file="$claude_dir/.devkit-pull.log"
+
+    # Append to pull log, keep last 10 entries
+    _devkit_log() {
+        mkdir -p "$claude_dir"
+        echo "$(date -u +%Y-%m-%dT%H:%M:%S) $1" >> "$log_file"
+        local tmp; tmp=$(tail -n 10 "$log_file"); printf '%s\n' "$tmp" > "$log_file"
+    }
+
+    # Rate limiting: skip if last pull was less than 1 hour ago
+    if [ -f "$last_pull_file" ]; then
+        local last_epoch now_epoch elapsed
+        last_epoch=$(cat "$last_pull_file" 2>/dev/null)
+        now_epoch=$(date +%s 2>/dev/null)
+        elapsed=$(( ${now_epoch:-0} - ${last_epoch:-0} ))
+        if [ "$elapsed" -gt 0 ] && [ "$elapsed" -lt 3600 ]; then return 0; fi
+    fi
 
     # Try ~/.devkit-config.json first
     local config="$HOME/.devkit-config.json"
     if [ -f "$config" ]; then
-        # Extract devspacePath using simple grep (no jq dependency)
-        # Supports both v1 ("devspacePath") and legacy ("devspace") field names
         local devspace
         devspace=$(grep -o '"devspacePath"[[:space:]]*:[[:space:]]*"[^"]*"' "$config" | head -1 | sed 's/.*"devspacePath"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/' | sed 's|\\\\|/|g')
         if [ -z "$devspace" ]; then
@@ -38,15 +56,24 @@ devkit_pull() {
         return 0
     fi
 
+    # Skip if git lock file present (another git operation in progress)
+    if [ -f "$devkit_path/.git/index.lock" ]; then
+        echo "DevKit: pull skipped -- git lock file present"
+        _devkit_log "SKIPPED_LOCKED"
+        return 0
+    fi
+
     # Skip if working tree is dirty (user has uncommitted changes)
     if [ -n "$(git -C "$devkit_path" status --porcelain 2>/dev/null)" ]; then
-        echo "DEVKIT_SYNC: Local changes detected — skipping pull"
+        echo "DevKit: pull skipped -- local changes detected"
+        _devkit_log "SKIPPED_DIRTY"
         return 0
     fi
 
     # Fetch with timeout (5s) to avoid blocking on network issues
     if ! timeout 5 git -C "$devkit_path" fetch origin 2>/dev/null; then
-        return 0  # Network unavailable — skip silently
+        _devkit_log "SKIPPED_OFFLINE"
+        return 0
     fi
 
     # Count commits behind
@@ -54,15 +81,20 @@ devkit_pull() {
     behind=$(git -C "$devkit_path" rev-list HEAD..origin/main --count 2>/dev/null)
 
     if [ -z "$behind" ] || [ "$behind" -eq 0 ]; then
-        echo "DEVKIT_SYNC: Up to date"
+        echo "DevKit: up to date"
+        _devkit_log "UP_TO_DATE"
+        date +%s > "$last_pull_file"
         return 0
     fi
 
     # Pull with rebase
     if git -C "$devkit_path" pull --rebase origin main 2>/dev/null; then
-        echo "DEVKIT_SYNC: Pulled $behind new commit(s)"
+        echo "DevKit: pulled $behind new commit(s)"
+        _devkit_log "PULLED_$behind"
+        date +%s > "$last_pull_file"
     else
-        echo "DEVKIT_SYNC: Pull failed — run /devkit-sync pull manually"
+        echo "DevKit: pull failed -- run /devkit-sync pull manually"
+        _devkit_log "PULL_FAILED"
     fi
 }
 
