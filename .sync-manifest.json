@@ -73,7 +73,8 @@
         "history.jsonl",
         "stats-cache.json",
         ".machine-id",
-        ".devkit-config.json"
+        ".devkit-config.json",
+        "~/.devkit-registry.json"
       ],
       "config_schema": {
         "file": "~/.devkit-config.json",

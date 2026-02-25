@@ -97,6 +97,10 @@ This backs up any existing files in `~/.claude/`, creates symlinks for all share
 
 Local-only files (`*.local.md`, `settings.local.json`, `.credentials*`) are never synced. See [ADR-0011](docs/ADR-0011-sync-architecture.md) for the full rationale and alternatives considered.
 
+### Project registry
+
+DevKit can track which projects on a machine consume its configuration via a project registry (`~/.devkit-registry.json`). This enables querying which projects have local rules to promote and which need updating after a DevKit change. The registry is machine-local and never committed to DevKit. See [docs/project-registry-schema.md](docs/project-registry-schema.md) for the schema and field descriptions.
+
 ## Local Overrides
 
 Rules files ending in `.local.md` provide machine-specific overrides that complement the universal rules. Claude Code loads all `*.md` files from `~/.claude/rules/` automatically, so a file like `~/.claude/rules/my-machine.local.md` is picked up alongside the synced rules -- no extra configuration needed.
