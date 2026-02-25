@@ -1,70 +1,115 @@
 {
-  "version": 1,
-  "description": "Defines which DevKit files are shared (symlinked to ~/.claude/) vs local-only (never synced).",
-  "shared": {
-    "files": [
-      "claude/CLAUDE.md",
-      "claude/claude-functions.sh",
-      "claude/settings.template.json"
-    ],
-    "rules": [
-      "claude/rules/agent-team-coordination.md",
-      "claude/rules/autolearn-patterns.md",
-      "claude/rules/compaction-recovery.md",
-      "claude/rules/known-gotchas.md",
-      "claude/rules/markdown-style.md",
-      "claude/rules/review-policy.md",
-      "claude/rules/subagent-ci-checklist.md",
-      "claude/rules/workflow-preferences.md"
-    ],
-    "skills": [
-      "claude/skills/autolearn",
-      "claude/skills/bash-linux",
-      "claude/skills/devkit-sync",
-      "claude/skills/docker-containerization",
-      "claude/skills/go-development",
-      "claude/skills/manage-github-issues",
-      "claude/skills/powershell-windows",
-      "claude/skills/quality-control",
-      "claude/skills/react-frontend-development",
-      "claude/skills/requirements-generator",
-      "claude/skills/security-review",
-      "claude/skills/server-management",
-      "claude/skills/setup-github-actions",
-      "claude/skills/systematic-debugging",
-      "claude/skills/webapp-testing",
-      "claude/skills/windows-development",
-      "claude/skills/code-review",
-      "claude/skills/plan-review"
-    ],
-    "agents": [
-      "claude/agents/go-test-writer.md",
-      "claude/agents/plan-reviewer.md",
-      "claude/agents/portfolio-analyzer.md",
-      "claude/agents/review-code.md",
-      "claude/agents/security-analyzer.md",
-      "claude/agents/vscode-test-writer.md",
-      "claude/agents/vscode-translation-manager.md"
-    ],
-    "hooks": [
-      "claude/hooks/SessionStart.sh"
-    ]
+  "version": 2,
+  "description": "Three-tier configuration manifest. Defines Universal (symlinked), Machine (local-only), and Project (external) tiers. See docs/ADR-0012-three-tier-architecture.md.",
+  "tiers": {
+    "universal": {
+      "description": "Shared across all machines and projects. Symlinked to ~/.claude/ by sync.ps1.",
+      "files": [
+        "claude/CLAUDE.md",
+        "claude/claude-functions.sh",
+        "claude/settings.template.json"
+      ],
+      "rules": [
+        "claude/rules/agent-team-coordination.md",
+        "claude/rules/autolearn-patterns.md",
+        "claude/rules/compaction-recovery.md",
+        "claude/rules/known-gotchas.md",
+        "claude/rules/markdown-style.md",
+        "claude/rules/review-policy.md",
+        "claude/rules/subagent-ci-checklist.md",
+        "claude/rules/workflow-preferences.md"
+      ],
+      "skills": [
+        "claude/skills/autolearn",
+        "claude/skills/bash-linux",
+        "claude/skills/devkit-sync",
+        "claude/skills/docker-containerization",
+        "claude/skills/go-development",
+        "claude/skills/manage-github-issues",
+        "claude/skills/powershell-windows",
+        "claude/skills/quality-control",
+        "claude/skills/react-frontend-development",
+        "claude/skills/requirements-generator",
+        "claude/skills/security-review",
+        "claude/skills/server-management",
+        "claude/skills/setup-github-actions",
+        "claude/skills/systematic-debugging",
+        "claude/skills/webapp-testing",
+        "claude/skills/windows-development",
+        "claude/skills/code-review",
+        "claude/skills/plan-review"
+      ],
+      "agents": [
+        "claude/agents/go-test-writer.md",
+        "claude/agents/plan-reviewer.md",
+        "claude/agents/portfolio-analyzer.md",
+        "claude/agents/review-code.md",
+        "claude/agents/security-analyzer.md",
+        "claude/agents/vscode-test-writer.md",
+        "claude/agents/vscode-translation-manager.md"
+      ],
+      "hooks": [
+        "claude/hooks/SessionStart.sh"
+      ],
+      "reference": [
+        "profiles/",
+        "project-templates/",
+        "devspace/",
+        "machine/",
+        "docs/",
+        "METHODOLOGY.md"
+      ]
+    },
+    "machine": {
+      "description": "Per-workstation config. Local files at ~/.claude/, never committed to DevKit.",
+      "local_only_patterns": [
+        "claude/rules/*.local.md",
+        "claude/CLAUDE.local.md",
+        "claude/settings.local.json",
+        ".credentials*",
+        "projects/",
+        "plans/",
+        "memory/",
+        "history.jsonl",
+        "stats-cache.json",
+        ".machine-id",
+        ".devkit-config.json"
+      ],
+      "config_schema": {
+        "file": "~/.devkit-config.json",
+        "version": 2,
+        "fields": {
+          "version": "Schema version (integer)",
+          "machineId": "Unique machine identifier (string)",
+          "devspacePath": "Absolute path to DevSpace root (string, matches v1 field name)",
+          "claudeHome": "Absolute path to Claude config directory (string)",
+          "os": "Detected platform: windows | linux | darwin (string)",
+          "forge": {
+            "primary": "Primary forge: github | gitea (string)",
+            "giteaUrl": "Gitea instance URL if applicable (string | null)"
+          },
+          "installedProfiles": "Kit 2 profiles applied on this machine (string[])",
+          "lastSync": "ISO 8601 timestamp of last successful sync (string)"
+        }
+      }
+    },
+    "project": {
+      "description": "Per-repository config. Lives in project repos, not in DevKit. DevKit provides templates and a promotion path.",
+      "templates": [
+        "project-templates/claude-md-template.md",
+        "project-templates/workspace-claude-md-template.md"
+      ],
+      "convention": {
+        "project_claude_md": "<project-root>/CLAUDE.md",
+        "project_rules": "<project-root>/.claude/rules/*.md",
+        "project_skills": "<project-root>/.claude/skills/*/",
+        "project_settings": "<project-root>/.claude/settings.local.json"
+      }
+    }
   },
-  "local_only_patterns": [
-    "claude/rules/*.local.md",
-    "claude/CLAUDE.local.md",
-    "claude/settings.local.json",
-    ".credentials*",
-    "projects/",
-    "plans/",
-    "memory/",
-    "history.jsonl",
-    "stats-cache.json",
-    ".machine-id",
-    ".devkit-config.json"
-  ],
   "append_only_files": [
     "claude/rules/autolearn-patterns.md",
     "claude/rules/known-gotchas.md"
-  ]
+  ],
+  "precedence": ["project", "machine", "universal"]
 }

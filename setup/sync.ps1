@@ -75,8 +75,9 @@ function Resolve-DevKitPath {
     $configPath = Join-Path $HOME '.devkit-config.json'
     if (Test-Path $configPath) {
         $config = Get-Content $configPath -Raw | ConvertFrom-Json
-        if ($config.devspace) {
-            $candidate = Join-Path $config.devspace 'devkit'
+        $devspacePath = if ($config.devspacePath) { $config.devspacePath } elseif ($config.devspace) { $config.devspace } else { $null }
+        if ($devspacePath) {
+            $candidate = Join-Path $devspacePath 'devkit'
             if (Test-Path (Join-Path $candidate '.sync-manifest.json')) {
                 return $candidate
             }
@@ -95,6 +96,8 @@ function Read-SyncManifest {
     <#
     .SYNOPSIS
         Parses .sync-manifest.json and returns the manifest object.
+        Supports both v1 (shared) and v2 (tiers.universal) schemas.
+        Normalizes to a .shared property for backward compatibility.
     #>
     param([string]$DevKit)
 
@@ -103,7 +106,14 @@ function Read-SyncManifest {
         Write-Fail ".sync-manifest.json not found in $DevKit"
         return $null
     }
-    return Get-Content $manifestPath -Raw | ConvertFrom-Json
+    $manifest = Get-Content $manifestPath -Raw | ConvertFrom-Json
+
+    # v2 schema: tiers.universal replaces shared
+    if ($manifest.tiers -and $manifest.tiers.universal -and -not $manifest.shared) {
+        $manifest | Add-Member -NotePropertyName 'shared' -NotePropertyValue $manifest.tiers.universal -Force
+    }
+
+    return $manifest
 }
 
 # ---------------------------------------------------------------------------
