@@ -162,6 +162,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 - **Architecture:** See `docs/ARCHITECTURE.md` for system design
 - **Decisions:** See `docs/decisions.md` for ADRs and design rationale
 - **Global conventions:** See `~/.claude/CLAUDE.md` for workspace-wide standards
+- **Local overrides:** Add machine-specific or project-specific patterns to `~/.claude/rules/<name>.local.md` (never synced, never committed)
 
 ---
 
