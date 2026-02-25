@@ -886,3 +886,223 @@ globs: |
 3. **SessionStart.sh hook** -- Detects project directories missing `CLAUDE.md` and prompts user once. Catches projects initialized outside the helper workflow.
 
 Each layer catches what the previous missed. Layer 1 is passive, layer 2 is active, layer 3 is interactive.
+
+## 73. Three-Stream Redirect for VS Code CLI in PowerShell Scripts
+
+**Category:** platform-workaround
+**Context:** Running `& code --list-extensions` or `& code --install-extension` in a PowerShell script opens `code-stdin-*` editor tabs. Redirecting only stdout and stderr (`-RedirectStandardOutput`, `-RedirectStandardError`) is NOT sufficient -- VS Code still reads from the inherited parent stdin handle and creates the tab.
+**Fix:** Redirect ALL THREE streams. The stdin redirect to an empty temp file feeds EOF immediately, fully decoupling VS Code from the PowerShell pipeline:
+
+```powershell
+$tmpIn  = [IO.Path]::GetTempFileName()
+$tmpOut = [IO.Path]::GetTempFileName()
+$tmpErr = [IO.Path]::GetTempFileName()
+$proc = Start-Process -FilePath 'code' `
+    -ArgumentList '--list-extensions' `
+    -NoNewWindow -PassThru `
+    -RedirectStandardInput  $tmpIn `
+    -RedirectStandardOutput $tmpOut `
+    -RedirectStandardError  $tmpErr
+$proc.WaitForExit(15000) | Out-Null
+# Read output from $tmpOut, then clean up all temp files
+$tmpIn, $tmpOut, $tmpErr | Remove-Item -Force -ErrorAction SilentlyContinue
+```
+
+**Key insight:** `-RedirectStandardInput` is the critical piece. Without it, VS Code's IPC mechanism reads from the parent process's stdin and interprets it as a file to open, creating `code-stdin-*` tabs. Applies to ALL `code` CLI invocations: `--list-extensions`, `--install-extension`, etc.
+
+## 74. Iterative Bootstrap Debugging on New Machines
+
+**Category:** workflow-pattern
+**Context:** First-time bootstrap runs on a new machine surface cascading issues that can't all be caught in advance: parameter binding edge cases, false negatives from system queries, stale PATH, tools running via unexpected paths. Each phase may expose issues that are invisible until prior phases complete.
+**Pattern:** Run bootstrap end-to-end, capture full output, fix all failures in a single pass:
+
+1. Run full bootstrap, capture complete stdout
+2. Categorize failures: parameter errors, false negatives, exit code misinterpretation, PATH issues, detection failures
+3. Fix all in one commit — these are cohesive (all "first-run on new machine" bugs)
+4. Re-run to verify, repeat if new issues surface
+
+**Key insight:** Don't fix one issue and re-run — read the full output first. Multiple failures may share a root cause (e.g., PATH staleness affects 5+ tool checks). Fixing them individually wastes cycles.
+
+## 75. Start-Job Timeout for Commands That Might Hang
+
+**Category:** platform-workaround
+**Context:** Some commands hang indefinitely on Windows -- notably Windows Store Python aliases (`py.exe`, `python.exe` in `WindowsApps/`) that prompt for Store installation and block forever. `command -v` and `Get-Command` resolve them as valid, so pre-checks pass but `& py --version` blocks the entire script.
+**Fix:** Wrap potentially hanging commands in `Start-Job` + `Wait-Job -Timeout`:
+
+```powershell
+$job = Start-Job -ScriptBlock {
+    param($p, $a)
+    & $p @a 2>&1 | Out-String
+} -ArgumentList $Path, $versionArgs
+$completed = $job | Wait-Job -Timeout 5
+if (-not $completed) {
+    $job | Stop-Job
+    $job | Remove-Job -Force
+    return $null  # treat as "not installed"
+}
+$output = $job | Receive-Job
+$job | Remove-Job -Force
+```
+
+**Key insight:** The 5-second timeout is generous enough for real tools (even slow ones like `docker --version`) but catches hangs immediately. Use this for any `--version` check where the binary might be a shim or alias.
+
+## 76. PowerShell Temp File for Complex Commands from MSYS Bash
+
+**Category:** platform-workaround
+**Context:** Running PowerShell commands inline from MSYS bash (`powershell.exe -Command "..."`) breaks when the command contains `$env:PATH`, special characters, or multi-line logic. Bash's `\$` escaping conflicts with PowerShell's `$` syntax. Using `cmd.exe /c` from MSYS swallows output entirely.
+**Fix:** Write to a temp `.ps1` file using a bash heredoc (with single-quoted delimiter to prevent bash interpolation), then execute with `-File`:
+
+```bash
+cat > /tmp/my-command.ps1 << 'PSEOF'
+$env:PATH = "C:\Some\Path;" + $env:PATH
+Set-Location "d:\project"
+& some-tool --flag
+PSEOF
+powershell.exe -NoProfile -File /tmp/my-command.ps1 2>&1
+```
+
+**Why this works:**
+- Single-quoted heredoc (`'PSEOF'`) prevents bash from interpreting `$env:PATH`
+- `-File` reads the script natively -- no shell escaping layer
+- `-NoProfile` skips profile loading for speed
+- `2>&1` captures both stdout and stderr in MSYS
+
+## 77. Small Wave 3 Without Subagent for Focused Changes
+
+**Category:** workflow-pattern
+**Context:** Wave-based parallel sprint execution normally uses subagents for each wave. But when a wave has a single focused task (one file, well-understood changes), implementing directly in the main context is faster than the subagent overhead (prompt construction, context loading, result verification).
+**Threshold:** If the task modifies 1-2 files with <50 lines of changes and the main context already has the file loaded, skip the subagent.
+
+## 78. golangci-lint exhaustive: List All Enum Cases in Switch
+
+**Category:** lint-fix
+**Context:** The `exhaustive` linter requires every value of a type-defined enum to appear in a `switch` statement, even when the function has a `default` return. Common in helper functions like `isInfrastructureType(dt DeviceType) bool` where only 4 of 15 enum values return `true`.
+**Fix:** Explicitly list all remaining enum values in a second `case` block returning the default value. Group them on 2-3 lines for readability.
+**Example:**
+
+```go
+// BAD: triggers exhaustive -- missing 11 DeviceType cases
+func isInfrastructureType(dt models.DeviceType) bool {
+    switch dt {
+    case models.DeviceTypeRouter, models.DeviceTypeSwitch,
+        models.DeviceTypeFirewall, models.DeviceTypeAccessPoint:
+        return true
+    }
+    return false
+}
+
+// GOOD: all cases listed
+func isInfrastructureType(dt models.DeviceType) bool {
+    switch dt {
+    case models.DeviceTypeRouter, models.DeviceTypeSwitch,
+        models.DeviceTypeFirewall, models.DeviceTypeAccessPoint:
+        return true
+    case models.DeviceTypeServer, models.DeviceTypeDesktop, models.DeviceTypeLaptop,
+        models.DeviceTypeMobile, models.DeviceTypePrinter, models.DeviceTypeIoT,
+        models.DeviceTypeNAS, models.DeviceTypePhone, models.DeviceTypeTablet,
+        models.DeviceTypeCamera, models.DeviceTypeUnknown:
+        return false
+    }
+    return false
+}
+```
+
+**Note:** Keep the final `return false` after the switch as a safety net for future enum additions.
+
+## 79. Cross-Language Enum Exhaustiveness Audit
+
+**Category:** pattern
+**Context:** Shared enum types (e.g., `DeviceType`) exist in both Go (`pkg/models/`) and TypeScript (`web/src/api/types.ts`). Adding new values requires updates in BOTH languages. Go's `exhaustive` linter catches missing switch cases. TypeScript's compiler catches missing `Record<DeviceType, ...>` keys. But these only fail in CI -- the agent may not check both.
+**Fix:** When adding new enum values to a shared type, audit ALL downstream usage:
+
+1. **Go:** `grep -r 'switch.*DeviceType\|case models.DeviceType' internal/` -- find all switch statements
+2. **TypeScript:** `grep -r 'Record<DeviceType' web/src/` -- find all Record maps
+3. **TypeScript:** `grep -r 'deviceTypeIcons\|deviceTypeLabels\|DEVICE_TYPE_LABELS' web/src/` -- find all label/icon maps
+
+Add the new values to every location found.
+**Prevention:** Include "cross-language enum audit" in subagent prompts when the task adds new enum values.
+
+## 80. E2E getByText Regex Matches Multiple UI Elements After Feature Additions
+
+**Category:** gotcha
+**Context:** Playwright's `getByText(/\d+ devices?/)` resolved to 1 element originally but broke after adding per-group counts (e.g., "25 devices" header + "20 devices" and "5 devices" per group). Strict mode violation: "resolved to 3 elements."
+**Fix:** Use `.first()` for aggregate count assertions, or use more specific selectors (`data-testid`, `aria-label`, scoped locators).
+
+```typescript
+// BAD: resolves to multiple elements after grouping
+await expect(page.getByText(/\d+ devices?/)).toBeVisible()
+
+// GOOD: grabs the first (page-level) count
+await expect(page.getByText(/\d+ devices?/).first()).toBeVisible({ timeout: 10_000 })
+```
+
+**General rule:** Any `getByText` with a generic regex pattern is fragile. New UI features can add matching text anywhere. Prefer scoped locators or `.first()` with a comment explaining why.
+
+## 81. Union Return Type Requires Type Guard at ALL Call Sites
+
+**Category:** correction
+**Context:** When changing a function's return type to a union (e.g., `loginApi()` from `TokenPair` to `TokenPair | MFAChallengeResponse`), every call site must narrow with a type guard before accessing type-specific properties. TypeScript reports `TS2339: Property 'access_token' does not exist on type 'LoginResponse'`. Easy to miss call sites in: (1) page components that call the function directly, (2) test files that mock the function (must export the type guard in the mock too).
+**Fix:** After changing a return type to a union:
+
+1. Grep for ALL call sites: `grep -rn "functionName(" --include="*.ts" --include="*.tsx"`
+2. Add type guard narrowing at each site
+3. Grep for ALL mocks: `grep -rn "vi.mock.*module" --include="*.test.*"` and add the type guard to each mock
+
+```typescript
+// BAD: TS2339 -- access_token doesn't exist on union type
+const result = await loginApi(username, password)
+setTokens(result.access_token, result.refresh_token)
+
+// GOOD: narrow first
+const result = await loginApi(username, password)
+if (isMFAChallenge(result)) {
+  throw new Error('MFA should not be enabled during initial setup')
+}
+setTokens(result.access_token, result.refresh_token)
+
+// MOCK: must also export the type guard
+vi.mock('@/api/auth', () => ({
+  loginApi: vi.fn(),
+  isMFAChallenge: vi.fn(() => false),  // required!
+}))
+```
+
+## 82. Rebase Conflict Resolution: Keep Both Features' Additions
+
+**Category:** workflow-pattern
+**Context:** When two PRs both add content to the same file (e.g., settings.tsx -- new tabs, imports, components) and one merges first, rebasing the second PR produces multiple conflict blocks. Each conflict has feature A's additions (from HEAD/main) on one side and feature B's additions (from the incoming commit) on the other.
+**Fix:** At each conflict block, keep BOTH sides by concatenating. Typical conflict points in a tabbed settings page and their resolution:
+
+1. **Icon imports:** Keep both sets of icons
+2. **API imports:** Keep both API module imports
+3. **Tab type union:** Combine both new tab values into the union
+4. **Tab buttons:** Keep both new tab buttons
+5. **Tab content rendering:** Keep both conditional renders
+6. **Component definitions:** Keep both new component functions
+
+**Key insight:** These conflicts look complex (5-6 blocks in one file) but are mechanically simple -- every resolution is "keep both." Don't overthink it.
+
+## 83. Sprint Scope Reduction via Codebase Exploration
+
+**Category:** workflow-pattern
+**Context:** When planning a sprint from issue trackers and roadmap checklists, planned items may already be partially or fully implemented in the codebase. Planning without exploring first leads to overscoped sprints, wasted agent context, and unnecessary PRs.
+**Fix:** Before executing a sprint, launch an Explore agent to check each planned deliverable against the actual codebase. Search for existing components, API endpoints, and UI patterns that match planned features.
+**Extends:** Pattern #47 (check existing assets before scoping issues) -- same principle applied at sprint level instead of individual issue level.
+
+## 84. Subagents Skip Lint Despite CI Checklist Warnings
+
+**Category:** correction
+**Context:** Go agent CI checklist says "watch for: gocritic rangeValCopy, prealloc" but agents still produce these violations because they run `go build` and `go test` but not `golangci-lint`. The "watch for" phrasing is advisory, not mandatory.
+**Fix:** Strengthened the Go agent CI checklist to require running `golangci-lint run ./path/to/modified/...` as a mandatory step, not just "watch for" patterns. Also added it as step 4 in the numbered list.
+
+## 85. Roadmap Drift: Verify Claims Against Source Code
+
+**Category:** process-pattern
+**Context:** Roadmap checklists drift from reality in both directions: (1) items implemented but never checked off, (2) items listed as "TODO" that are already done. Both cause wasted planning effort. Reading the roadmap alone is insufficient -- the source code is the source of truth.
+**Fix:** When auditing a roadmap for a cleanup sprint, cross-reference each unchecked item against the actual codebase:
+
+1. For each unchecked item, search for the implementation: `grep -r "functionName\|featureName" internal/ cmd/`
+2. For infrastructure items (CI workflows, scaffolding), check if files exist: `ls .github/workflows/ mkdocs.yml`
+3. For agent features, read the actual platform-specific files (e.g., `*_other.go` for Linux stubs)
+
+This can eliminate significant planned work when items are already implemented but unchecked.

@@ -533,3 +533,238 @@ Key flag names (easy to get wrong): `install` (not `init`), `--modules` (not `--
 **Issue:** MD060 (table-column-style) is a newer rule that gets auto-enabled when config has `"default": true`. It flags tables where separator rows use compact style (`|---|`) but content rows use padded style (`| text |`). If your config was written before this rule existed, it will suddenly appear in CI after a markdownlint version upgrade.
 **Diagnosis:** CI shows dozens of `MD060/table-column-style` errors on tables that look fine visually. The errors say "Table pipe is missing space to the left/right for style compact".
 **Fix:** Add `"MD060": false` to `.markdownlint.json` to disable, or fix all table pipe spacing to be consistent. When using `"default": true`, review release notes after markdownlint upgrades for newly added rules.
+
+## 47. PowerShell [Mandatory] Validates Each Element in String Arrays
+
+**Platform:** PowerShell 7+
+**Issue:** `[Parameter(Mandatory)] [string[]]$Param` validates EACH element in the array, not just the array itself. Empty strings `''` used as visual separator lines in instruction arrays fail with "Cannot bind argument to parameter because it is an empty string."
+**Diagnosis:** Function call works with non-empty strings but fails when array contains `''` elements as blank lines for display formatting.
+**Fix:** Add `[AllowEmptyString()]` alongside `[Mandatory]`:
+
+```powershell
+[Parameter(Mandatory)]
+[AllowEmptyString()]
+[string[]]$Instructions,
+```
+
+**Note:** `[AllowNull()]` is different — it allows `$null`, not empty strings. You need `[AllowEmptyString()]` specifically.
+
+## 48. Win32_Processor.VirtualizationFirmwareEnabled False When Hypervisor Running
+
+**Platform:** Windows (Hyper-V)
+**Issue:** `(Get-CimInstance Win32_Processor).VirtualizationFirmwareEnabled` returns `$false` when Hyper-V (or any hypervisor) is already active. The CPU reports VT-x as "not available" because the hypervisor has already claimed it. This creates a false negative in virtualization readiness checks.
+**Diagnosis:** Bootstrap reports "Virtualization FAIL" on a machine where Docker Desktop, WSL2, and Hyper-V are all working correctly.
+**Fix:** Use Hyper-V state as a fallback. If Hyper-V is enabled, virtualization must be active regardless of what `Win32_Processor` reports:
+
+```powershell
+$virtCheck = Test-Virtualization  # uses Win32_Processor
+$hyperVMet = $false
+try { $hyperVMet = (Test-HyperV).Met } catch { }
+if ($virtCheck.Met -or $hyperVMet) {
+    # Virtualization is confirmed
+}
+```
+
+## 49. PowerShell Get-ChildItem Misses Dotfiles Without -Force
+
+**Platform:** PowerShell (all versions)
+**Issue:** `Get-ChildItem -Filter 'credentials*'` does NOT match `.credentials.json` because dotfiles (files starting with `.`) are treated as hidden on Windows. Without `-Force`, they're invisible. Additionally, the filter `credentials*` doesn't match `.credentials*` — the dot prefix is significant.
+**Diagnosis:** Claude Code auth check reports "not authenticated" despite `~/.claude/.credentials.json` existing and containing valid tokens.
+**Fix:** Use `-Force` flag AND add a separate `.credentials*` filter:
+
+```powershell
+$authFiles = Get-ChildItem -Path $dir -Filter 'auth*' -File -Force -ErrorAction SilentlyContinue
+$credFiles = Get-ChildItem -Path $dir -Filter 'credentials*' -File -Force -ErrorAction SilentlyContinue
+$dotCredFiles = Get-ChildItem -Path $dir -Filter '.credentials*' -File -Force -ErrorAction SilentlyContinue
+```
+
+**General rule:** Always use `-Force` when searching for config/credential files that might be dotfiles.
+
+## 50. Winget Exit Code -1978335189 Means Already Installed
+
+**Platform:** Windows (winget)
+**Issue:** `winget install <id>` returns exit code `-1978335189` (`0x8A150011` = `APPINSTALLER_CLI_ERROR_UPDATE_NOT_APPLICABLE`) when the package is already installed and no upgrade is available. Scripts treating non-zero exit codes as failures incorrectly report these as installation failures.
+**Diagnosis:** Bootstrap shows "FAIL" for every package that's already up to date. Stderr contains "No available upgrade found."
+**Fix:** Check for this specific exit code and treat it as success:
+
+```powershell
+$exitCode = $proc.ExitCode
+if ($exitCode -eq 0) {
+    # Newly installed or upgraded
+} elseif ($exitCode -eq -1978335189 -or $exitCode -eq -1978335184) {
+    # Already installed, up to date (-1978335184 = no applicable update)
+    Write-OK "$Id already installed (up to date)"
+    return @{ Success = $true; AlreadyInstalled = $true }
+} else {
+    # Actual failure
+}
+```
+
+## 51. Winget Installs Update Registry PATH but Current Session Is Stale
+
+**Platform:** Windows (PowerShell / MSYS)
+**Issue:** When winget installs tools (gh, go, rustup, cmake), they add to the registry `PATH` (`HKLM\...\Environment` or `HKCU\...\Environment`). But the current PowerShell or bash session still has the old `$env:PATH` from process start. Newly installed tools appear as "not found" in the same session.
+**Diagnosis:** Phase 6 verification reports tools as missing immediately after Phase 2 installed them. Restarting the terminal resolves it.
+**Fix:** Refresh PATH from registry before running verification:
+
+```powershell
+# PowerShell
+$env:PATH = [Environment]::GetEnvironmentVariable('PATH', 'Machine') + ';' + [Environment]::GetEnvironmentVariable('PATH', 'User')
+```
+
+```bash
+# Bash/MSYS -- export the specific tool path
+export PATH="/c/Program Files/GitHub CLI:$PATH"
+```
+
+**Note:** This is related to gotcha #8 (Windows Python aliases) but affects ALL winget-installed tools, not just Python.
+
+## 52. Physical Drive Migration Preserves Old User SID
+
+**Platform:** Windows 11
+**Issue:** Moving a physical drive from one PC to another preserves the old user's SID on all files and directories. Windows shows security warnings about untrusted files. Applications may fail to read/write files they previously owned. Copying files (via network share or Explorer) creates new ownership; moving/migrating the physical drive does not.
+**Diagnosis:** Windows security popup says "we can't verify who created this file" on files from the migrated drive.
+**Fix:** Take ownership recursively and reset ACLs:
+
+```powershell
+# Run as Administrator
+takeown /F D:\ /R /A          # Assign ownership to Administrators group
+icacls D:\* /reset /T /C /Q   # Reset ACLs to inherited defaults
+```
+
+**Gotcha:** `icacls <drive>:\` on the drive root may fail with "un-usable ACL" — use `<drive>:\*` instead to skip the root directory's special system ACLs. Stale symlinks (e.g., old pnpm links) will fail — these are harmless.
+
+## 53. VS Code CLI Opens Editor Tabs When Stdin Not Redirected
+
+**Platform:** Windows (PowerShell)
+**Issue:** `Start-Process -FilePath 'code' -RedirectStandardOutput ... -RedirectStandardError ...` (without `-RedirectStandardInput`) still opens `code-stdin-*` editor tabs. VS Code's CLI wrapper inherits the parent process's stdin handle and interprets pending input as a file to open. This happens with `--list-extensions`, `--install-extension`, and any other `code` subcommand.
+**Diagnosis:** VS Code opens a tab named `code-stdin-XXX` (random suffix) every time the script calls `code`. The tab contains garbled or empty content.
+**Fix:** Always redirect ALL THREE streams when invoking `code` from a script:
+
+```powershell
+$tmpIn  = [IO.Path]::GetTempFileName()
+$tmpOut = [IO.Path]::GetTempFileName()
+$tmpErr = [IO.Path]::GetTempFileName()
+$proc = Start-Process -FilePath 'code' `
+    -ArgumentList '--list-extensions' `
+    -NoNewWindow -PassThru `
+    -RedirectStandardInput  $tmpIn `
+    -RedirectStandardOutput $tmpOut `
+    -RedirectStandardError  $tmpErr
+```
+
+**Key insight:** The empty temp file provides immediate EOF on stdin, preventing VS Code from reading anything. This is the ONLY reliable fix — `-NoNewWindow`, `-WindowStyle Hidden`, and pipe redirects (`2>&1`) all fail to prevent the tabs.
+
+## 54. PowerShell param() Must Be First Executable Statement
+
+**Platform:** PowerShell 7+
+**Issue:** `Set-StrictMode -Version Latest` placed before `param()` causes: "The function or command was called as if it were a method. Parameters should be separated by spaces." Only comments and `#Requires` directives are allowed before `param()`.
+**Diagnosis:** Script fails on first invocation with a confusing error message that doesn't mention `param()` at all.
+**Fix:** Always place `param()` as the first executable statement in any script file:
+
+```powershell
+#Requires -Version 7.0
+# Comments are OK here
+
+param(
+    [switch]$List,
+    [string]$Install
+)
+
+Set-StrictMode -Version Latest  # Must come AFTER param()
+```
+
+**Note:** This is a PowerShell language requirement, not a style preference. The parser treats the script block differently when `param()` is not the first statement.
+
+## 55. VS 2022 Bundled Node.js as Fallback for Frontend Builds
+
+**Platform:** Windows (MSYS_NT)
+**Issue:** Node.js, npm, and pnpm may not be on the system PATH or MSYS PATH, but Visual Studio 2022 bundles Node.js v20.x at `C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VisualStudio\NodeJs\`. Running commands via `cmd.exe` from MSYS swallows output; `\$env:PATH` escaping breaks in bash heredocs.
+**Fix:** Write a temp PowerShell script file and execute it:
+
+```bash
+cat > /tmp/frontend-cmd.ps1 << 'PSEOF'
+$env:PATH = "C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VisualStudio\NodeJs;" + $env:PATH
+Set-Location "d:\project\web"
+& npx pnpm install --no-frozen-lockfile
+PSEOF
+powershell.exe -NoProfile -File /tmp/frontend-cmd.ps1 2>&1
+```
+
+**Key insights:**
+- `cmd.exe /c` from MSYS swallows output -- use PowerShell instead
+- Inline PowerShell from bash (`powershell.exe -Command "..."`) has escaping issues with `$env:PATH` -- the `\$` needed for bash conflicts with PowerShell syntax
+- Writing to a `.ps1` temp file and using `-File` bypasses all escaping issues
+- `npx pnpm` downloads pnpm on the fly but pnpm then needs `node` on PATH -- set PATH before the npx call
+
+## 56. Subagent pnpm-lock.yaml Drift When Node.js Unavailable
+
+**Platform:** Claude Code (Windows)
+**Issue:** When a subagent adds npm dependencies to `package.json` but cannot run `pnpm install` because Node.js/pnpm aren't on PATH, CI fails with `ERR_PNPM_OUTDATED_LOCKFILE Cannot install with "frozen-lockfile"`. The agent's changes are correct but incomplete.
+**Diagnosis:** PR CI shows frontend job failing. `package.json` has new deps but `pnpm-lock.yaml` is stale.
+**Fix:** After merging subagent changes, run `pnpm install` (or `npx pnpm install --no-frozen-lockfile` via the VS 2022 Node.js workaround in gotcha #55) to update the lockfile. Commit the updated `pnpm-lock.yaml` and push.
+**Prevention:** Include "run `pnpm install` after adding dependencies" in frontend agent prompts. Or accept this as a known post-agent fixup step when Node.js isn't available in the agent's environment.
+
+## 57. Swagger x-enum-descriptions Blocks Differ Between Windows and Linux
+
+**Platform:** Go (swaggo/swag, cross-platform)
+**Issue:** Windows `swag init` generates `x-enum-descriptions` array blocks for Go enums with comment annotations. Linux CI's `swag init` (same version) omits these blocks entirely. The `x-enum-comments` map and `x-enum-varnames` array are generated identically on both platforms. This is a sibling of gotcha #12 (time.Duration enums) but affects any enum type with comment-annotated values.
+**Diagnosis:** Swagger Drift Check fails in CI. Diff shows `x-enum-descriptions` arrays being removed from swagger files.
+**Fix:** After running `swag init` locally on Windows, manually remove all `x-enum-descriptions` blocks from all three swagger files before committing.
+**Prevention:** After any `swag init` on Windows, grep for `x-enum-descriptions` in swagger output and remove all matches.
+
+```bash
+# Quick check after swag init
+grep -c "x-enum-descriptions" api/swagger/*
+# Should be 0 for CI compatibility
+```
+
+## 58. Local Main Diverges After Squash-Merge When Merge Commits Exist
+
+**Platform:** Git (all)
+**Issue:** If local `main` has merge commits (e.g., from `git pull` without `--ff-only`), squash-merging a PR on GitHub creates a new commit on `origin/main` that isn't an ancestor of local `main`. `git pull --ff-only` then fails with "Not possible to fast-forward, aborting" because the histories diverged.
+**Diagnosis:** `git log --oneline main` shows a merge commit not present on `origin/main`. `git log --oneline origin/main` shows the squash commit not present locally.
+**Fix:** When local main has no uncommitted work:
+
+```bash
+git log --oneline main -3        # verify local-only merge commit
+git log --oneline origin/main -3 # verify squash commit
+git reset --hard origin/main     # safe when no uncommitted work
+```
+
+**Prevention:** Always use `git pull --ff-only` (or configure `git config pull.ff only`) to prevent merge commits on main. If local main already has a merge commit from a previous session, clean it up before starting new work.
+
+## 59. Perl Regex for Stripping Swagger YAML Corrupts Line Boundaries
+
+**Platform:** Windows (MSYS_NT) / swaggo/swag
+**Issue:** The perl one-liner used to strip `x-enum-descriptions` from `swagger.yaml` can concatenate adjacent lines. When a YAML enum description value is immediately followed by an `x-enum-descriptions` block, the regex removes the block AND the newline, joining the description with the next YAML key on one line. This produces invalid YAML.
+**Diagnosis:** Swagger Drift Check passes for JSON but fails for YAML. The diff shows line concatenation rather than missing blocks.
+**Fix:** After running the perl strip regex, verify YAML integrity:
+
+```bash
+# Strip x-enum-descriptions
+perl -0777 -i -pe 's/\n\s*x-enum-descriptions:\n(?:\s+-\s+.*\n)*//g' api/swagger/swagger.yaml
+
+# Verify no corrupted lines (description text joined with x-enum-varnames)
+grep "x-enum-varnames" api/swagger/swagger.yaml | grep -v "^\s*x-enum-varnames"
+# If any output, those lines are corrupted -- fix manually
+```
+
+**Prevention:** Consider switching to a YAML-aware tool (yq) for swagger post-processing instead of regex. Or validate the YAML parses cleanly after stripping.
+
+## 60. Go Binary Permission Denied on MSYS -- Use go run Instead
+
+**Platform:** Windows (MSYS_NT)
+**Issue:** Go tool binaries installed to `~/go/bin/` (e.g., `swag`, `protoc-gen-go`) may have filesystem permission issues on MSYS bash, returning "permission denied" even when the file exists and is executable.
+**Diagnosis:** Running `~/go/bin/swag init ...` fails with "permission denied". `ls -la ~/go/bin/swag` shows the file exists with execute bits.
+**Fix:** Use `go run` with the full module path and pinned version instead of the local binary:
+
+```bash
+# BAD: permission denied
+~/go/bin/swag init -g cmd/app/main.go -o api/swagger
+
+# GOOD: go run bypasses local binary
+go run github.com/swaggo/swag/cmd/swag@v1.16.4 init -g cmd/app/main.go -o api/swagger
+```
+
+**Key insight:** `go run` downloads the module to a temp cache and executes it directly, bypassing any filesystem permission issues with the `~/go/bin/` directory. Pin the version with `@vX.Y.Z` for reproducibility. Works for any Go tool: `swag`, `protoc-gen-go`, `golangci-lint`, etc.
