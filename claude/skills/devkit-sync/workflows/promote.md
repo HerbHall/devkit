@@ -80,12 +80,12 @@ For each target universal file:
 1. Read the file to find the highest existing entry number. Entry numbers are in `## N. Title` headings.
 2. Assign the next sequential number to the promoted entry.
 3. Rewrite the entry's heading from `## <old-number>. Title` to `## <new-number>. Title`.
-4. Append the full entry (heading + all content until the next `## ` heading or end of file) to the end of the target file.
+4. Append the full entry (heading + all content until the next `##` heading or end of file) to the end of the target file.
 5. Ensure a blank line separates the new entry from the previous content.
 
 ### 6. Mark as promoted in source
 
-For each promoted entry in the `.local.md` source file, add a comment directly above the entry's `## ` heading:
+For each promoted entry in the `.local.md` source file, add a comment directly above the entry's `##` heading:
 
 ```markdown
 <!-- Promoted to universal: YYYY-MM-DD -->
