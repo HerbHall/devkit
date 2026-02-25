@@ -100,6 +100,54 @@ devkit_pull() {
 
 devkit_pull
 
+# ===== Version Check =====
+# Compare local VERSION with origin/main after devkit_pull's fetch.
+# Only prints when a newer version is available (no noise otherwise).
+devkit_version_check() {
+    local devkit_path="$1"
+
+    # Nothing to check if no DevKit path or no VERSION file
+    if [ -z "$devkit_path" ] || [ ! -f "$devkit_path/VERSION" ]; then
+        return 0
+    fi
+
+    local current remote
+    current=$(cat "$devkit_path/VERSION" 2>/dev/null | tr -d '[:space:]')
+    remote=$(git -C "$devkit_path" show origin/main:VERSION 2>/dev/null | tr -d '[:space:]')
+
+    # Skip if either version is empty or they match
+    if [ -z "$current" ] || [ -z "$remote" ] || [ "$current" = "$remote" ]; then
+        return 0
+    fi
+
+    echo "DevKit: new version available (current: $current, latest: $remote)"
+}
+
+# Resolve devkit_path using the same logic as devkit_pull for the version check.
+# This duplicates path resolution but keeps devkit_pull's local scope intact.
+_devkit_resolve_path() {
+    local config="$HOME/.devkit-config.json"
+    if [ -f "$config" ]; then
+        local devspace
+        devspace=$(grep -o '"devspacePath"[[:space:]]*:[[:space:]]*"[^"]*"' "$config" | head -1 | sed 's/.*"devspacePath"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/' | sed 's|\\\\|/|g')
+        if [ -z "$devspace" ]; then
+            devspace=$(grep -o '"devspace"[[:space:]]*:[[:space:]]*"[^"]*"' "$config" | head -1 | sed 's/.*"devspace"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/' | sed 's|\\\\|/|g')
+        fi
+        if [ -n "$devspace" ] && [ -f "$devspace/devkit/.sync-manifest.json" ]; then
+            echo "$devspace/devkit"
+            return 0
+        fi
+    fi
+    for candidate in "$HOME/DevSpace/devkit" "$HOME/workspace/devkit" "$HOME/devkit"; do
+        if [ -f "$candidate/.sync-manifest.json" ]; then
+            echo "$candidate"
+            return 0
+        fi
+    done
+}
+
+devkit_version_check "$(_devkit_resolve_path)"
+
 # ===== CLAUDE.md Detection =====
 
 # Skip if we're in the home directory

@@ -1,5 +1,31 @@
 # Changelog
 
+## v2.0.0 -- 2026-02-25
+
+v2.0 represents a major architectural shift from a bash-centric toolkit to a
+cross-platform, multi-tier system with formal versioning.
+
+### Added
+
+- Three-tier settings architecture (ADR-0012): User > DevSpace > Project cascade
+- Dual-language scripting strategy (ADR-0013): PowerShell primary, bash legacy
+- Cross-platform path resolution via `~/.devkit-config.json`
+- Forge abstraction layer for GitHub/GitLab operations
+- Project registry for multi-project coordination
+- Local overrides via `.local.md` pattern (gitignored, machine-specific)
+- SessionStart hardening: rate limiting (1/hour), lock-file awareness, pull logging
+- Auto-push prompt after `/reflect` sessions
+- Version-tagged releases with `VERSION` file as single source of truth
+- SessionStart version check: notifies when a newer DevKit release is available
+- `devkit update` command via `/devkit-sync` skill (check version, upgrade to tag or latest)
+- `devkit promote` command for graduating local patterns to universal rules
+
+### Version Policy
+
+- MAJOR: Breaking changes to rules, skill interfaces, or sync protocol
+- MINOR: New skills, agents, or non-breaking rule additions
+- PATCH: Bug fixes, documentation, pattern additions
+
 ## v1.2.0 -- 2026-02-21
 
 ### Fixed
