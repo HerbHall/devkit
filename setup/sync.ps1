@@ -147,6 +147,15 @@ function New-SafeSymlink {
         Creates a symlink, backing up existing real files first.
     .OUTPUTS
         Hashtable with Status (linked, backed-up, skipped, failed) and Message.
+    .NOTES
+        Cross-platform symlink behavior:
+        - Windows: New-Item -ItemType SymbolicLink (requires Developer Mode or admin).
+          Falls back to directory junctions for skill directories, then hard links
+          for individual files, then copy as last resort (with drift warning).
+        - macOS/Linux (future): ln -s (no special permissions needed).
+        - All platforms: $ClaudeHome resolved from .devkit-config.json claudeHome field.
+        See docs/cross-platform-guide.md for the full fallback chain and path
+        resolution strategy per OS.
     #>
     param(
         [string]$LinkPath,
