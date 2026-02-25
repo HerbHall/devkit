@@ -8,17 +8,20 @@ Follow these rules to avoid wasting the new context window on redundant work.
 ## Rule 1: Trust the Summary
 
 The compaction summary was written by YOU moments ago. It contains:
+
 - What was already verified (don't verify again)
 - What was already read (don't re-read)
 - What the next action is (do it immediately)
 
 **Do NOT:**
+
 - Re-read transcript files to "refresh context" — the summary IS your context
 - Re-verify directory structures already confirmed in the summary
 - Re-analyze source material already synthesized in the summary
 - Read transcripts in 100-line increments "just to be thorough"
 
 **DO:**
+
 - Read the summary's PENDING/NEXT STEP section
 - Start executing the next action within your first 2-3 tool calls
 - Only consult transcripts for specific missing details (targeted reads, not full scans)
@@ -40,11 +43,13 @@ If orientation is consuming more than 5 tool calls, STOP and start executing.
 ## Rule 3: Detect the Loop
 
 You are in a compaction loop if:
+
 - You've been compacted 2+ times on the same task
 - Each session's primary activity was "reading" not "writing"
 - No output files have been created across sessions
 
 **Breaking the loop:**
+
 1. Stop all reading/analysis immediately
 2. List what you already know (it's enough)
 3. Start creating output files with your current knowledge
@@ -53,6 +58,7 @@ You are in a compaction loop if:
 ## Rule 4: Scope Check
 
 Before starting any task, estimate:
+
 - Files to read: ___
 - Files to create/edit: ___
 - Total tool calls needed: ___
@@ -63,6 +69,7 @@ State the sub-task breakdown to the user before starting.
 ## Rule 5: Transcript Reading Protocol
 
 If you MUST read a transcript (specific detail needed, not general refresh):
+
 - Use targeted line ranges, not sequential full reads
 - Read the END first (most recent = most relevant)
 - Stop as soon as you find the specific detail

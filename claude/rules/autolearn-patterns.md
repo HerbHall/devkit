@@ -962,6 +962,7 @@ powershell.exe -NoProfile -File /tmp/my-command.ps1 2>&1
 ```
 
 **Why this works:**
+
 - Single-quoted heredoc (`'PSEOF'`) prevents bash from interpreting `$env:PATH`
 - `-File` reads the script natively -- no shell escaping layer
 - `-NoProfile` skips profile loading for speed

@@ -692,6 +692,7 @@ powershell.exe -NoProfile -File /tmp/frontend-cmd.ps1 2>&1
 ```
 
 **Key insights:**
+
 - `cmd.exe /c` from MSYS swallows output -- use PowerShell instead
 - Inline PowerShell from bash (`powershell.exe -Command "..."`) has escaping issues with `$env:PATH` -- the `\$` needed for bash conflicts with PowerShell syntax
 - Writing to a `.ps1` temp file and using `-File` bypasses all escaping issues
