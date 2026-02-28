@@ -90,6 +90,12 @@ devkit_pull() {
     # Pull with rebase
     if git -C "$devkit_path" pull --rebase origin main 2>/dev/null; then
         echo "DevKit: pulled $behind new commit(s)"
+        # Check if rules files changed in the pull
+        local rules_changed
+        rules_changed=$(git -C "$devkit_path" diff HEAD~"$behind" HEAD --name-only -- claude/rules/ 2>/dev/null | wc -l)
+        if [ "$rules_changed" -gt 0 ]; then
+            echo "DevKit: $rules_changed rule file(s) updated. Symlinked projects are current."
+        fi
         _devkit_log "PULLED_$behind"
         date +%s > "$last_pull_file"
     else
