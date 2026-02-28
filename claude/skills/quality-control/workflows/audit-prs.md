@@ -36,7 +36,7 @@ Create a markdown table:
 Order by severity:
 
 1. PRs with all checks cancelled (quick fix: re-run)
-2. PRs with pre-existing failures (fix in one place, unblocks many)
+2. PRs with base-branch failures (fix in one place, unblocks many)
 3. PRs with configuration failures (CI/workflow issues)
 4. PRs with PR-introduced failures (code bugs)
 5. Stale PRs (may need rebase or abandonment)

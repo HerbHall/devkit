@@ -32,7 +32,7 @@ gh run view <run_id> --log --job=<job_id> 2>&1 | grep -E "error|Error|FAIL|fatal
 
 Group identical failures across PRs. Common patterns:
 
-- Same lint error appearing in multiple PRs (pre-existing in base)
+- Same lint error appearing in multiple PRs (base-branch origin)
 - Same license check failure (configuration issue)
 - Same build error (dependency issue)
 
@@ -40,19 +40,19 @@ Create a deduplicated failure list:
 
 | Failure | Affected PRs | Category |
 |---------|-------------|----------|
-| gosec G101 in roles.go | #55, #42, #41 | Pre-existing |
+| gosec G101 in roles.go | #55, #42, #41 | Base-branch |
 | License check fails | #41 | Configuration |
 
 ### 4. Prioritize Fix Order
 
-1. **Shared pre-existing failures** - Fix once in base, unblocks all PRs
+1. **Shared base-branch failures** - Fix once, unblocks all PRs
 2. **Configuration failures** - Fix in the affected workflow/config
 3. **Infrastructure issues** - Re-run workflows
 4. **PR-specific failures** - Fix on each PR branch
 
 ### 5. Apply Shared Fixes
 
-For pre-existing failures:
+For base-branch failures:
 
 1. Create a fix branch from main (or add to an existing PR)
 2. Apply the fix
