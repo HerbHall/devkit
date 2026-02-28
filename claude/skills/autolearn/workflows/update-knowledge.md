@@ -2,7 +2,25 @@
 
 Merge accumulated learnings from MCP Memory into rules files. Ensures rules files stay current and useful.
 
+**This workflow modifies rules files directly.** It must only run in the DevKit repo.
+
 ## Steps
+
+### 0. Context Guard
+
+Check if the current working directory is the DevKit repo:
+
+- Look for `.sync-manifest.json` containing `"version": 2`
+- If NOT in DevKit: **STOP**. Print this message and exit:
+
+```text
+This workflow writes directly to rules files and must run in the DevKit repo.
+
+To promote learnings from this project:
+1. Run `/reflect` (quick or session review) -- learnings go to MCP Memory
+2. Universal learnings are filed as DevKit issues automatically
+3. In a DevKit session, run `/reflect` with "update knowledge" to merge them
+```
 
 ### 1. Read Current Rules Files
 

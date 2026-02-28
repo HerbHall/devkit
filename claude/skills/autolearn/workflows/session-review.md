@@ -98,35 +98,52 @@ create_relations: [
 ]
 ```
 
-### 6. Update Rules Files
+### 6. Scope Assessment and Rules Update
 
-**Tier boundary check (MANDATORY):**
+Determine where this session is running to decide how to handle rules:
 
-- **Tier 0** (`core-principles.md`, `error-policy.md`): NEVER modify. These are immutable.
-  Changes require a human-authored PR with explicit justification.
-- **Tier 1** (`workflow-preferences.md`, `review-policy.md`): Propose changes only.
-  Create a DevKit issue instead of editing directly.
-- **Tier 2** (`autolearn-patterns.md`, `known-gotchas.md`): Autolearn can add entries.
+**Detect context:**
 
-Read current Tier 2 rules files:
+- Check if `.sync-manifest.json` exists in the current working directory (or a parent)
+- If found and contains `"version": 2`: this is the **DevKit repo** -- direct rules editing is allowed
+- Otherwise: this is a **project context** -- rules files are read-only (symlinked)
 
-- `~/.claude/rules/autolearn-patterns.md`
-- `~/.claude/rules/known-gotchas.md`
+**If in DevKit repo:**
 
-For each HIGH-confidence finding that should be in rules:
+Check tier boundaries before editing:
+
+- **Tier 0** (`core-principles.md`, `error-policy.md`): NEVER modify. Immutable.
+- **Tier 1** (`workflow-preferences.md`, `review-policy.md`): Do NOT edit directly.
+  Create a DevKit issue instead.
+- **Tier 2** (`autolearn-patterns.md`, `known-gotchas.md`): Safe to add entries directly.
+
+Read current Tier 2 rules files and for each HIGH-confidence finding:
 
 1. Check if it's already in the appropriate file
 2. If not, append a new numbered entry
 3. Update the `entry_count` in YAML frontmatter
 4. Update `last_updated` date
 
-For findings that affect Tier 1 rules (workflow preferences, review policy):
+Keep rules files concise. If a file exceeds 30 entries, consider archiving older entries.
 
-1. Create a GitHub issue in the DevKit repo:
-   `gh issue create -R HerbHall/devkit --title "rule: <description>" --body "..."`
-2. Note the issue number in the session summary
+**If in a project (not DevKit):**
 
-Keep rules files concise. If a file exceeds 30 entries, consider archiving older/less-relevant entries.
+1. Store all learnings in MCP Memory only (steps 3-5 above).
+2. For findings that are universal or stack-specific, create a DevKit issue:
+
+```bash
+gh issue create -R HerbHall/devkit \
+  --title "autolearn: <brief description>" \
+  --body "Source project: $(basename $(pwd))
+Category: <pattern|gotcha|correction>
+Confidence: HIGH
+
+<description of the learning>
+
+Suggested rules file: <autolearn-patterns.md or known-gotchas.md>"
+```
+
+**Important:** Do NOT edit files in `~/.claude/rules/` from a project context -- they are symlinks to DevKit.
 
 ### 7. Generate Session Summary
 
@@ -143,10 +160,15 @@ Present a comprehensive summary:
 |--------|------|-----------|--------|
 | name   | type | HIGH/MED  | New/Updated/Skipped |
 
-### Rules Files Updated
+### Context
+- Running in: [DevKit / Project (<name>)]
+
+### Rules Files Updated (DevKit context only)
 - autolearn-patterns.md: +N entries
 - known-gotchas.md: +N entries
-- workflow-preferences.md: +N entries
+
+### DevKit Issues Created (project context only)
+- #NNN: <description>
 
 ### Skill Improvement Opportunities
 - [Any recurring mistakes that suggest a skill should be updated]
@@ -154,41 +176,4 @@ Present a comprehensive summary:
 
 ### Recommendations
 - [Suggested follow-up actions]
-
-### DevKit Sync
-- [Handled in Step 8 -- prompted user to push or skip]
 ```
-
-### 8. DevKit Sync Check
-
-After the summary, check if the DevKit clone has uncommitted changes:
-
-```bash
-# Find DevKit clone (same logic as quick-reflect step 6)
-DEVKIT=$(python3 -c "import json; c=json.load(open('$HOME/.devkit-config.json')); print(c['devspace']+'/devkit')" 2>/dev/null)
-[ -z "$DEVKIT" ] && for d in "$HOME/DevSpace/devkit" "/d/DevSpace/devkit"; do [ -f "$d/.sync-manifest.json" ] && DEVKIT="$d" && break; done
-
-if [ -n "$DEVKIT" ] && [ -n "$(git -C "$DEVKIT" status --porcelain -- claude/ 2>/dev/null)" ]; then
-    git -C "$DEVKIT" diff --stat -- claude/
-fi
-```
-
-If changes exist, prompt the user:
-
-```text
-**DevKit sync:** Uncommitted changes detected in DevKit clone.
-
-  (1) Push DevKit changes now
-  (2) Skip -- push later with /devkit-sync push
-```
-
-If the user selects **1**, run the push workflow inline:
-
-1. Read machine ID from `~/.claude/.machine-id` (if missing, tell the user to run `/devkit-sync init` and stop)
-2. `git -C <devkit> add claude/`
-3. `git -C <devkit> commit` with message `chore(sync): <machine-id> session learnings <date>` and co-author tag
-4. `git -C <devkit> push -u origin sync/<machine-id>`
-5. Check for an existing PR with `gh pr list -R HerbHall/devkit --head sync/<machine-id>`; if none, create one with `gh pr create`
-6. Report the PR URL
-
-If the user selects **2**, acknowledge and move on. No further action needed.

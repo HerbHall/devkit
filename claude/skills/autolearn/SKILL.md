@@ -25,6 +25,15 @@ Deliberate retrospective analysis for continuous improvement. Extracts learnings
 - Rules files are the fast path -- they're injected into every session automatically
 - MCP Memory is the deep store -- searchable, relational, comprehensive
 
+**Scope-Aware Routing**
+
+Storage depends on WHERE the session is running:
+
+- **In DevKit repo** (`.sync-manifest.json` present): Write Tier 2 rules directly. DevKit is the source of truth.
+- **In any other project**: Write to MCP Memory only. For stack-specific or universal learnings, create a DevKit issue (`gh issue create -R HerbHall/devkit`) so the learning can be reviewed and promoted to rules files through a PR.
+
+This prevents projects from modifying symlinked rules files directly. Symlinks provide READ access to DevKit rules; writing flows through issues.
+
 **Deduplication is Critical**
 
 - Always search MCP Memory before creating entities: `search_nodes` with relevant keywords
