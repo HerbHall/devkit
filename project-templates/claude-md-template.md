@@ -9,18 +9,21 @@
 ## Quick Start
 
 ```bash
-# Install dependencies
-make install
+# First time setup: install git hooks
+make hooks
 
 # Build and test
 make build
 make test
 
+# Run all lint checks (matches CI)
+make lint-all
+
 # Run the project
 make run
 ```
 
-See `Makefile` or `justfile` in the project root for all available commands.
+The pre-push hook runs `build + test + lint` automatically before each push. See `Makefile` for all available targets.
 
 ## Project Structure
 
@@ -76,16 +79,10 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 
 ### Testing Before Push
 
+The pre-push hook handles this automatically. To run checks manually:
+
 ```bash
-# Build and test locally
-make build
-make test
-
-# For Go projects: race detection
-go test -race ./...
-
-# For all projects: lint
-make lint
+make ci    # build + test + lint (same checks as CI and the pre-push hook)
 ```
 
 Fix all failures before pushing. CI should only confirm what you've already verified locally.
