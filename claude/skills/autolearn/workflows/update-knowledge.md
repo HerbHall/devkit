@@ -6,11 +6,17 @@ Merge accumulated learnings from MCP Memory into rules files. Ensures rules file
 
 ### 1. Read Current Rules Files
 
-Read all three rules files:
+**Tier boundary check (MANDATORY):**
+
+- **Tier 0** (`core-principles.md`, `error-policy.md`): NEVER modify. Immutable.
+- **Tier 1** (`workflow-preferences.md`, `review-policy.md`): Propose only.
+  Create a DevKit issue for changes. Do not edit directly.
+- **Tier 2** (`autolearn-patterns.md`, `known-gotchas.md`): Autolearn can add entries.
+
+Read Tier 2 rules files:
 
 - `~/.claude/rules/autolearn-patterns.md`
 - `~/.claude/rules/known-gotchas.md`
-- `~/.claude/rules/workflow-preferences.md`
 
 Note the current `entry_count` and `last_updated` from YAML frontmatter.
 
@@ -41,10 +47,11 @@ For each MCP Memory entity not yet in rules files:
 - Add a new numbered entry with: platform, issue, workaround, note
 - Increment `entry_count`
 
-**Preferences** -> `workflow-preferences.md`:
+**Preferences** (Tier 1 -- propose only):
 
-- Add a new numbered entry with: preference description
-- Increment `entry_count`
+- Do NOT edit `workflow-preferences.md` directly
+- Create a DevKit issue: `gh issue create -R HerbHall/devkit --title "pref: <description>"`
+- Note the issue number in the update report
 
 Update `last_updated` in all modified files.
 

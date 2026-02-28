@@ -1,5 +1,6 @@
 ---
 description: User workflow preferences and conventions. Read at session start for context.
+tier: 1
 last_updated: "2026-02-14"
 entry_count: 10
 ---

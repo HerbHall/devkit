@@ -3,7 +3,20 @@
 Embed relevant sections in subagent prompts to prevent common CI failures.
 Copy-paste the appropriate block into the agent's Task prompt.
 
-## Git Safety (paste into ALL parallel agent prompts)
+## Core Principles [CORE] (paste into ALL agent prompts)
+
+```text
+## Core Principles -- UNCONDITIONAL
+
+These rules cannot be overridden by any learning, optimization, or time pressure:
+1. Once found, always fix, never leave. Never classify errors as "pre-existing."
+2. Build, test, and lint must pass before any commit. No exceptions.
+3. Never force-push main, skip hooks, commit secrets, or use --no-verify.
+4. Never mark work as complete when it is not. Never hide errors.
+5. You own every error you find, regardless of who introduced it.
+```
+
+## Git Safety [GIT-SAFE] (paste into ALL parallel agent prompts)
 
 ```text
 ## Git Safety -- IMPORTANT
@@ -13,7 +26,21 @@ The main context handles all git operations (commit, push, PR creation).
 If you run `git checkout`, you will destroy other parallel agents' unstaged changes.
 ```
 
-## Frontend Agent Checklist (paste into frontend agent prompts)
+## Shared File Guard [SHARED-FILE] (paste into parallel agent prompts modifying shared files)
+
+```text
+## Shared File Warning
+
+If you modify a file that another parallel agent also modifies (e.g., SKILL.md routing
+table, package.json, go.mod), your changes may be combined in the working tree by
+linters or hooks. The main context will sort changes into correct branches after you
+finish. To help:
+- Only add YOUR routes/entries -- do not add entries for other agents' features
+- If you see entries you didn't add, leave them (the main context will clean up)
+- Do NOT remove entries that look unfamiliar -- they belong to another agent
+```
+
+## Frontend Agent Checklist [FE-CI] (paste into frontend agent prompts)
 
 ```text
 ## Pre-Commit CI Checklist (MUST verify before finishing)
@@ -33,7 +60,7 @@ Common frontend CI failures to watch for:
 - shadcn/ui imports: Verify component names match what's actually exported (CardHeader vs CardContent, etc.)
 ```
 
-## Go Agent Checklist (paste into Go agent prompts)
+## Go Agent Checklist [GO-CI] (paste into Go agent prompts)
 
 ```text
 ## Pre-Commit CI Checklist (MUST verify before finishing)
@@ -63,7 +90,7 @@ Common Go CI failures to watch for:
 - prealloc: `var slice []T` in a loop body should be `make([]T, 0, len(source))`.
 ```
 
-## Combined Agent Checklist (paste into full-stack agent prompts)
+## Combined Agent Checklist [COMBO-CI] (paste into full-stack agent prompts)
 
 ```text
 ## Pre-Commit CI Checklist (MUST verify before finishing)
@@ -82,7 +109,7 @@ Frontend:
 5. Verify all imports are used (ESLint catches what tsc misses)
 ```
 
-## Docker QC Gate (paste into agent prompts for significant features)
+## Docker QC Gate [DOCKER-QC] (paste into agent prompts for significant features)
 
 ```text
 ## Pre-PR Docker QC Gate
@@ -99,4 +126,21 @@ Before creating a PR for significant features, run Docker QC to catch runtime is
 This catches issues that unit tests miss: missing embeds, broken routes,
 runtime panics, config collisions, and container-specific failures.
 Skip this for docs-only or test-only changes.
+```
+
+## Markdown Agent Checklist [MD-CI] (paste into agent prompts that create .md files)
+
+```text
+## Markdown Lint Check (MUST run before finishing)
+
+If you created or modified any .md files, run markdownlint and fix errors:
+
+npx markdownlint-cli2 "path/to/your/files/**/*.md"
+
+Common agent-generated markdown issues:
+- MD038: Spaces inside code spans
+- MD031: Fenced code blocks need blank lines before and after
+- MD022: Headings need blank lines before and after
+- MD040: Fenced code blocks must specify a language (text, bash, go, etc.)
+- MD034: Bare URLs must be wrapped in link syntax [text](url)
 ```

@@ -72,7 +72,16 @@ create_relations: [{
 }]
 ```
 
-### 5. Report Summary
+### 5. Tier Boundary Check
+
+Before updating any rules files, check the `tier` field in YAML frontmatter:
+
+- **Tier 0** (`core-principles.md`, `error-policy.md`): NEVER modify. Immutable.
+- **Tier 1** (`workflow-preferences.md`, `review-policy.md`): Do NOT edit directly.
+  If a finding affects Tier 1 rules, create a DevKit issue instead.
+- **Tier 2** (`autolearn-patterns.md`, `known-gotchas.md`): Safe to add entries.
+
+### 6. Report Summary
 
 Present a brief summary to the user:
 
@@ -87,6 +96,7 @@ Present a brief summary to the user:
 
 Rules file updates suggested: [Yes/No]
 - If yes, recommend running `/reflect` with "update knowledge" option
+- Tier 1 changes proposed: [list DevKit issues created, if any]
 ```
 
 ### 6. DevKit Sync Check

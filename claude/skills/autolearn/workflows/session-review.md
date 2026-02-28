@@ -100,11 +100,18 @@ create_relations: [
 
 ### 6. Update Rules Files
 
-Read current rules files:
+**Tier boundary check (MANDATORY):**
+
+- **Tier 0** (`core-principles.md`, `error-policy.md`): NEVER modify. These are immutable.
+  Changes require a human-authored PR with explicit justification.
+- **Tier 1** (`workflow-preferences.md`, `review-policy.md`): Propose changes only.
+  Create a DevKit issue instead of editing directly.
+- **Tier 2** (`autolearn-patterns.md`, `known-gotchas.md`): Autolearn can add entries.
+
+Read current Tier 2 rules files:
 
 - `~/.claude/rules/autolearn-patterns.md`
 - `~/.claude/rules/known-gotchas.md`
-- `~/.claude/rules/workflow-preferences.md`
 
 For each HIGH-confidence finding that should be in rules:
 
@@ -112,6 +119,12 @@ For each HIGH-confidence finding that should be in rules:
 2. If not, append a new numbered entry
 3. Update the `entry_count` in YAML frontmatter
 4. Update `last_updated` date
+
+For findings that affect Tier 1 rules (workflow preferences, review policy):
+
+1. Create a GitHub issue in the DevKit repo:
+   `gh issue create -R HerbHall/devkit --title "rule: <description>" --body "..."`
+2. Note the issue number in the session summary
 
 Keep rules files concise. If a file exceeds 30 entries, consider archiving older/less-relevant entries.
 

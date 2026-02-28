@@ -1,5 +1,6 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
+tier: 2
 ---
 
 # Known Gotchas

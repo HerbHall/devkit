@@ -1,5 +1,6 @@
 ---
 description: Independent review policy. Auto-loaded at session start. Defines when review is mandatory, scope limits for reviewers, and how to handle findings.
+tier: 1
 last_updated: "2026-02-24"
 ---
 
