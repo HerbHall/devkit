@@ -52,7 +52,7 @@ done
 
 echo ""
 echo "Verifying individual skills..."
-for skill in autolearn docker-containerization go-development manage-github-issues quality-control react-frontend-development requirements-generator setup-github-actions windows-development bash-linux powershell-windows security-review server-management systematic-debugging webapp-testing; do
+for skill in autolearn code-review devkit-sync docker-containerization go-development manage-github-issues plan-review powershell-windows quality-control react-frontend-development requirements-generator security-review server-management setup-github-actions systematic-debugging webapp-testing windows-development bash-linux; do
     check "$CLAUDE_HOME/skills/$skill/SKILL.md" "$skill skill"
 done
 
