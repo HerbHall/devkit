@@ -1,6 +1,8 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
+entry_count: 60
+last_updated: "2026-02-28"
 ---
 
 # Known Gotchas
