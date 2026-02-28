@@ -1,7 +1,7 @@
 ---
 description: Learned patterns from past sessions. Read when encountering similar situations.
 tier: 2
-entry_count: 76
+entry_count: 75
 last_updated: "2026-02-28"
 ---
 
@@ -10,6 +10,8 @@ last_updated: "2026-02-28"
 Patterns discovered through past sessions. Each entry includes the pattern, context, and fix/approach.
 
 ## 1. gosec G101 False Positive on Constants Near Credential Code
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** lint-fix
 **Context:** gosec G101 flags constants as "hardcoded credentials" when their **name** contains "credential", "password", "secret", "token", or "passphrase", OR when their **value** contains sensitive-looking strings like "snmp". In vault/credential modules, expect 5-10+ false positives across type labels, event topics, and env var name constants. These appear incrementally in CI -- fixing one batch may reveal more on the next run.
@@ -44,6 +46,8 @@ go-licenses check ./... 2>&1 | grep -E "GPL|AGPL|LGPL|SSPL" && exit 1 || echo "N
 ```
 
 ## 5. WebSocket Auth: JWT via Query Parameter
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** architecture-pattern
 **Context:** Browser WebSocket API doesn't support custom headers (`Authorization: Bearer ...`). Standard auth middleware can't validate WS connections.
@@ -164,6 +168,9 @@ req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
 
 ## 17. swaggertype Tags for Platform-Specific Type Enums
 
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+**See also:** AP#35, KG#12, KG#57, KG#59
+
 **Category:** ci-fix
 **Context:** swag (swaggo/swag) introspects Go types like `time.Duration` and generates platform-specific enum definitions. The same swag version (e.g., v1.16.4) produces different enum values on Linux vs Windows (e.g., `minDuration`/`maxDuration` present or absent). This causes swagger drift check failures in CI when specs are generated locally on a different platform.
 **Fix:** Add `swaggertype:"integer"` (or `"string"`) struct tag to override swag's introspection:
@@ -279,22 +286,9 @@ func (a *tokenAdapter) ValidateAccessToken(t string) (*gateway.TokenClaims, erro
 
 ## 27. golangci-lint bodyclose with websocket.Dial
 
-**Category:** lint-fix
-**Context:** The `coder/websocket` library's `websocket.Dial()` returns `(conn, *http.Response, error)`. The golangci-lint `bodyclose` linter requires that the `*http.Response` body is always closed, even in test code where the response is typically discarded with `_, _, err := websocket.Dial(...)`.
-**Mistake:** First fix only addressing some call sites, or using `replace_all` blindly which creates variable name collisions with other uses of `_` in the same scope (e.g., a `conn.Read()` return variable also named `resp`).
-**Fix:** For each `websocket.Dial` call, change to:
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** superseded-by-KG17
 
-```go
-conn, resp, err := websocket.Dial(ctx, wsURL, nil)
-if resp != nil && resp.Body != nil {
-    resp.Body.Close()
-}
-if err != nil {
-    t.Fatalf("websocket dial: %v", err)
-}
-```
-
-**Lesson:** When fixing a lint issue across multiple call sites, ALWAYS grep for ALL occurrences first before making partial fixes. Check for variable name collisions in the surrounding scope before using `replace_all`.
+Archived to `claude/rules/archive/autolearn-patterns.md`. See KG#17 for the consolidated entry.
 
 ## 28. Go 1.22+ ServeMux Ambiguous Route Pattern Panic
 
@@ -370,6 +364,9 @@ writeJSON(w, http.StatusOK, ActiveThemeResponse(req))
 - Reddit/web data is supplementary; GitHub data alone is sufficient for a comprehensive gap exploitation report
 
 ## 35. Swagger CI Job Needs Explicit go mod download
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+**See also:** AP#17, KG#12, KG#57, KG#59
 
 **Category:** ci-fix
 **Context:** `swag init --parseDependency --parseInternal` resolves Go module dependencies at parse time. The CI swagger drift check relied on `actions/setup-go`'s module cache, but Dependabot dependency bumps change `go.sum` which changes the cache key, causing a miss. With no cached modules and no explicit download step, swag fails with "cannot find all dependencies" and exit code 1.
@@ -1100,6 +1097,8 @@ vi.mock('@/api/auth', () => ({
 **Fix:** Strengthened the Go agent CI checklist to require running `golangci-lint run ./path/to/modified/...` as a mandatory step, not just "watch for" patterns. Also added it as step 4 in the numbered list.
 
 ## 85. Roadmap Drift: Verify Claims Against Source Code
+
+**Added:** 2026-02-24 | **Source:** SubNetree | **Status:** active
 
 **Category:** process-pattern
 **Context:** Roadmap checklists drift from reality in both directions: (1) items implemented but never checked off, (2) items listed as "TODO" that are already done. Both cause wasted planning effort. Reading the roadmap alone is insufficient -- the source code is the source of truth.
