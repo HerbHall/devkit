@@ -65,9 +65,21 @@ Categorize each as:
 - **Duplicate**: Already stored with same information -- skip
 - **Superseded**: Existing entity is outdated -- update and add SUPERSEDES relation
 
-### 4. Store New Entities
+### 4. Validate Proposed Rules
 
-Create entities for all NEW findings:
+Before storing, run each finding through the validation pipeline
+(see `references/validation-pipeline.md`):
+
+1. **Dangerous pattern scan**: Check for blocked words (skip, bypass, ignore, suppress, disable, `--no-verify`, `--force`, nolint without justification). CRITICAL findings are rejected immediately.
+2. **Core principles check**: Does the finding contradict any of the 10 core principles? If yes, reject.
+3. **Conflict check**: Search existing rules for contradictions. Flag conflicts for human review.
+4. **Risk classification**: LOW (auto-accept), MEDIUM (note in summary), HIGH (MCP Memory only, flag for review), CRITICAL (reject).
+
+Track validation results for the session summary.
+
+### 5. Store New Entities
+
+Create entities for all NEW findings that passed validation:
 
 ```text
 create_entities: [
@@ -85,7 +97,7 @@ add_observations: [
 ]
 ```
 
-### 5. Create Relations
+### 6. Create Relations
 
 Link learnings to their context:
 
@@ -98,7 +110,7 @@ create_relations: [
 ]
 ```
 
-### 6. Scope Assessment and Rules Update
+### 7. Scope Assessment and Rules Update
 
 Determine where this session is running to decide how to handle rules:
 
@@ -128,7 +140,7 @@ Keep rules files concise. If a file exceeds 30 entries, consider archiving older
 
 **If in a project (not DevKit):**
 
-1. Store all learnings in MCP Memory only (steps 3-5 above).
+1. Store all learnings in MCP Memory only (steps 3-6 above).
 2. For findings that are universal or stack-specific, create a DevKit issue:
 
 ```bash
@@ -145,7 +157,7 @@ Suggested rules file: <autolearn-patterns.md or known-gotchas.md>"
 
 **Important:** Do NOT edit files in `~/.claude/rules/` from a project context -- they are symlinks to DevKit.
 
-### 7. Generate Session Summary
+### 8. Generate Session Summary
 
 Present a comprehensive summary:
 
@@ -159,6 +171,11 @@ Present a comprehensive summary:
 | Entity | Type | Confidence | Action |
 |--------|------|-----------|--------|
 | name   | type | HIGH/MED  | New/Updated/Skipped |
+
+### Validation Results
+- Rejected (CRITICAL): N -- [reasons]
+- Flagged for review (HIGH/MEDIUM): N
+- Accepted (LOW): N
 
 ### Context
 - Running in: [DevKit / Project (<name>)]

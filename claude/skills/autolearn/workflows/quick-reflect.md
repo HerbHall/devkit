@@ -29,7 +29,18 @@ Filter out:
 - Trivial details (typos, formatting)
 - Context-specific decisions that don't generalize
 
-### 3. Check for Duplicates
+### 3. Validate Proposed Rules
+
+Before storing, run each HIGH-confidence finding through the validation pipeline
+(see `references/validation-pipeline.md`):
+
+1. **Dangerous pattern scan**: Check for blocked words (skip, bypass, ignore, suppress, disable, `--no-verify`, `--force`, nolint without justification). CRITICAL findings are rejected immediately.
+2. **Core principles check**: Does the finding contradict any of the 10 core principles? If yes, reject.
+3. **Risk classification**: LOW (auto-accept), MEDIUM (note in summary), HIGH (MCP Memory only, flag for review), CRITICAL (reject).
+
+Skip validation for MEDIUM-confidence findings (they only go to MCP Memory, not rules files).
+
+### 4. Check for Duplicates
 
 Search MCP Memory for existing entities:
 
@@ -39,7 +50,7 @@ search_nodes with keywords from each finding
 
 If a match exists, plan to add an observation instead of creating a new entity.
 
-### 4. Store Learnings
+### 5. Store Learnings
 
 For each HIGH-confidence finding:
 
@@ -72,7 +83,7 @@ create_relations: [{
 }]
 ```
 
-### 5. Scope Assessment and Rules Update
+### 6. Scope Assessment and Rules Update
 
 Determine where this session is running to decide how to handle rules:
 
@@ -93,7 +104,7 @@ Check tier boundaries before editing:
 
 **If in a project (not DevKit):**
 
-1. Store all learnings in MCP Memory only (step 4 above).
+1. Store all learnings in MCP Memory only (step 5 above).
 2. For findings that are universal (apply across projects) or stack-specific (apply to all projects using this language/framework), create a DevKit issue:
 
 ```bash
@@ -110,7 +121,7 @@ Suggested rules file: <autolearn-patterns.md or known-gotchas.md>"
 
 **Important:** Do NOT edit files in `~/.claude/rules/` -- they are symlinks to DevKit.
 
-### 6. Report Summary
+### 7. Report Summary
 
 Present a brief summary to the user:
 
@@ -122,6 +133,11 @@ Present a brief summary to the user:
 
 **Skipped (already known):** N items
 **Skipped (low confidence):** N items
+
+**Validation results:**
+- Rejected (CRITICAL): N items -- [reasons]
+- Flagged for review (HIGH/MEDIUM): N items
+- Accepted (LOW): N items
 
 **Context:** [DevKit / Project (<name>)]
 **Rules files updated:** [Yes (Tier 2 only) / No -- DevKit issues created instead]

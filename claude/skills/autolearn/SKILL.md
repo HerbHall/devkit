@@ -51,6 +51,7 @@ This prevents projects from modifying symlinked rules files directly. Symlinks p
 <references>
 - references/memory-schema.md -- Entity types, relation types, observation format
 - references/learning-categories.md -- Classification guide with priority and confidence thresholds
+- references/validation-pipeline.md -- Five-stage validation gate for proposed rules
 </references>
 
 <intake>
