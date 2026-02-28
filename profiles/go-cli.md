@@ -9,8 +9,8 @@ winget:
 manual:
   - id: golangci-lint
     check: golangci-lint
-    install: go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.1.6
-    note: Pin version to avoid surprise breakage. Use go run ...@v2.1.6 for execution.
+    install: go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.10.1
+    note: Pin version to avoid surprise breakage. Use go run ...@v2.10.1 for execution.
   - id: staticcheck
     check: staticcheck
     install: go install honnef.co/go/tools/cmd/staticcheck@latest
@@ -123,7 +123,7 @@ Runs multiple linters in parallel. Configure which linters to use in `.golangci.
 Prefer `go run` over a local binary -- this guarantees the exact version runs and avoids permission issues on Windows MSYS:
 
 ```bash
-go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.1.6 run ./...
+go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.10.1 run ./...
 ```
 
 For CI, use `golangci-lint-action@v6` with a pinned version. The default install mode (binary) downloads pre-built binaries and handles v2 module paths correctly.
@@ -173,7 +173,7 @@ Use `Makefile` for common tasks. Copy `project-templates/Makefile.go` and custom
 ```text
 build:          go build -o bin/app ./cmd/app/
 test:           go test ./...
-lint:           go run ...golangci-lint@v2.1.6 run ./...
+lint:           go run ...golangci-lint@v2.10.1 run ./...
 ci:             build + test + lint + lint-md
 hooks:          install pre-push git hook
 ```
