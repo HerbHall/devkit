@@ -61,6 +61,7 @@ What would you like to reflect on?
 2. **Session review** -- Comprehensive session retrospective with full MCP Memory sync
 3. **Update knowledge** -- Merge accumulated learnings into rules files
 4. **Skill improvement** -- Analyze past mistakes and improve existing skills/agents
+5. **Audit rules** -- Health check: stale entries, missing metadata, duplicates, cross-references
 
 **Wait for response before proceeding.**
 </intake>
@@ -72,6 +73,7 @@ What would you like to reflect on?
 | 2, "session", "review", "comprehensive", "full" | workflows/session-review.md |
 | 3, "update", "knowledge", "rules", "merge" | workflows/update-knowledge.md |
 | 4, "skill", "improve", "agent", "fix" | workflows/skill-improvement.md |
+| 5, "audit", "rules", "health", "stale" | workflows/audit-rules.md |
 
 **After reading the workflow, follow it exactly.**
 </routing>
