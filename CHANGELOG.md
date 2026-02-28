@@ -1,5 +1,23 @@
 # Changelog
 
+## v2.2.0 -- 2026-02-28
+
+Rule lifecycle management for the autolearn system.
+
+### Added
+
+- **Rule lifecycle metadata format** (PR #126): ADR-0014 defines per-entry metadata (`**Added:**`, `**Source:**`, `**Status:**`, `**Last relevant:**`, `**See also:**`), deprecation states, and archive strategy
+- **Archive directory** (PR #126): `claude/rules/archive/` for deprecated entries (not loaded into sessions, frees context tokens)
+- **Frontmatter extensions** (PR #126): `entry_count` and `last_updated` fields in Tier 2 rules file frontmatter
+- **Metadata PoC** (PR #127): 10 proof-of-concept entries annotated with lifecycle metadata (5 AP, 5 KG)
+- **Duplicate resolution** (PR #127): AP#27 superseded by KG#17, archived; swagger cluster cross-referenced (5 entries)
+- **Rules audit workflow** (PR #128): `/reflect` option 5 for health check -- parses entries, generates report, identifies stale/duplicate entries, proposes actions
+- **Last-relevant tracking** (PR #128): `/reflect` quick and session workflows update `**Last relevant:**` timestamps on entries applied during the session
+
+### Changed
+
+- Autolearn-patterns entry count: 76 -> 75 (AP#27 archived)
+
 ## v2.1.0 -- 2026-02-28
 
 Governance and quality gates for the autolearn system.
