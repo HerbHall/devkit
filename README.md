@@ -31,7 +31,7 @@ Setup creates symlinks from `~/.claude/` to the DevKit clone (or copies files in
 
 | Component | Count | Location |
 |-----------|-------|----------|
-| Rules (auto-loaded every session) | 8 files | `claude/rules/` |
+| Rules (auto-loaded every session) | 10 files | `claude/rules/` |
 | Skills (invoke with `/skill-name`) | 18 skills | `claude/skills/` |
 | Agent templates | 7 agents | `claude/agents/` |
 | SessionStart hook | 1 | `claude/hooks/` |
@@ -54,7 +54,7 @@ Setup creates symlinks from `~/.claude/` to the DevKit clone (or copies files in
 
 | Directory | Purpose |
 |-----------|---------|
-| `claude/` | Global Claude Code config — CLAUDE.md, 8 rules files (135+ patterns), 18 skills, 7 agent templates, hooks |
+| `claude/` | Global Claude Code config — CLAUDE.md, 10 rules files (135+ patterns), 18 skills, 7 agent templates, hooks |
 | `devspace/` | Workspace shared configs — .editorconfig, .markdownlint.json, VS Code fragments |
 | `docs/` | Human-readable guides — architecture decisions, profile format spec |
 | `machine/` | Machine state snapshots — VS Code extensions, tool versions |
@@ -87,6 +87,10 @@ This backs up any existing files in `~/.claude/`, creates symlinks for all share
 | `/devkit-sync init` | First-time setup: create symlinks and machine identity |
 | `/devkit-sync diff` | Show detailed diff of local changes vs main |
 | `/devkit-sync unlink` | Replace symlinks with copies (portable snapshot) |
+| `/devkit-sync resolve` | Resolve sync conflicts between machines |
+| `/devkit-sync promote` | Graduate local patterns to universal rules |
+| `/devkit-sync update` | Check version and upgrade to latest release |
+| `/devkit-sync verify` | Check if DevKit updates reached all active projects |
 
 ### Multi-machine workflow
 
@@ -216,6 +220,8 @@ With symlinks active, changes flow automatically:
 | `agent-team-coordination.md` | - | Multi-agent team coordination rules and anti-patterns |
 | `autolearn-patterns.md` | 76 | Learned patterns: lint fixes, CI config, architecture, testing |
 | `compaction-recovery.md` | - | Context compaction recovery rules and loop detection |
+| `core-principles.md` | 10 | Immutable core principles (Tier 0) |
+| `error-policy.md` | - | Zero-tolerance error policy and fix-forward workflow (Tier 1) |
 | `known-gotchas.md` | 60 | Platform issues: Windows, GitHub, Go, React, Docker |
 | `markdown-style.md` | - | Markdownlint conventions |
 | `review-policy.md` | - | Independent review policy: mandatory triggers and scope |
@@ -246,7 +252,7 @@ Claude.ai Chat uses a separate skill store - install via Settings > Skills in th
 | webapp-testing | E2E testing, Playwright, deep audit strategies | Code |
 | code-review | Independent code review gate before commits | Code |
 | plan-review | Independent plan review gate before implementation | Code |
-| devkit-sync | Multi-machine DevKit sync: status, push, pull, init, diff | Code |
+| devkit-sync | Multi-machine DevKit sync: status, push, pull, init, diff, verify, promote, update | Code |
 
 ### Agent Templates
 

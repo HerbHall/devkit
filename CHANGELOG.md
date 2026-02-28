@@ -1,5 +1,28 @@
 # Changelog
 
+## v2.1.0 -- 2026-02-28
+
+Governance and quality gates for the autolearn system.
+
+### Added
+
+- **Tiered rule governance** (PR #117): `core-principles.md` (Tier 0, immutable) and `error-policy.md` (Tier 1, governed) rules files with YAML frontmatter tier metadata
+- **SessionStart health checks** (PR #118): symlink integrity verification and CLAUDE.md detection at session start
+- **Pre-commit verification** (PR #119): build/test/lint gates before commit in workflow preferences
+- **Fix-forward workflow** (PR #120): error-policy.md with zero-tolerance fix-forward, replaces "pre-existing" classification
+- **Template quality gates** (PR #121): CI scaffolding templates include lint and test verification steps
+- **Autolearn scope-aware routing** (PR #122): in DevKit, write Tier 2 rules directly; in projects, write to MCP Memory and create DevKit issues for universal learnings
+- **Rule validation pipeline** (PR #123): five-stage gate for proposed rules (dangerous pattern scan, core principles check, conflict check, risk classification, storage decision) in `references/validation-pipeline.md`
+- **Propagation verification** (PR #124): `/devkit-sync verify` checks all active projects for DevKit update propagation via symlink health; SessionStart reports rule file changes after pull
+- `/devkit-sync promote` subcommand for graduating local patterns to universal rules
+- `/devkit-sync update` subcommand for version checking and upgrading
+
+### Changed
+
+- Autolearn workflows (`quick-reflect.md`, `session-review.md`) now include validation and scope assessment steps
+- `update-knowledge.md` requires DevKit context (context guard rejects non-DevKit sessions)
+- Rules file count increased from 8 to 10
+
 ## v2.0.0 -- 2026-02-25
 
 v2.0 represents a major architectural shift from a bash-centric toolkit to a
