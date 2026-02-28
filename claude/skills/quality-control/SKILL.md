@@ -28,19 +28,25 @@ This skill provides systematic quality verification for code changes. It catches
 **Quality Principles**
 
 1. **Fail fast, fix fast.** Identify failures immediately after pushing. The longer a broken PR sits, the harder it is to fix.
-2. **Root cause over symptoms.** When CI fails, identify whether the failure is in the PR's code, pre-existing in the base branch, or an infrastructure issue. Each requires a different fix strategy.
-3. **Minimal intervention.** Fix only what's broken. Don't refactor unrelated code while fixing CI failures.
-4. **Verify after fix.** Always confirm the fix by checking CI status after pushing. Never assume a fix worked.
+2. **Root cause over symptoms.** When CI fails, identify whether the failure originates in the PR's code, the base branch, or infrastructure. Each requires a different fix strategy.
+3. **Fix forward, never defer.** Every error found gets fixed or tracked immediately. There is no "pre-existing" bypass. If an error exists in the base branch, fix it on the PR branch or create a tracking issue. See `error-policy.md` for the full fix-forward workflow.
+4. **Minimal intervention.** Fix only what's broken. Don't refactor unrelated code while fixing CI failures.
+5. **Verify after fix.** Always confirm the fix by checking CI status after pushing. Never assume a fix worked.
+6. **Assess the system.** After fixing, ask: why didn't our rules prevent this? Create a DevKit issue if a new rule or pattern is needed.
 
 **Failure Classification**
 
 | Category | Description | Action |
 |----------|-------------|--------|
 | PR-introduced | Failure caused by code in the PR | Fix on the PR branch |
-| Pre-existing | Failure exists in the base branch | Fix on PR branch (or separate fix PR to base) |
+| Base-branch | Failure also exists on the base branch | Fix on PR branch AND create tracking issue if not fixable inline |
 | Infrastructure | CI runner issues, flaky tests, timeouts | Re-run the workflow |
 | Configuration | Wrong CI config (versions, paths, flags) | Fix the workflow/config file |
 | Dependency | External dependency issue (license, vuln) | Update dependency or add exception |
+
+**IMPORTANT**: "Base-branch" failures are NOT an excuse to skip fixing.
+The fix-forward policy requires immediate action: fix inline or create
+a tracking issue. Never leave a known error unaddressed.
 
 </essential_principles>
 
@@ -64,10 +70,17 @@ For each failing check, follow this diagnostic flow:
 
 3. **Classify the failure** using the table above.
 
-4. **For pre-existing failures**, verify by checking if the same error exists on the base branch:
+4. **For base-branch failures**, verify by checking if the same error exists on the base branch:
 
    ```bash
    gh api repos/{owner}/{repo}/actions/runs?branch=main&per_page=3 --jq '.workflow_runs[0].conclusion'
+   ```
+
+   If confirmed as a base-branch issue, fix it on the PR branch. If the fix
+   is out of scope, create a tracking issue immediately:
+
+   ```bash
+   gh issue create --title "fix: <failure description>" --body "Found during PR #N CI. ..."
    ```
 
 **Common CI Failure Patterns**
@@ -194,7 +207,7 @@ A successful quality control run produces:
 
 - [ ] All target PRs checked for CI status
 - [ ] Failing checks diagnosed with root cause identified
-- [ ] Failures classified (PR-introduced, pre-existing, infrastructure, config)
+- [ ] Failures classified (PR-introduced, base-branch, infrastructure, config)
 - [ ] Fixes applied where possible (lint issues, config fixes, rebases)
 - [ ] Fixes pushed and CI re-triggered
 - [ ] Post-fix verification confirming CI passes

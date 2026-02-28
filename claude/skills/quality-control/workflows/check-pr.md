@@ -42,7 +42,7 @@ For each failing check:
    ```
 
 4. Match error against known patterns from the `<diagnostics>` section in SKILL.md
-5. Classify as: PR-introduced, pre-existing, infrastructure, configuration, or dependency
+5. Classify as: PR-introduced, base-branch, infrastructure, configuration, or dependency
 
 ### 4. Report Findings
 
@@ -51,7 +51,7 @@ Present a summary table:
 | Check | Status | Category | Root Cause | Fix |
 |-------|--------|----------|------------|-----|
 | Build | pass | - | - | - |
-| Lint | fail | pre-existing | gosec G101 false positive | Add nolint directive |
+| Lint | fail | base-branch | gosec G101 false positive | Add nolint directive |
 
 ### 5. Propose Fixes
 
