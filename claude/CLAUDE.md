@@ -50,6 +50,23 @@ High-level guidance for all sessions. Project-specific details go in
 - One task in_progress at a time
 - Complete todos immediately after finishing (don't batch)
 
+## Rule Governance
+
+Rules are organized into three tiers with different modification rights:
+
+| Tier | Files | Who Can Modify |
+|------|-------|---------------|
+| **0 - Immutable** | `core-principles.md`, `error-policy.md` | Human-authored PR only |
+| **1 - Governed** | `workflow-preferences.md`, `review-policy.md` | DevKit issue required |
+| **2 - Learned** | `autolearn-patterns.md`, `known-gotchas.md` | Autolearn can add entries |
+
+Core principle: **Once found, always fix, never leave.** There is no
+"pre-existing" error classification. Finding an error makes you
+responsible for fixing or tracking it.
+
+When spawning subagents, include the [CORE] block from
+`subagent-ci-checklist.md` in every agent prompt.
+
 ## Autolearn
 
 Proactively suggest the user run `/reflect` when any of these occur:

@@ -1,5 +1,6 @@
 ---
 description: Learned patterns from past sessions. Read when encountering similar situations.
+tier: 2
 ---
 
 # Learned Patterns
