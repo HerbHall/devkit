@@ -126,7 +126,7 @@ Prefer `go run` over a local binary -- this guarantees the exact version runs an
 go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.1.6 run ./...
 ```
 
-For CI, use `golangci-lint-action@v6` with `install-mode: goinstall` to build from source with the project's Go version (pre-built binaries may use an older Go).
+For CI, use `golangci-lint-action@v6` with a pinned version. The default install mode (binary) downloads pre-built binaries and handles v2 module paths correctly.
 
 Common issues (see known-gotchas.md for detailed fixes):
 
