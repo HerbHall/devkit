@@ -129,6 +129,14 @@ Check tier boundaries before editing:
   Create a DevKit issue instead.
 - **Tier 2** (`autolearn-patterns.md`, `known-gotchas.md`): Safe to add entries directly.
 
+**Update "last relevant" timestamps:**
+
+If an existing pattern or gotcha was actively applied during this session (not just read, but used to solve a problem or avoid a mistake), and the entry has a metadata line, update its `**Last relevant:**` field:
+
+- If the entry already has `**Last relevant:**`, update the date
+- If the entry has other metadata fields but no `**Last relevant:**`, append it
+- If the entry has no metadata at all, skip (metadata addition is an audit task)
+
 Read current Tier 2 rules files and for each HIGH-confidence finding:
 
 1. Check if it's already in the appropriate file
