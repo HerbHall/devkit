@@ -11,6 +11,8 @@ Platform-specific issues, tool quirks, and surprising behaviors discovered throu
 
 ## 1. Windows MSYS Bash Path Translation
 
+**Added:** 2026-02-17 | **Source:** global | **Status:** active
+
 **Platform:** Windows (MSYS_NT)
 **Issue:** MSYS bash auto-translates Unix-style paths to Windows paths in some contexts. Paths starting with `/c/` become `C:\`.
 **Workaround:** Use `MSYS_NO_PATHCONV=1` prefix for commands where path translation causes problems, or use double-slash `//` to prevent translation.
@@ -116,6 +118,9 @@ Regular prompts containing numbers still fire normally (e.g., "fix issue #297").
 
 ## 12. swag Generates Platform-Specific time.Duration Enums
 
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+**See also:** AP#17, AP#35, KG#57, KG#59
+
 **Platform:** Go (cross-platform)
 **Issue:** `swag init` with `--parseDependency --parseInternal` introspects `time.Duration` and generates an enum definition. The exact enum values differ across Go versions and platforms -- Linux CI may include `minDuration`/`maxDuration` while Windows local doesn't (or vice versa). Even with the same swag version pinned (`v1.16.4`), the Go toolchain version affects the output.
 **Diagnosis:** Swagger drift check fails in CI. The diff shows `minDuration`/`maxDuration` being added or removed from the `time.Duration` enum.
@@ -178,6 +183,8 @@ If you miss some, close manually: `gh issue close N --comment "Shipped in PR #X"
 **Example:** PR #270 body had `Closes #226, #251, #259, #254, #249` -- only #226 was auto-closed. The other 4 required manual closure.
 
 ## 17. websocket.Dial Response Body Must Be Closed
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Platform:** Go (all) / coder/websocket library
 **Issue:** `websocket.Dial(ctx, url, nil)` returns `(*websocket.Conn, *http.Response, error)`. Even though you typically only care about the connection, the golangci-lint `bodyclose` linter requires that the `*http.Response` body is always closed. Ignoring the response with `_, _, err := websocket.Dial(...)` triggers lint errors.
@@ -271,6 +278,8 @@ if ($resp.StatusCode -eq 200) { ... }  # always works
 **Fix:** Remove the cla-assistant.io integration (redundant if you have a GitHub Actions CLA workflow) or add `dependabot[bot]` to its allowlist. The Actions-based CLA workflow is more configurable and handles bot authors correctly.
 
 ## 25. Parallel Background Agents Share Working Tree
+
+**Added:** 2026-02-17 | **Source:** global | **Status:** active
 
 **Platform:** Claude Code (all)
 **Issue:** When launching multiple background agents (`Task` tool) in parallel that modify files, ALL agents write to the currently checked-out git branch. The agents don't create or switch branches -- they just write files to the working directory. After both complete, all changes are mixed together as unstaged modifications on whichever branch was checked out.
@@ -711,6 +720,9 @@ powershell.exe -NoProfile -File /tmp/frontend-cmd.ps1 2>&1
 
 ## 57. Swagger x-enum-descriptions Blocks Differ Between Windows and Linux
 
+**Added:** 2026-02-24 | **Source:** SubNetree | **Status:** active
+**See also:** AP#17, AP#35, KG#12, KG#59
+
 **Platform:** Go (swaggo/swag, cross-platform)
 **Issue:** Windows `swag init` generates `x-enum-descriptions` array blocks for Go enums with comment annotations. Linux CI's `swag init` (same version) omits these blocks entirely. The `x-enum-comments` map and `x-enum-varnames` array are generated identically on both platforms. This is a sibling of gotcha #12 (time.Duration enums) but affects any enum type with comment-annotated values.
 **Diagnosis:** Swagger Drift Check fails in CI. Diff shows `x-enum-descriptions` arrays being removed from swagger files.
@@ -740,6 +752,9 @@ git reset --hard origin/main     # safe when no uncommitted work
 
 ## 59. Perl Regex for Stripping Swagger YAML Corrupts Line Boundaries
 
+**Added:** 2026-02-24 | **Source:** SubNetree | **Status:** active
+**See also:** AP#17, AP#35, KG#12, KG#57
+
 **Platform:** Windows (MSYS_NT) / swaggo/swag
 **Issue:** The perl one-liner used to strip `x-enum-descriptions` from `swagger.yaml` can concatenate adjacent lines. When a YAML enum description value is immediately followed by an `x-enum-descriptions` block, the regex removes the block AND the newline, joining the description with the next YAML key on one line. This produces invalid YAML.
 **Diagnosis:** Swagger Drift Check passes for JSON but fails for YAML. The diff shows line concatenation rather than missing blocks.
@@ -757,6 +772,8 @@ grep "x-enum-varnames" api/swagger/swagger.yaml | grep -v "^\s*x-enum-varnames"
 **Prevention:** Consider switching to a YAML-aware tool (yq) for swagger post-processing instead of regex. Or validate the YAML parses cleanly after stripping.
 
 ## 60. Go Binary Permission Denied on MSYS -- Use go run Instead
+
+**Added:** 2026-02-24 | **Source:** SubNetree | **Status:** active
 
 **Platform:** Windows (MSYS_NT)
 **Issue:** Go tool binaries installed to `~/go/bin/` (e.g., `swag`, `protoc-gen-go`) may have filesystem permission issues on MSYS bash, returning "permission denied" even when the file exists and is executable.
