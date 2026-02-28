@@ -148,6 +148,51 @@ _devkit_resolve_path() {
 
 devkit_version_check "$(_devkit_resolve_path)"
 
+# ===== Symlink Health Check =====
+# Validates that critical DevKit files exist in ~/.claude/.
+# Detects broken symlinks and missing files so the user can re-sync.
+devkit_symlink_health() {
+    local devkit_path="$1"
+    local claude_dir="$HOME/.claude"
+    local broken=0
+    local missing=0
+
+    # Skip if no DevKit path resolved
+    if [ -z "$devkit_path" ]; then return 0; fi
+
+    # Critical files that must exist in ~/.claude/
+    local critical_targets=(
+        "CLAUDE.md"
+        "rules/core-principles.md"
+        "rules/error-policy.md"
+        "rules/autolearn-patterns.md"
+        "rules/known-gotchas.md"
+        "rules/workflow-preferences.md"
+        "rules/review-policy.md"
+        "rules/subagent-ci-checklist.md"
+    )
+
+    for rel in "${critical_targets[@]}"; do
+        local target="$claude_dir/$rel"
+        if [ -L "$target" ] && [ ! -e "$target" ]; then
+            # Symlink exists but target is gone (broken)
+            broken=$((broken + 1))
+        elif [ ! -e "$target" ]; then
+            # File doesn't exist at all
+            missing=$((missing + 1))
+        fi
+    done
+
+    if [ "$broken" -gt 0 ]; then
+        echo "DevKit: $broken broken symlink(s) in ~/.claude/. Run: pwsh setup/sync.ps1 -Link"
+    fi
+    if [ "$missing" -gt 0 ]; then
+        echo "DevKit: $missing critical file(s) missing from ~/.claude/. Run: pwsh setup/sync.ps1 -Link"
+    fi
+}
+
+devkit_symlink_health "$(_devkit_resolve_path)"
+
 # ===== CLAUDE.md Detection =====
 
 # Skip if we're in the home directory
