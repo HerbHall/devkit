@@ -77,15 +77,20 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - Push branch and create PR via `gh pr create`
 - Merge only after CI passes
 
-### Testing Before Push
+### Pre-Commit Verification (Mandatory)
 
-The pre-push hook handles this automatically. To run checks manually:
+**Every commit must pass build, test, and lint.** No exceptions for
+"small changes" or "just config." The workflow is:
+**Explore -> Plan -> Code -> Verify -> Commit**
 
 ```bash
 make ci    # build + test + lint (same checks as CI and the pre-push hook)
 ```
 
-Fix all failures before pushing. CI should only confirm what you've already verified locally.
+Fix all failures before committing. CI should only confirm what you've
+already verified locally. If you find errors (even in unrelated code),
+fix them inline or create a tracking issue immediately. See
+`~/.claude/rules/error-policy.md` for the full fix-forward workflow.
 
 ### Code Review
 
@@ -159,6 +164,8 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 - **Architecture:** See `docs/ARCHITECTURE.md` for system design
 - **Decisions:** See `docs/decisions.md` for ADRs and design rationale
 - **Global conventions:** See `~/.claude/CLAUDE.md` for workspace-wide standards
+- **Core principles:** See `~/.claude/rules/core-principles.md` for immutable development rules
+- **Error policy:** See `~/.claude/rules/error-policy.md` for fix-forward workflow
 - **Local overrides:** Add machine-specific or project-specific patterns to `~/.claude/rules/<name>.local.md` (never synced, never committed)
 
 ---

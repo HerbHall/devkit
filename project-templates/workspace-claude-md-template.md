@@ -85,6 +85,15 @@ WORKSPACE_ROOT/
 - Always cite sources in code and documentation
 - Maintain `README.md` for GitHub with credits section
 
+## Quality Gates
+
+All projects in this workspace follow these quality gates from DevKit:
+
+- **Pre-commit**: Build, test, and lint must pass before every commit
+- **Fix-forward**: Every error found gets fixed or tracked immediately (no "pre-existing" bypass)
+- **Core principles**: See `~/.claude/rules/core-principles.md` for immutable rules
+- **Error policy**: See `~/.claude/rules/error-policy.md` for fix-forward workflow
+
 ## Adding a New Project
 
 1. Create a folder under `WORKSPACE_ROOT`
