@@ -13,6 +13,8 @@
         "claude/rules/agent-team-coordination.md",
         "claude/rules/autolearn-patterns.md",
         "claude/rules/compaction-recovery.md",
+        "claude/rules/core-principles.md",
+        "claude/rules/error-policy.md",
         "claude/rules/known-gotchas.md",
         "claude/rules/markdown-style.md",
         "claude/rules/review-policy.md",
