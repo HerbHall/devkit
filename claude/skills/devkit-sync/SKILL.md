@@ -30,6 +30,7 @@ What sync operation do you need?
 7. **Resolve conflicts** -- Fix merge conflicts after pull/rebase
 8. **Promote** -- Promote local patterns/gotchas to universal rules files
 9. **Update** -- Check version and upgrade to a specific release or latest
+10. **Verify** -- Check if DevKit updates reached all active projects
 
 Or just type your question about DevKit sync.
 </intake>
@@ -46,6 +47,7 @@ Or just type your question about DevKit sync.
 | 7, "resolve", "conflicts", "conflict", "merge conflict", "rebase conflict" | workflows/resolve-conflicts.md |
 | 8, "promote", "graduate", "elevate", "local to universal" | workflows/promote.md |
 | 9, "update", "upgrade", "version", "release" | workflows/update.md |
+| 10, "verify", "propagation", "check projects", "reach" | workflows/verify.md |
 
 **After reading the workflow, follow it exactly.**
 </routing>
