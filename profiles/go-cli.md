@@ -9,7 +9,8 @@ winget:
 manual:
   - id: golangci-lint
     check: golangci-lint
-    install: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+    install: go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.1.6
+    note: Pin version to avoid surprise breakage. Use go run ...@v2.1.6 for execution.
   - id: staticcheck
     check: staticcheck
     install: go install honnef.co/go/tools/cmd/staticcheck@latest
@@ -65,27 +66,35 @@ echo $env:Path | grep -o '[^;]*go[^;]*'
 
 ### Linter Configuration
 
-Create a `.golangci.yml` at the project root. Start with:
+Copy `project-templates/golangci.yml` to your project root as `.golangci.yml`. The template includes:
+
+- `version: "2"` (required by golangci-lint v2; omitting this causes a silent config failure)
+- A proven linter set: errcheck, gosec, gocritic, govet, staticcheck, ineffassign, unused, misspell, bodyclose, noctx, sqlclosecheck, durationcheck, exhaustive, nilerr, prealloc
+- Test and cmd/ exclusion rules
 
 ```yaml
+version: "2"
+
 run:
   timeout: 5m
-  skip-dirs:
-    - testdata
 
 linters:
   enable:
-    - gosimple
-    - govet
-    - gocritic
+    - errcheck
     - gosec
+    - gocritic
+    - govet
     - staticcheck
-    - revive
-
-issues:
-  exclude-rules:
-    - linters: [gosec]
-      text: "G101"
+    - ineffassign
+    - unused
+    - misspell
+    - bodyclose
+    - noctx
+    - sqlclosecheck
+    - durationcheck
+    - exhaustive
+    - nilerr
+    - prealloc
 ```
 
 ## Cross-Compilation
@@ -109,11 +118,15 @@ GOOS=windows GOARCH=amd64 go build -o dist/app.exe ./cmd/app
 
 ### golangci-lint
 
-Runs multiple linters in parallel. Configure which linters to use in `.golangci.yml`:
+Runs multiple linters in parallel. Configure which linters to use in `.golangci.yml`.
+
+Prefer `go run` over a local binary -- this guarantees the exact version runs and avoids permission issues on Windows MSYS:
 
 ```bash
-golangci-lint run ./...
+go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.1.6 run ./...
 ```
+
+For CI, use `golangci-lint-action@v6` with `install-mode: goinstall` to build from source with the project's Go version (pre-built binaries may use an older Go).
 
 Common issues (see known-gotchas.md for detailed fixes):
 
@@ -155,21 +168,17 @@ go test -cover ./...  # coverage report
 
 ## Build and Release
 
-Use `Makefile` or `just` for common tasks. Typical targets:
+Use `Makefile` for common tasks. Copy `project-templates/Makefile.go` and customize. Key targets:
 
-```makefile
-build:
-  go build -o dist/app ./cmd/app
-
-test:
-  go test -race ./...
-
-lint:
-  golangci-lint run ./...
-
-clean:
-  rm -rf dist/
+```text
+build:          go build -o bin/app ./cmd/app/
+test:           go test ./...
+lint:           go run ...golangci-lint@v2.1.6 run ./...
+ci:             build + test + lint + lint-md
+hooks:          install pre-push git hook
 ```
+
+Run `make hooks` after cloning to install the pre-push hook. The hook runs the same checks as CI before each push.
 
 ## Related Profiles
 
