@@ -5,12 +5,17 @@ High-level guidance for all sessions. Project-specific details go in
 
 ## Workflow
 
-**IMPORTANT**: Always **Explore -> Plan -> Code -> Commit**
+**IMPORTANT**: Always **Explore -> Plan -> Code -> Verify -> Commit**
 
 1. Read relevant files first - understand before coding
 2. Create detailed plan and get approval before implementing
 3. Implement methodically
-4. Commit with clear messages including
+4. **Verify before committing** (mandatory, no exceptions):
+   - Build passes (language-appropriate: `go build`, `tsc`, etc.)
+   - Tests pass (`go test`, `vitest`, etc.)
+   - Lint passes (`golangci-lint`, `eslint`, etc.)
+   - See `subagent-ci-checklist.md` for stack-specific checks
+5. Commit with clear messages including
    `Co-Authored-By: Claude <noreply@anthropic.com>`
 
 **Course Correct Early**: Interrupt me if I'm heading the wrong direction.

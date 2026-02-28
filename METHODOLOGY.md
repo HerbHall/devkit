@@ -163,6 +163,11 @@ This project is NOT worth pursuing if:
    - Write a brief spec (what it does, acceptance criteria)
    - Run `/plan-review` against the feature spec before writing code
    - Implement with tests
+   - **Pre-commit verification** (mandatory, no exceptions):
+     - Build passes (`go build`, `tsc --noEmit`, etc.)
+     - Tests pass (`go test`, `vitest`, etc.)
+     - Lint passes (`golangci-lint`, `eslint`, etc.)
+     - See `subagent-ci-checklist.md` for stack-specific checks
    - Run `/code-review` before committing (Critical/High findings block the commit)
    - Verify with `/quality-control`
    - Create PR, merge after CI passes
@@ -245,24 +250,26 @@ IPScan is the cautionary example: a network scanner that grew into a full monito
 Session work
   → /reflect captures learnings
     → MCP Memory (deep store, searchable)
-    → Rules files (fast path, auto-loaded)
+    → Tier 2 rules files (fast path, auto-loaded)
+    → DevKit issues for Tier 1 changes
       → Next session starts with all accumulated knowledge
 ```
 
 ### Maintaining the devkit
 
-After significant sessions, sync changes back:
+Projects discover improvements through daily work. Changes flow to
+DevKit through issues, not direct file edits:
 
-```bash
-# Copy updated rules
-cp ~/.claude/rules/*.md ~/workspace/devkit/claude/rules/
+1. **During project work**: `/reflect` stores learnings in MCP Memory
+   and Tier 2 rules files (patterns, gotchas). For Tier 1 changes
+   (workflow preferences, review policy), it creates DevKit issues.
+2. **During DevKit work**: Address accumulated issues, validate
+   proposed changes, and commit to DevKit.
+3. **Sync propagates**: `setup/sync.ps1 -Link` symlinks DevKit files
+   to `~/.claude/`. All projects inherit updates immediately.
 
-# Copy new skills
-cp -r ~/.claude/skills/new-skill ~/workspace/devkit/claude/skills/
-
-# Commit
-cd ~/workspace/devkit && git add -A && git commit -m "chore: sync patterns from [project]"
-```
+Symlinks are **read-only from the project perspective**. Projects
+read DevKit rules via symlinks but write changes through issues.
 
 ### When to Update the Methodology
 
