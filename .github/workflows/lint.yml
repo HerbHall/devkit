@@ -70,3 +70,126 @@ jobs:
             echo "::warning::Skills in claude/skills/ not listed in verify.sh: $UNLISTED"
           fi
           echo "OK: verify.sh skill list is accurate"
+
+  validate-rule-metadata:
+    name: Validate rule metadata
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate lifecycle metadata in Tier 2 rules
+        run: |
+          errors=0
+
+          # Map of files to their entry prefix
+          declare -A FILE_PREFIX=(
+            ["claude/rules/autolearn-patterns.md"]="AP"
+            ["claude/rules/known-gotchas.md"]="KG"
+          )
+
+          # Collect all entry headings across both files for cross-reference validation
+          # Format: PREFIX#NUMBER for each ## N. heading found
+          declare -A ALL_ENTRIES
+          for file in "${!FILE_PREFIX[@]}"; do
+            prefix="${FILE_PREFIX[$file]}"
+            while IFS=: read -r num rest; do
+              ALL_ENTRIES["${prefix}#${num}"]=1
+            done < <(grep -P '^## (\d+)\.' "$file" | grep -oP '(?<=## )\d+')
+          done
+
+          for file in "${!FILE_PREFIX[@]}"; do
+            prefix="${FILE_PREFIX[$file]}"
+            echo "--- Validating $file (prefix: $prefix) ---"
+
+            # -------------------------------------------------------
+            # (a) Validate **Added:** line format
+            # -------------------------------------------------------
+            while IFS=: read -r lineno line; do
+              # Expected: **Added:** YYYY-MM-DD | **Source:** <word> | **Status:** <status>
+              if ! echo "$line" | grep -qP '^\*\*Added:\*\* \d{4}-\d{2}-\d{2} \| \*\*Source:\*\* \S+ \| \*\*Status:\*\* .+$'; then
+                echo "::error file=$file,line=$lineno::Malformed **Added:** line. Expected: **Added:** YYYY-MM-DD | **Source:** <word> | **Status:** <status>"
+                errors=$((errors + 1))
+                continue
+              fi
+
+              # Extract and validate date
+              date_val=$(echo "$line" | grep -oP '(?<=\*\*Added:\*\* )\d{4}-\d{2}-\d{2}')
+              if ! date -d "$date_val" >/dev/null 2>&1; then
+                echo "::error file=$file,line=$lineno::Invalid date '$date_val' in **Added:** line"
+                errors=$((errors + 1))
+              fi
+
+              # Extract and validate status
+              status_val=$(echo "$line" | grep -oP '(?<=\*\*Status:\*\* ).+$')
+              if [ "$status_val" = "active" ]; then
+                : # valid
+              elif echo "$status_val" | grep -qP '^deprecated \(\d{4}-\d{2}-\d{2}\) -- .+$'; then
+                : # valid deprecated format
+              elif echo "$status_val" | grep -qP '^superseded-by-(AP|KG)#\d+$'; then
+                : # valid superseded format -- note: uses PREFIX#N with hash
+              elif echo "$status_val" | grep -qP '^superseded-by-(AP|KG)\d+$'; then
+                : # also accept without hash for backward compat (superseded-by-KG17)
+              else
+                echo "::error file=$file,line=$lineno::Invalid status '$status_val'. Must be: active | deprecated (YYYY-MM-DD) -- reason | superseded-by-<PREFIX>#<N>"
+                errors=$((errors + 1))
+              fi
+            done < <(grep -nP '^\*\*Added:\*\*' "$file")
+
+            # -------------------------------------------------------
+            # (b) Validate **See also:** references
+            # -------------------------------------------------------
+            while IFS=: read -r lineno line; do
+              # Extract all AP#N and KG#N references
+              refs=$(echo "$line" | grep -oP '(AP|KG)#\d+' || true)
+              for ref in $refs; do
+                ref_prefix=$(echo "$ref" | grep -oP '^(AP|KG)')
+                ref_num=$(echo "$ref" | grep -oP '\d+$')
+
+                # Determine which file to check
+                if [ "$ref_prefix" = "AP" ]; then
+                  target_file="claude/rules/autolearn-patterns.md"
+                else
+                  target_file="claude/rules/known-gotchas.md"
+                fi
+
+                # Verify the heading ## N. exists in the target file
+                if ! grep -qP "^## ${ref_num}\." "$target_file"; then
+                  echo "::error file=$file,line=$lineno::Reference $ref points to non-existent entry (## ${ref_num}. not found in $target_file)"
+                  errors=$((errors + 1))
+                fi
+              done
+            done < <(grep -nP '^\*\*See also:\*\*' "$file")
+
+            # -------------------------------------------------------
+            # (c) Validate entry_count in frontmatter
+            # -------------------------------------------------------
+            # Read entry_count from YAML frontmatter
+            frontmatter_count=$(grep -P '^entry_count:\s*\d+' "$file" | grep -oP '\d+' || echo "")
+            if [ -z "$frontmatter_count" ]; then
+              echo "::error file=$file,line=1::Missing entry_count in YAML frontmatter"
+              errors=$((errors + 1))
+            else
+              # Count all ## N. headings
+              total_entries=$(grep -cP '^## \d+\.' "$file" || echo "0")
+
+              # Count deprecated and superseded entries
+              inactive_entries=$(grep -cP '^\*\*Status:\*\* (deprecated|superseded)' "$file" || echo "0")
+
+              # Active = total - inactive
+              active_entries=$((total_entries - inactive_entries))
+
+              if [ "$active_entries" != "$frontmatter_count" ]; then
+                # Find the line number of entry_count for the annotation
+                ec_line=$(grep -nP '^entry_count:' "$file" | head -1 | cut -d: -f1)
+                echo "::error file=$file,line=$ec_line::entry_count is $frontmatter_count but computed active entries = $active_entries (total=$total_entries, inactive=$inactive_entries)"
+                errors=$((errors + 1))
+              fi
+            fi
+
+            echo "--- Done: $file ---"
+          done
+
+          if [ "$errors" -gt 0 ]; then
+            echo "Found $errors metadata validation error(s)"
+            exit 1
+          fi
+          echo "All rule metadata is valid"
