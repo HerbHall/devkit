@@ -199,6 +199,47 @@ devkit_symlink_health() {
 
 devkit_symlink_health "$(_devkit_resolve_path)"
 
+# ===== Rules Drift Detection =====
+# Compare entry counts between ~/.claude/rules/ and devkit clone.
+# Warns when copies have diverged so user can push or pull.
+devkit_drift_check() {
+    local devkit_path="$1"
+    [ -z "$devkit_path" ] && return 0
+    [ ! -d "$devkit_path/claude/rules" ] && return 0
+
+    local local_rules="$HOME/.claude/rules"
+    [ ! -d "$local_rules" ] && return 0
+
+    local files="autolearn-patterns.md known-gotchas.md workflow-preferences.md"
+    local drifted=0
+
+    for f in $files; do
+        [ ! -f "$local_rules/$f" ] && continue
+        [ ! -f "$devkit_path/claude/rules/$f" ] && continue
+
+        local local_count devkit_count
+        local_count=$(grep -c '^## [0-9]' "$local_rules/$f" 2>/dev/null || echo 0)
+        devkit_count=$(grep -c '^## [0-9]' "$devkit_path/claude/rules/$f" 2>/dev/null || echo 0)
+
+        if [ "$local_count" != "$devkit_count" ]; then
+            local direction
+            if [ "$local_count" -gt "$devkit_count" ]; then
+                direction="local $local_count > devkit $devkit_count (push needed)"
+            else
+                direction="local $local_count < devkit $devkit_count (pull needed)"
+            fi
+            echo "DevKit drift: $f -- $direction"
+            drifted=$((drifted + 1))
+        fi
+    done
+
+    if [ "$drifted" -gt 0 ]; then
+        echo "DevKit: $drifted rules file(s) out of sync. Run /devkit-sync push or pull."
+    fi
+}
+
+devkit_drift_check "$(_devkit_resolve_path)"
+
 # ===== CLAUDE.md Detection =====
 
 # Skip if we're in the home directory
