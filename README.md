@@ -94,6 +94,7 @@ This backs up any existing files in `~/.claude/`, creates symlinks for all share
 | `/devkit-sync promote` | Graduate local patterns to universal rules |
 | `/devkit-sync update` | Check version and upgrade to latest release |
 | `/devkit-sync verify` | Check if DevKit updates reached all active projects |
+| `/devkit-sync new-project` | Scaffold a new project with templates and profile |
 
 ### Multi-machine workflow
 
