@@ -1,6 +1,6 @@
 ---
 name: devkit-sync
-description: Manual sync operations for DevKit multi-machine synchronization. Status, push, pull, init, diff, unlink, promote, update, and new-project scaffolding.
+description: Manual sync operations for DevKit multi-machine synchronization. Status, push, pull, init, diff, unlink, promote, update, new-project scaffolding, and settings audit.
 user_invocable: true
 ---
 
@@ -32,6 +32,7 @@ What sync operation do you need?
 9. **Update** -- Check version and upgrade to a specific release or latest
 10. **Verify** -- Check if DevKit updates reached all active projects
 11. **New project** -- Scaffold a new project with DevKit templates and profile
+12. **Audit settings** -- Check for redundant permissions in settings.json
 
 Or just type your question about DevKit sync.
 </intake>
@@ -50,6 +51,7 @@ Or just type your question about DevKit sync.
 | 9, "update", "upgrade", "version", "release" | workflows/update.md |
 | 10, "verify", "propagation", "check projects", "reach" | workflows/verify.md |
 | 11, "new-project", "scaffold", "create project", "new" | workflows/new-project.md |
+| 12, "audit", "cleanup", "settings audit", "redundant", "permissions" | workflows/audit-settings.md |
 
 **After reading the workflow, follow it exactly.**
 </routing>
