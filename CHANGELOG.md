@@ -1,5 +1,27 @@
 # Changelog
 
+## v2.3.0 -- 2026-03-01
+
+Rules reconciliation, drift detection, and project settings enforcement.
+
+### Added
+
+- **Rules reconciliation** (PR #140): Imported 44 orphaned entries from local copies back to devkit (22 AP, 17 KG, 5 WP)
+- **Rules drift detection** (PR #141): `devkit_drift_check()` in SessionStart.sh warns when local and devkit entry counts diverge; `/devkit-sync status` includes drift report
+- **Project settings enforcement** (PR #145): Three-layer mechanism ensures all projects have `.claude/settings.json` -- git template, Kit 3 scaffolder, and SessionStart.sh detection
+- **Git template settings.json** (PR #145): `git-templates/.claude/settings.json` auto-deploys on `git init`
+
+### Fixed
+
+- **sync.ps1 StrictMode crash** (PR #142): `PSObject.Properties.Match()` for safe property existence checks under `Set-StrictMode -Version Latest`
+- **sync.ps1 Read-Host null** (PR #144): Null guard prevents crash when `Read-Host` returns null in non-interactive mode
+- **Known gotcha KG#80** (PR #144): Documented PowerShell StrictMode + PSCustomObject property access gotcha
+
+### Changed
+
+- Rules entry counts: autolearn-patterns 76 -> 98, known-gotchas 62 -> 80, workflow-preferences 11 -> 16
+- `/devkit-sync verify` now checks `.claude/settings.json` presence across all projects
+
 ## v2.2.0 -- 2026-02-28
 
 Rule lifecycle management for the autolearn system.

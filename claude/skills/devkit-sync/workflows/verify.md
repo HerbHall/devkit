@@ -60,6 +60,7 @@ For each discovered project, verify these critical files:
 | `CLAUDE.md` | `claude/CLAUDE.md` | `~/.claude/CLAUDE.md` (global) |
 | `rules/*.md` | `claude/rules/*.md` | `~/.claude/rules/*.md` (global) |
 | Project `CLAUDE.md` | n/a | `<project>/CLAUDE.md` (project-specific) |
+| Project `.claude/settings.json` | `project-templates/settings.json` | `<project>/.claude/settings.json` |
 
 **For each file, determine status:**
 
@@ -109,10 +110,10 @@ Present results as a table:
 
 ### Projects
 
-| Project | CLAUDE.md | Notes |
-|---------|-----------|-------|
-| SubNetree | Present (project-specific) | OK |
-| Runbooks | Missing | Create with template |
+| Project | CLAUDE.md | .claude/settings.json | Notes |
+|---------|-----------|----------------------|-------|
+| SubNetree | Present | Present | OK |
+| Runbooks | Missing | Present | Create CLAUDE.md from template |
 
 ### Summary
 
@@ -129,4 +130,5 @@ Based on findings:
 - **Stale copies or missing files**: `pwsh setup/sync.ps1 -Link` to re-establish symlinks
 - **Broken symlinks**: DevKit clone may have moved. Run `/devkit-sync init` to reconfigure
 - **Project missing CLAUDE.md**: Offer to create from template (`project-templates/claude-md-template.md`)
+- **Project missing `.claude/settings.json`**: Copy from `project-templates/settings.json` (creates `.claude/` dir if needed)
 - **All current**: Report "All projects are current. No action needed."
