@@ -297,8 +297,9 @@ function Set-MachineIdentity {
     Write-Step "Machine identity is used in sync branch names and commit messages."
     Write-Step "Default (from hostname): $default"
 
+    # In non-interactive mode (piped from bash, CI), Read-Host returns null
     $userInput = Read-Host -Prompt "  Machine ID [$default]"
-    $machineId = if ($userInput.Trim()) { $userInput.Trim() } else { $default }
+    $machineId = if ($userInput -and $userInput.Trim()) { $userInput.Trim() } else { $default }
 
     # Validate
     if ($machineId -notmatch '^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$') {

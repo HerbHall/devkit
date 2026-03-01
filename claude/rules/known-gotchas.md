@@ -1,7 +1,7 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 79
+entry_count: 80
 last_updated: "2026-03-01"
 ---
 
@@ -1040,3 +1040,25 @@ ignored:
 **Platform:** GitHub
 **Issue:** Repository secrets for GitHub Actions are under Settings > Secrets and variables > Actions. The "Secrets and variables" item has a dropdown arrow that must be clicked to expand and reveal the "Actions" submenu. Easy to miss when looking at the Settings sidebar.
 **Fix:** Use CLI instead: `gh secret set SECRETNAME` (prompts for value). `gh secret list` to verify.
+
+## 80. PowerShell StrictMode Throws on Nonexistent Property Access in Conditionals
+
+**Platform:** PowerShell 7+
+**Issue:** Under `Set-StrictMode -Version Latest`, accessing a property that doesn't exist on a `PSCustomObject` throws `PropertyNotFoundException` -- even inside a boolean conditional like `if (-not $obj.prop)`. The error fires before the `-not` operator evaluates. This breaks backward-compatibility shims that check for a property before adding it (e.g., `if (-not $manifest.shared) { Add-Member ... }`).
+**Diagnosis:** Error says "The property 'X' cannot be found on this object" pointing to the conditional line, not to a property assignment.
+**Fix:** Use `PSObject.Properties.Match()` for safe existence checks:
+
+```powershell
+# BAD: throws under StrictMode when 'shared' doesn't exist
+if ($manifest.tiers -and -not $manifest.shared) {
+    $manifest | Add-Member -NotePropertyName 'shared' -NotePropertyValue $manifest.tiers.universal
+}
+
+# GOOD: safe property existence check
+$hasShared = $manifest.PSObject.Properties.Match('shared').Count -gt 0
+if ($manifest.tiers -and -not $hasShared) {
+    $manifest | Add-Member -NotePropertyName 'shared' -NotePropertyValue $manifest.tiers.universal
+}
+```
+
+**Note:** This does NOT affect hashtables (`$hash.missing` returns `$null` under StrictMode). Only `PSCustomObject` (from `ConvertFrom-Json`, `New-Object`, etc.) throws.
