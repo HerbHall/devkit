@@ -802,5 +802,5 @@ go run github.com/swaggo/swag/cmd/swag@v1.16.4 init -g cmd/app/main.go -o api/sw
 3. Project-local: `<project>/.claude/settings.local.json` (gitignored, session accumulation)
 
 Permission arrays **merge** across scopes. Deny rules take precedence.
-**Fix:** Put broad tool permission wildcards in `~/.claude/settings.json` (user-level). These apply as defaults to every project. Use project-level `settings.json` only for project-specific deny rules or overrides. DevKit's `settings.template.json` has the correct broad wildcards -- apply them to `~/.claude/settings.json`, not to a parent workspace directory.
-**Prevention:** When scaffolding new projects, copy `project-templates/settings.json` to `<project>/.claude/settings.json`. See DevKit issue #131.
+**Fix:** Put broad tool permission wildcards in `~/.claude/settings.json` (user-level). These apply as defaults to every project. Use project-level `settings.json` only for project-specific deny rules or overrides. DevKit's user-level template (`claude/settings.template.json`) has the correct broad wildcards -- apply them to `~/.claude/settings.json`. For project-level permissions, use `project-templates/settings.json` copied to `<project>/.claude/settings.json`.
+**Prevention:** When scaffolding new projects, copy `project-templates/settings.json` to `<project>/.claude/settings.json`. See DevKit issue #131 and [Settings Strategy](../docs/settings-strategy.md).

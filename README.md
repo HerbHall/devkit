@@ -41,10 +41,13 @@ Setup creates symlinks from `~/.claude/` to the DevKit clone (or copies files in
 
 | File | Purpose |
 |------|---------|
-| `claude/settings.template.json` | Claude Code settings — adjust permissions and plugins |
+| `claude/settings.template.json` | User-level Claude Code settings — broad permissions, hooks, plugins |
+| `project-templates/settings.json` | Project-level Claude Code permissions — commit to repo for collaborators |
 | `project-templates/workspace-claude-md-template.md` | Workspace CLAUDE.md template — fill in your projects |
 | `mcp/memory-seeds.md` | MCP Memory bootstrap — replace with your profile |
 | `mcp/claude-desktop.template.json` | MCP server config — fill in tokens and paths |
+
+See [Settings Strategy](docs/settings-strategy.md) for the two-layer permission architecture.
 
 ### Methodology (opinionated process guide)
 
