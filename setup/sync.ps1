@@ -109,7 +109,9 @@ function Read-SyncManifest {
     $manifest = Get-Content $manifestPath -Raw | ConvertFrom-Json
 
     # v2 schema: tiers.universal replaces shared
-    if ($manifest.tiers -and $manifest.tiers.universal -and -not $manifest.shared) {
+    # Use PSObject.Properties to avoid PropertyNotFoundException under Set-StrictMode -Version Latest
+    $hasShared = $manifest.PSObject.Properties.Match('shared').Count -gt 0
+    if ($manifest.tiers -and $manifest.tiers.universal -and -not $hasShared) {
         $manifest | Add-Member -NotePropertyName 'shared' -NotePropertyValue $manifest.tiers.universal -Force
     }
 
