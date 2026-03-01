@@ -1,8 +1,8 @@
 ---
 description: User workflow preferences and conventions. Read at session start for context.
 tier: 1
-last_updated: "2026-02-14"
-entry_count: 10
+last_updated: "2026-03-01"
+entry_count: 16
 ---
 
 # Workflow Preferences
@@ -101,3 +101,51 @@ When resuming after context compaction with "continue where we left off":
 - Check the todo list first -- it reflects current progress accurately
 - Check `git status` and `git branch` to confirm actual working tree state before acting
 - The plan file (if any) in system reminders provides the overall scope
+
+## 12. Cross-Project Workspace Isolation
+
+When working on cross-project tasks (e.g., DevKit sync from a SubNetree session):
+
+- Verify no files are created or modified in the wrong project's repo
+- Create GitHub issues in the correct repo (not the currently-open project)
+- Check `git status` in both repos before closing the session
+- Plan files and MCP Memory are global (not project-scoped) -- this is fine
+- If the user asks to verify isolation, run `git status` in both project directories
+
+## 13. Zero-Tolerance Error Policy
+
+Once found, always fix, never leave. Every error is an opportunity to improve the system:
+
+- No "pre-existing" bypass -- all errors get fixed or tracked with an issue immediately
+- Every error triggers a systemic assessment: why didn't our rules prevent this?
+- Learnings feed back to DevKit via `/reflect` for all-project benefit
+- Agents own every error they find, regardless of who introduced it
+
+## 14. Mandatory Subagent Checklists
+
+Every Task tool invocation for code-writing agents MUST include:
+
+- Relevant CI checklist from `subagent-ci-checklist.md` ([GO-CI], [FE-CI], or [COMBO-CI])
+- Git Safety block ([GIT-SAFE])
+- Shared File Guard ([SHARED-FILE]) if running parallel agents
+- Core principles reminder (Tier 0 rules are unconditional)
+- Failure to include checklists is a DevKit policy violation
+
+## 15. Autolearn Abstraction Assessment
+
+After fixing errors or discovering patterns, assess abstraction level:
+
+- Project-specific: stays in project rules
+- Stack-specific (Go, React, etc.): promote to DevKit stack rules
+- Universal development principle: promote to DevKit core rules
+- Template-worthy: update project templates so future projects inherit it
+- Run `/reflect` to capture and propose promotion
+
+## 16. Cross-Project Boundary: Issues Not Edits
+
+When working in a project context (e.g., Samverk), do NOT directly edit files in other projects (e.g., DevKit). Instead:
+
+- Create a GitHub issue in the other repo: `gh issue create -R HerbHall/<repo>`
+- Include enough detail to reproduce/implement the fix
+- The fix gets implemented when actively working in that project's context
+- This prevents projects from becoming coupled and keeps sessions focused

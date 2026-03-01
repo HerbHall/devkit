@@ -1,7 +1,7 @@
 ---
 description: Learned patterns from past sessions. Read when encountering similar situations.
 tier: 2
-entry_count: 76
+entry_count: 98
 last_updated: "2026-03-01"
 ---
 
@@ -1121,3 +1121,291 @@ This can eliminate significant planned work when items are already implemented b
 
 Periodically clean up user-level settings.json to remove accumulated specific approvals -- they are redundant when broad wildcards are present.
 **Proven:** Replaced 157 individual approvals with 11 broad wildcards. All projects immediately inherited tool access without per-command prompts.
+
+## 87. Linter/Hook Leaks Cross-Branch Changes in Parallel Agent Work
+
+**Category:** workflow-pattern
+**Context:** When parallel agents both modify the same file (e.g., SKILL.md routing table) and a linter or hook runs on the working tree, it can merge both agents' changes into a single file state. If you commit that file on one branch, the other agent's additions leak in. CI then fails because the branch references files that don't exist on it (e.g., `workflows/update.md` referenced in SKILL.md but only created by the other agent).
+**Fix:** After sorting parallel agents' changes into branches via stash/pop, diff the shared file against main to verify only the current branch's additions are present. Remove cross-branch additions before committing.
+**Example:** DevKit v2.0 Wave D: #86 (promote) and #87 (update) both added routes to SKILL.md. The linter updated the working tree copy to include both. Committing on #86's branch included the update route, causing CI "missing workflow" failure. Fixed by removing the update route from #86's branch.
+
+## 88. Agent-Generated Markdown Needs MD038 Check
+
+**Category:** correction
+**Context:** Subagents generating markdown workflow files commonly produce code spans with trailing spaces like `` `## ` `` which triggers markdownlint MD038 (no-space-in-code). This is especially common when the agent writes instructions referencing heading syntax.
+**Fix:** After receiving agent-generated `.md` files, grep for MD038 violations before committing: `grep -n '` [^`]' file.md` or run `npx markdownlint-cli2 file.md`.
+
+## 89. Parallel Plain-Text Renderer for TUI Transition Animations
+
+**Category:** architecture-pattern
+**Context:** A Bubbletea TUI has a styled `View()` (lipgloss styles, borders, centering via `lipgloss.Place`) and a transition animation that needs to reveal the menu text character-by-character. Stripping ANSI from `View()` output fails due to width calculation mismatches between lipgloss and terminals (emoji, variation selectors, border chars).
+**Fix:** Create a `TransitionText()` method on the model that mirrors `View()` content logic but outputs plain text -- no ANSI, no borders, no lipgloss centering. Share the responsive logic (column count, show/hide flags) between both methods so they stay synchronized.
+
+```go
+// View() builds styled content -> wraps in border -> centers with lipgloss.Place
+// TransitionText() builds same content as plain text -> transition system centers
+
+func (m Model) TransitionText() string {
+    // Same responsive flags as View()
+    showTitle, showStats, showTip := m.responsiveFlags()
+    // Same column count as View()
+    cols := m.columnCount()
+    // Build plain text with same layout, no styles
+    // ...
+    return b.String()
+}
+```
+
+**Key insight:** Two rendering paths (styled + plain) sharing the same layout decisions is more maintainable and correct than trying to reverse-engineer plain text from styled output via ANSI stripping.
+
+## 90. golangci-lint v2 Requires version Field in Config
+
+**Category:** correction
+**Context:** golangci-lint v2 requires `version: "2"` as the first field in `.golangci.yml`. Without it, the linter exits with `Error: can't load config: unsupported version of the configuration: ""`. This error is NOT caught by `go build` or `go test` -- only by running golangci-lint directly. A config that worked with v1 silently breaks when upgrading to v2.
+**Fix:** Add `version: "2"` as the first line of `.golangci.yml`. Also note that v2 changed the module path from `github.com/golangci/golangci-lint/cmd/golangci-lint` to `github.com/golangci/golangci-lint/v2/cmd/golangci-lint`.
+**Example:**
+
+```yaml
+# BAD: v1 config with v2 binary
+run:
+  timeout: 5m
+
+# GOOD: v2 config
+version: "2"
+
+run:
+  timeout: 5m
+```
+
+**Discovered:** Caught by Samverk's pre-push hook on its first real use, proving the hook's value.
+
+## 91. go run for Pinned Tool Versions
+
+**Category:** workflow-pattern
+**Context:** Installing Go tools locally (`go install ...@latest`) creates version drift between developers, PATH issues on Windows MSYS (gotcha #60), and `@latest` risks surprise breakage in CI.
+**Fix:** Use `go run github.com/.../tool@vX.Y.Z` in Makefiles and hooks instead of relying on a local binary. Benefits: exact version guaranteed, no install step, no PATH issues, works identically in Makefile targets, pre-push hooks, and CI.
+**Example:**
+
+```makefile
+# BAD: depends on local install, version unknown
+lint:
+    golangci-lint run ./...
+
+# GOOD: exact version, no install needed
+lint:
+    go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.1.6 run ./...
+```
+
+## 92. DevKit Scaffolding Must Include Executable Templates
+
+**Category:** process-pattern
+**Context:** DevKit v2.0 had comprehensive profiles describing WHAT projects should do (linting, testing, CI) but zero HOW scaffolding (no Makefile templates, no CI workflow templates, no pre-push hooks, no .golangci.yml template). Projects set up from devkit required manual creation of all CI infrastructure, leading to preventable failures (Samverk had 8/10 CI runs failing from pre-existing errors).
+**Fix:** DevKit should include ready-to-copy templates for: (1) pre-push hook (`git-templates/hooks/pre-push`), (2) golangci-lint config (`project-templates/golangci.yml`), (3) Makefile (`project-templates/Makefile.go`), (4) CI workflow (`project-templates/ci.yml`). Added in devkit PR #104.
+
+## 93. Advisory Rules Without Enforcement Are Ignored Under Pressure
+
+**Category:** process-pattern
+**Context:** DevKit v2.0 has 88 autolearn patterns and 62 gotchas loaded into every session. They are advisory-only -- no mechanism enforces them. Under time pressure (sprints, parallel agent waves), subagent prompts omit CI checklists, errors get classified as "pre-existing" and left unfixed, and agents repeat known mistakes. On Samverk, errors were dismissed as pre-existing despite DevKit being applied to the workspace.
+**Fix:** Advisory rules need enforcement tiers. DevKit v2.1.0 introduces: (1) Tier 0 immutable core principles that nothing can override, (2) Tier 1 governed rules that autolearn can propose but humans must approve, (3) Tier 2 learned patterns that autolearn can add with periodic review. Pre-commit verification must be mandatory ("must") not advisory ("should"). See DevKit issues #105-#116.
+
+## 94. Autolearn Must Validate Before Writing Rules
+
+**Category:** process-pattern
+**Context:** Autolearn writes directly to rules files with minimal validation (deduplication + format only). A bad learning (e.g., "suppress this lint warning" instead of "fix the root cause") becomes a permanent rule cascading to all projects. With autonomous workers, this risk is amplified -- an agent's workaround could weaken the guardrails that keep other agents on track.
+**Fix:** Five-stage validation pipeline before any rule is written: (1) Evidence check -- was the fix verified? (2) Core principle alignment -- does it contradict immutable rules? (3) Best practices review -- root cause fix or workaround? (4) Conflict check -- does it contradict existing rules? (5) Risk classification -- LOW auto-accepts, MEDIUM/HIGH needs human approval, CRITICAL is rejected. Hard-coded dangerous pattern list ("skip", "bypass", "ignore", "suppress", "disable", "--no-verify") always triggers human review. See DevKit issue #116.
+
+## 95. Fix-Forward Replaces Pre-Existing Error Classification
+
+**Category:** process-pattern
+**Context:** The quality-control skill classified CI failures as "pre-existing" when they existed in main before the current PR. This classification had no follow-through -- errors were noted and ignored indefinitely. Technical debt accumulated as each new PR inherited the failures.
+**Fix:** Replace "pre-existing" with "fix-forward" workflow: (1) Can fix inline in < 5 min? Fix it, add `chore: fix pre-existing <issue>`. (2) Can't fix inline? File a GitHub issue immediately with priority label. (3) Systemic? Also identify the DevKit gap (missing rule/checklist/template) and update it. Never acceptable: "noted as pre-existing, moving on" without a fix OR tracking issue. See DevKit issue #108.
+
+## 96. Interactive Q&A Then Background Agent for Human-Dependent Issues
+
+**Category:** workflow-pattern
+**Context:** Issues tagged `agent:human` require design decisions before implementation. Processing them one at a time wastes user attention. Processing them all at once risks context overload.
+**Fix:** Batch all agent:human issues into a single interactive pass: (1) present each issue with 2-4 focused questions using predefined options (AskUserQuestion), (2) capture all decisions, (3) launch background agents (one per issue) to write design docs incorporating the decisions. User spends ~30 min answering questions, then agents run in parallel.
+**Proven:** Samverk session: 4 agent:human issues (#7, #19, #10, #13) + 1 background research (#12) resolved in one sitting. 5 design docs generated, all passing markdownlint.
+
+## 97. Combine Complementary Issues Into Single PR
+
+**Category:** workflow-pattern
+**Context:** Two issues may produce complementary outputs where one's research directly feeds the other's requirements (e.g., #12 Ollama orchestration research informs #13 system requirements hardware tiers).
+**Fix:** Combine into a single PR with both deliverables. Close both issues using repeated keyword syntax (`Closes #12, Closes #13`). Reduces: CI runs, review overhead, merge conflict risk. Keep individual issue tracking granular -- the combined PR references both.
+
+## 98. 4-PR Contributor Config Rollout Sequence
+
+**Category:** workflow-pattern
+**Context:** Setting up a repo for external contributors requires ESLint, CI, community health files, branch protection, and repo settings. These have dependency ordering that must be respected.
+**Fix:** Split into 4 PRs with this dependency chain:
+
+1. **Community Health Files** (CONTRIBUTING.md, CODE_OF_CONDUCT.md, SECURITY.md, PR template, CODEOWNERS, README badges) -- independent
+2. **ESLint/Linting Setup** (eslint.config.js, package.json scripts, lint fixes) -- independent, parallel with PR 1
+3. **CI Enhancements** (split workflow into Lint/TypeCheck/Build jobs) -- depends on PR 2 (needs lint config)
+4. **Repo Settings + Branch Protection** (dependabot, issue config, merge policy, branch protection) -- depends on PR 3 (protection needs CI job names to exist)
+
+PRs 1 and 2 have zero file overlap and can merge in parallel. PR 3 must wait for PR 2. PR 4 must wait for PR 3. Branch protection API call goes AFTER PR 4 merges.
+**Proven:** Runbooks PRs #66-#69, all CI-green first pass, zero rework.
+
+## 99. Dependabot Triage: Batch Check, Merge Green, Close Failing
+
+**Category:** workflow-pattern
+**Context:** When Dependabot is first enabled on a repo, it creates multiple PRs at once. Some pass CI, others fail due to ecosystem incompatibilities (e.g., ESLint 10 breaking react-hooks plugin peer dep).
+**Fix:** Check CI status on ALL Dependabot PRs first, then batch process:
+
+1. `gh pr view N --json statusCheckRollup` for each PR
+2. Merge all CI-green PRs sequentially (rebase between each: `gh pr update-branch N`)
+3. Close all CI-failing PRs with explanatory comment and `--delete-branch`
+
+**Merge order:** Actions version bumps first (CI config changes), then build tools, then framework deps. Each merge changes main, so subsequent PRs need rebase before merge.
+**Proven:** Runbooks: 7 Dependabot PRs triaged in ~5 min. 4 merged (checkout v6, setup-node v6, vite 7, react-swc 4), 3 closed (ESLint 10 x2, React bump).
+
+## 100. Vitest Setup for React + Vite Projects
+
+**Category:** testing-pattern
+**Context:** Setting up unit tests for a React + MUI + Vite project (like a Docker Desktop extension) with TypeScript strict mode.
+**Fix:** Minimal setup that works:
+
+1. Install: `npm install --save-dev vitest @testing-library/react @testing-library/jest-dom jsdom`
+2. `vitest.config.ts`: use `mergeConfig(viteConfig, defineConfig({ test: { environment: 'jsdom', globals: true, setupFiles: './src/test-setup.ts' } }))` -- inherits Vite plugins and defines
+3. `test-setup.ts`: single line `import '@testing-library/jest-dom/vitest'`
+4. Priority targets: pure utility functions first (zero mocking), then localStorage-using functions (jsdom provides it)
+5. Add `"test": "vitest run"` to package.json scripts
+6. Add Test job to CI parallel with Lint/Type Check, make Build depend on all three
+
+**Key insight:** `mergeConfig` from `vitest/config` is required to inherit the Vite config (SWC plugin, define blocks). Using a standalone `defineConfig` misses these.
+
+## 101. Zero-Rework Sprint via Subagent CI Checklists
+
+**Category:** workflow-pattern
+**Context:** Sprint with 5 PRs across 4 waves achieved zero rework (all CI-green first pass). Previous sprints on other projects had 1-3 fix-push cycles per PR.
+**Fix:** Key factors that eliminated rework:
+
+1. **Subagent prompts include specific CI commands** -- not "run tests" but `cd ui && npx tsc --noEmit && npx eslint src/file.tsx && npm run build`
+2. **Wave ordering respects dependencies** -- parallel only when zero file overlap, sequential when output feeds input
+3. **Read-before-write requirement** -- "Read the existing file FIRST before making changes" in every prompt
+4. **Single responsibility per agent** -- one issue per agent, clear file ownership
+
+**Sprint structure:**
+
+- Wave 1 (parallel): Error Boundary + Dockerfile labels (zero overlap)
+- Wave 2: Destructive command confirmation (modifies dialog)
+- Wave 3: Unit tests (depends on Wave 2's utility file)
+- Wave 4: README/CHANGELOG docs update
+
+**Proven:** Runbooks sprint: 5 PRs (#78-#82), 4 waves, ~25 min total including CI waits.
+
+## 102. noctx: Database Operations Must Use Context-Aware Variants
+
+**Category:** lint-fix
+**Context:** golangci-lint `noctx` flags `db.Exec()`, `db.Query()`, and `db.QueryRow()` calls that don't pass a context. Even in init/migration code where `context.Background()` is appropriate, the context-aware variants must be used. Agents miss this because `db.Exec` compiles fine -- it's lint-only.
+**Fix:** Always use `ExecContext`, `QueryContext`, `QueryRowContext` with explicit context. For migration/init code, use `context.Background()`.
+**Example:**
+
+```go
+// BAD: noctx flagged
+db.Exec("PRAGMA journal_mode=WAL")
+rows, err := db.Query("SELECT id FROM sessions WHERE status = ?", status)
+
+// GOOD: context-aware variants
+db.ExecContext(context.Background(), "PRAGMA journal_mode=WAL")
+rows, err := db.QueryContext(ctx, "SELECT id FROM sessions WHERE status = ?", status)
+```
+
+## 103. errcheck: resp.Body.Close Requires Explicit Error Discard
+
+**Category:** lint-fix
+**Context:** `errcheck` flags both `resp.Body.Close()` (direct) and `defer resp.Body.Close()` (deferred). The deferred form requires a closure because `defer` evaluates args immediately -- `defer _ = resp.Body.Close()` doesn't work syntactically.
+**Fix:** Direct: `_ = resp.Body.Close()`. Deferred: `defer func() { _ = resp.Body.Close() }()`.
+**Example:**
+
+```go
+// BAD: errcheck flagged
+resp.Body.Close()
+defer resp.Body.Close()
+
+// GOOD: explicit discard
+_ = resp.Body.Close()
+defer func() { _ = resp.Body.Close() }()
+```
+
+## 104. gosec G704: SSRF Nolint for Trusted Base URL Clients
+
+**Category:** lint-fix
+**Context:** gosec G704 flags `httpClient.Do(req)` as potential SSRF via tainted URL. In provider/adapter clients where the base URL is set once during initialization from trusted configuration, this is a false positive.
+**Fix:** Add `//nolint:gosec // G704: URL is from trusted baseURL config` on the flagged line.
+**Example:**
+
+```go
+// BAD: G704 flagged
+resp, err := c.httpClient.Do(req)
+
+// GOOD: explicit nolint with reason
+resp, err := c.httpClient.Do(req) //nolint:gosec // G704: URL is from trusted baseURL config
+```
+
+## 105. gocritic sloppyReassign: Named Return Shadow in If Statement
+
+**Category:** lint-fix
+**Context:** `if err = f(); err != nil` inside a function with named return `err` triggers gocritic `sloppyReassign`. The `=` silently overwrites the named return, which can mask earlier error values. Common in adapter methods with multiple fallible calls.
+**Fix:** Use `:=` to shadow with a new scope variable, or restructure to avoid reassigning named returns.
+**Example:**
+
+```go
+// BAD: sloppyReassign -- overwrites named return err
+func (c *Client) SetLabels(ctx context.Context, number int, labels []string) (err error) {
+    if err = c.ensureLabelCache(ctx); err != nil { return }
+    // ...
+}
+
+// GOOD: shadow with new scope
+func (c *Client) SetLabels(ctx context.Context, number int, labels []string) (err error) {
+    if err := c.ensureLabelCache(ctx); err != nil { return err }
+    // ...
+}
+```
+
+## 106. Mandatory Lint Step Language Eliminates Fix-Push Cycles
+
+**Category:** workflow-pattern
+**Context:** Go agent CI checklist previously said "Self-check your code for these MANDATORY lint patterns" but agents interpreted "self-check" as advisory and skipped running golangci-lint. Result: lint violations shipped, requiring fix-push cycles in CI.
+**Fix:** Promote golangci-lint to a numbered mandatory step with explicit enforcement language: "Step 4: `golangci-lint run ./path/...` -- This is NOT optional. Agents that skip this step cause fix-push cycles in CI. If golangci-lint reports errors, fix ALL of them before finishing."
+**Proven:** Samverk sprint with 3 parallel agents (frontmatter, dispatcher, profile). All 3 ran golangci-lint as step 4 and got 0 issues. Zero fix-push cycles needed.
+**Key insight:** Agent compliance depends on enforcement language, not just presence in rules. "Self-check" = skip under pressure. "Step 4, NOT optional, fix ALL" = comply.
+
+## 107. Stash Untracked Files Before Cross-Branch Push
+
+**Category:** workflow-pattern
+**Context:** After parallel agents complete, all files are in the working tree on main. When sorting into branches via stash/pop, `go build ./...` in the pre-push hook compiles untracked files from other agents. If those files reference symbols only on another branch, the push fails with "undefined" errors.
+**Fix:** Before pushing each branch, stash untracked files that belong to other branches:
+
+```bash
+# Pushing profile branch -- stash dispatcher files first
+git stash push -u -m "dispatcher files" -- internal/dispatcher/*.go
+git push -u origin feature/profile-store
+git stash pop
+```
+
+**Also:** `git restore <file>` to bring back deleted tracked files (doc.go stubs) that belong to other branches' deletions.
+**Proven:** Samverk sprint: profile branch push failed until dispatcher files were stashed. After stash, push succeeded with 0 issues.
+
+## 108. Phased Research-Gate Workflow for New Projects
+
+**Category:** process-pattern
+**Context:** Jumping from a flat issue backlog straight to implementation leads to underresearched designs and no validation checkpoints. Issues get implemented without understanding the ecosystem (SDKs, libraries, communication patterns), causing rework.
+**Fix:** Structure every project phase as: Research issues -> Implementation issues -> Gate issue (checklist).
+
+- **Research issues**: Investigate SDK patterns, library choices, communication mechanisms. Close with findings in comments or linked docs.
+- **Implementation issues**: Code the feature using research findings.
+- **Gate issues**: Checklist of acceptance criteria that must ALL pass before proceeding to the next phase.
+
+```text
+Phase workflow:
+1. Open research issue(s) -> investigate -> close with findings
+2. Review findings, update design docs if needed
+3. Open implementation issue(s) -> code -> PR -> merge
+4. Open gate issue -> verify all checkboxes -> close gate
+5. Proceed to next phase
+```
+
+**Proven:** RunNotes restructured from 10 flat issues to 5 phases with 6 research + 5 gate + existing implementation issues. Forces thinking before coding at every stage.
