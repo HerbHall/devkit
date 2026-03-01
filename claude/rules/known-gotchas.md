@@ -1,7 +1,7 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 61
+entry_count: 79
 last_updated: "2026-03-01"
 ---
 
@@ -804,3 +804,239 @@ go run github.com/swaggo/swag/cmd/swag@v1.16.4 init -g cmd/app/main.go -o api/sw
 Permission arrays **merge** across scopes. Deny rules take precedence.
 **Fix:** Put broad tool permission wildcards in `~/.claude/settings.json` (user-level). These apply as defaults to every project. Use project-level `settings.json` only for project-specific deny rules or overrides. DevKit's user-level template (`claude/settings.template.json`) has the correct broad wildcards -- apply them to `~/.claude/settings.json`. For project-level permissions, use `project-templates/settings.json` copied to `<project>/.claude/settings.json`.
 **Prevention:** When scaffolding new projects, copy `project-templates/settings.json` to `<project>/.claude/settings.json`. See DevKit issue #131 and [Settings Strategy](../docs/settings-strategy.md).
+
+## 62. Windows CRLF Breaks Bash grep Value Extraction in CI
+
+**Platform:** GitHub Actions (Ubuntu runners) / Windows-committed files
+**Issue:** Files committed from Windows have `\r\n` line endings. When a CI bash script uses `grep -oP` to extract values (e.g., status fields from markdown metadata), the extracted string includes a trailing `\r`. This causes: (1) string comparisons to fail silently (`"active\r" != "active"`), (2) arithmetic expressions to fail with `syntax error in expression (error token is "0")` when `grep -cP` returns `"77\r"`, and (3) `::error` annotations to display split across two lines.
+**Diagnosis:** CI job fails with "Invalid status 'active'" where the status looks correct. The `\r` is invisible in most log viewers. Arithmetic errors on `$((var1 - var2))` where vars came from grep output.
+**Fix:** Pre-process files through `tr -d '\r'` before parsing. Create a temp clean copy:
+
+```bash
+clean_file=$(mktemp)
+tr -d '\r' < "$file" > "$clean_file"
+# All grep/parsing operations use $clean_file
+# Error annotations still reference $file (original path for GitHub links)
+rm -f "$clean_file"
+```
+
+**Prevention:** Any CI bash script that parses text from repo files committed on Windows should strip `\r` as a first step. This applies to metadata validators, config parsers, and changelog processors.
+
+## 63. Lipgloss Emoji Variation Selector Width Mismatch
+
+**Platform:** Go (charmbracelet/lipgloss, all terminals)
+**Issue:** Emoji with variation selector U+FE0F (e.g., U+2328+FE0F `⌨️`) renders as 2 cells wide in terminals, but lipgloss counts U+2328 (Misc Technical block) as 1 cell. This causes a 1-character width discrepancy on any line containing the emoji, pushing content past the border and creating a stray disconnected right border bar.
+**Diagnosis:** A vertical `│` appears detached to the right of the panel border, at the same row as the mismatched emoji.
+**Fix:** Replace variation-selector emoji with standard 2-cell emoji from the Supplementary Multilingual Plane (U+1Fxxx). These have consistent 2-cell width in both terminals and lipgloss.
+
+```go
+// BAD: U+2328+FE0F -- lipgloss counts as 1 cell, terminal renders as 2
+{Name: "Skills", Icon: "\u2328\ufe0f"}
+
+// GOOD: U+1F3AF (dart) -- consistent 2-cell width
+{Name: "Skills", Icon: "\U0001f3af"}
+```
+
+**General rule:** Avoid variation selectors (U+FE0F, U+FE0E) in TUI content rendered by lipgloss. Stick to emoji in the U+1Fxxx range which have unambiguous East Asian Width properties.
+
+## 64. lipgloss.Place Output Is Not Safely ANSI-Strippable
+
+**Platform:** Go (charmbracelet/lipgloss)
+**Issue:** `lipgloss.Place(w, h, Center, Center, panel)` produces a full-terminal output with ANSI styling, borders rendered as box-drawing characters, and space-based centering. Stripping ANSI codes from this output to get "plain text positions" fails because: (1) lipgloss's internal width calculations account for styled content widths that change after stripping, (2) border characters become depositable content (not just chrome), and (3) emoji width mismatches compound across styled vs plain rendering.
+**Diagnosis:** Transition animation deposits characters (including border chars) at wrong positions. The revealed text doesn't align with the real View() when it takes over.
+**Fix:** Never strip ANSI from lipgloss output for position computation. Instead, create a dedicated plain-text renderer method that mirrors the View() logic using shared state (column count, responsive flags) but outputs unstyled text without borders. Let the consumer handle centering.
+
+```go
+// BAD: strip ANSI from styled output
+menuText := transition.StripANSI(m.menu.View())
+
+// GOOD: dedicated plain-text method with same layout logic
+menuText := m.menu.TransitionText()
+```
+
+## 65. golangci-lint v2 Silent Config Failure Without version Field
+
+**Platform:** Go (all)
+**Issue:** `.golangci.yml` files written for golangci-lint v1 lack the `version: "2"` field required by v2. Running golangci-lint v2 with a v1 config produces `Error: can't load config: unsupported version of the configuration: ""` and exits non-zero. This only manifests when running golangci-lint itself -- `go build` and `go test` pass fine, so the issue isn't caught until CI or a pre-push hook runs linting.
+**Diagnosis:** Linting step fails but build and test steps pass. Error message mentions "unsupported version" but doesn't suggest the fix.
+**Fix:** Add `version: "2"` as the first field in `.golangci.yml`. Also update the module path in `go run` or `go install` commands from `github.com/golangci/golangci-lint/cmd/golangci-lint` (v1) to `github.com/golangci/golangci-lint/v2/cmd/golangci-lint` (v2).
+**Prevention:** Use the devkit template `project-templates/golangci.yml` which includes the version field. Pin the golangci-lint version in CI with `version: v2.10.1` instead of `version: latest`.
+
+## 66. golangci-lint-action v7 Runs config verify (Schema Enforcement)
+
+**Platform:** GitHub Actions (all)
+**Issue:** `golangci-lint-action@v7` runs `golangci-lint config verify` before linting, which enforces strict JSON schema on `.golangci.yml`. Action v6 did NOT do this. Config keys that worked with v6 fail with `additional properties '<key>' not allowed` on v7. Known schema changes between v2.1 and v2.10: top-level `linters-settings:` moved under `linters:` as `settings:`, and `issues: exclude-rules:` moved to `linters: exclusions: rules:`.
+**Diagnosis:** CI Lint step fails before any actual linting with "additional properties not allowed" errors. Build and Test steps pass.
+**Fix:** Migrate config to v2.10 schema:
+
+```yaml
+# BAD (v2.1 schema): fails with v7 action + v2.10
+linters-settings:
+  gosec:
+    excludes: [G104]
+
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters: [gosec]
+
+# GOOD (v2.10 schema): nested under linters
+linters:
+  settings:
+    gosec:
+      excludes: [G104]
+  exclusions:
+    rules:
+      - path: _test\.go
+        linters: [gosec]
+```
+
+**Also:** `golangci-lint-action@v6` explicitly rejects v2.x versions. Must use `@v7` for golangci-lint v2. And `install-mode: goinstall` does NOT work with v2 (constructs v1 module path). Use default binary mode.
+
+## 67. Agent-Generated Markdown Tables: Pipes in Cells and Missing Columns
+
+**Platform:** All (markdownlint)
+**Issue:** Subagent-generated markdown tables have two common MD056 (table-column-count) errors: (1) pipe characters `|` inside code spans in table cells are interpreted as column separators, creating extra columns; (2) agents sometimes omit columns when cell content is wide, generating 2-column rows in 3-column tables.
+**Diagnosis:** `markdownlint` reports MD056 with "Expected: N columns, found: M columns" on specific table rows.
+**Fix:** After receiving agent-generated `.md` files, run `npx markdownlint-cli2 "path/to/file.md"` and check for MD056. For pipes in cells: rewrite content to avoid `|` or use HTML entity `&#124;`. For missing columns: add the missing cells with appropriate content.
+**Prevention:** Include in markdown agent checklist: "Verify all table rows have the same number of columns. Do not use pipe characters inside table cells."
+
+## 68. Proxmox Installer Injects noapic Which Blocks IOMMU
+
+**Platform:** Proxmox VE (all versions)
+**Issue:** The Proxmox installer writes `noapic` to `/etc/default/grub.d/installer.cfg` which is silently appended to `GRUB_CMDLINE_LINUX`. This blocks IOMMU even when `intel_iommu=on iommu=pt` is correctly set in `/etc/default/grub`. The main grub file looks clean, so you don't suspect a drop-in config.
+**Diagnosis:** `find /sys/kernel/iommu_groups/ -type l` returns nothing despite kernel params showing `intel_iommu=on` in `/proc/cmdline`. The `noapic` is also visible in `/proc/cmdline` but easy to miss.
+**Fix:** Check and fix the drop-in config:
+
+```bash
+cat /etc/default/grub.d/installer.cfg
+# If it contains 'noapic', remove it:
+sed -i 's/nomodeset noapic/nomodeset/' /etc/default/grub.d/installer.cfg
+update-grub && reboot
+```
+
+**Also required:** VT-d (Intel) or AMD-Vi must be enabled in BIOS. Check after fixing grub.
+**Prevention:** When setting up GPU passthrough on Proxmox, always check ALL grub configs: `cat /etc/default/grub /etc/default/grub.d/*.cfg | grep -E 'noapic|iommu'`
+
+## 69. Proxmox VM Re-Boots Into ISO Installer After Guest OS Install
+
+**Platform:** Proxmox VE (QEMU/KVM)
+**Issue:** After a guest OS (Ubuntu, Debian) finishes installing in a Proxmox VM, clicking "Reboot" in the installer boots back into the ISO installer instead of the installed OS. The ISO is still attached to ide2 and has higher boot priority.
+**Fix:** Detach the ISO and set boot order to the installed disk:
+
+```bash
+qm set <vmid> --ide2 none --boot order=scsi0
+qm reboot <vmid>
+```
+
+## 70. Ubuntu Point Release URLs 404 When Superseded
+
+**Platform:** Ubuntu / Proxmox ISO downloads
+**Issue:** Ubuntu ISO download URLs include the point release version (e.g., `ubuntu-24.04.2-live-server-amd64.iso`). When a newer point release ships (24.04.4), the old URL returns 404. Proxmox `wget` commands referencing the old version fail silently or with a cryptic error.
+**Fix:** Check the current filename before downloading:
+
+```bash
+curl -s https://releases.ubuntu.com/24.04/ | grep -oP 'ubuntu-24\.04\.\d+-live-server-amd64\.iso' | head -1
+```
+
+## 71. NVIDIA Driver Package Names Vary by Ubuntu PPA
+
+**Platform:** Ubuntu (Proxmox VMs)
+**Issue:** `apt install nvidia-driver-560` may fail with "package not found" because the exact driver version depends on which PPA is enabled and the Ubuntu release. The `ppa:graphics-drivers/ppa` PPA has newer versions than the default repos.
+**Fix:** Add the PPA and search for available versions:
+
+```bash
+sudo add-apt-repository -y ppa:graphics-drivers/ppa
+sudo apt update
+apt-cache search nvidia-driver | grep -E '^nvidia-driver-[0-9]' | sort -t- -k3 -n
+# Install the latest available (e.g., nvidia-driver-590)
+```
+
+## 72. ESLint react-hooks/set-state-in-effect Cannot Be Inline-Disabled
+
+**Platform:** React / ESLint (eslint-plugin-react-hooks v7+)
+**Issue:** The `react-hooks/set-state-in-effect` rule does NOT support `// eslint-disable-next-line` inline comments. Adding the directive produces "Unused eslint-disable directive" while the underlying error persists. This is unusual -- most ESLint rules support inline disable.
+**Diagnosis:** Error persists after adding inline disable comment. A second warning appears about the unused directive.
+**Fix:** Must use config-level override in `eslint.config.js`:
+
+```javascript
+rules: {
+  "react-hooks/set-state-in-effect": "warn",  // cannot inline-disable, config only
+}
+```
+
+**Context:** Dialog form initialization from props via `useEffect(() => setState(prop), [prop])` is a legitimate pattern that triggers this rule. Downgrading to "warn" is acceptable.
+
+## 73. ESLint 10 Breaks react-hooks Plugin Peer Dependency
+
+**Platform:** npm / React ecosystem
+**Issue:** Running `npm install eslint` without version pinning pulls ESLint 10.x. `eslint-plugin-react-hooks` (v7.x as of 2026-02) requires `eslint@^9` as a peer dependency. The install succeeds but lint commands fail with peer dependency warnings or crashes.
+**Fix:** Pin ESLint to v9: `npm install --save-dev eslint@^9 @eslint/js@^9`. Check peer requirements of all ESLint plugins before installing.
+
+## 74. gh repo edit Lacks --disable-* Flags
+
+**Platform:** GitHub CLI (gh)
+**Issue:** `gh repo edit` has `--enable-squash-merge`, `--enable-discussions`, etc. but does NOT have `--disable-merge-commit`, `--disable-rebase-merge`, or `--disable-wiki`. Running with `--disable-*` flags gives "unknown flag" errors.
+**Fix:** Use `gh api` with PATCH for disabling settings:
+
+```bash
+gh api repos/{owner}/{repo} -X PATCH \
+  -f allow_merge_commit=false \
+  -f allow_rebase_merge=false \
+  -f has_wiki=false
+```
+
+Also use `gh api` for features not exposed in `gh repo edit`:
+
+```bash
+# Enable private vulnerability reporting
+gh api repos/{owner}/{repo}/private-vulnerability-reporting -X PUT
+```
+
+## 75. Branch Protection Requires Pre-Existing CI Check Names
+
+**Platform:** GitHub
+**Issue:** `required_status_checks.contexts` in branch protection must reference job names that have already appeared in at least one CI run on the repo. Setting protection before the CI workflow runs with those job names causes all PRs to be blocked with "Expected — Waiting for status to be reported."
+**Fix:** Merge the CI workflow PR first, verify the job names appear in the Actions tab, THEN apply branch protection. This creates a dependency ordering: CI config must ship before protection can reference it.
+
+## 76. go build Compiles Untracked Files in Working Tree
+
+**Platform:** Go (all)
+**Issue:** `go build ./...` compiles ALL `.go` files in the module directory tree, including untracked files. When parallel agents create files for different branches (gotcha #25), untracked files from Agent B can reference symbols that only exist on Agent A's branch. Pre-push hooks running `go build` fail with "undefined" errors even though the committed code on the current branch is correct.
+**Diagnosis:** `git push` triggers pre-push hook, which runs `go build ./...`. Build fails with `undefined: models.ParseFrontmatter` (or similar) pointing to untracked files from another agent's work.
+**Fix:** Before pushing a branch, stash untracked files belonging to other agents:
+
+```bash
+git stash push -u -m "other-agent-files" -- internal/dispatcher/*.go
+git push -u origin feature/profile-store
+git stash pop
+```
+
+**Prevention:** When sorting parallel agent output into branches, push the branch with no cross-dependencies first. Or `git restore` deleted tracked files and stash untracked ones before each push.
+
+## 77. Docker Hub Shows Extension Images as Regular Containers
+
+**Platform:** Docker Hub / Docker Desktop
+**Issue:** Pushing a Docker Desktop Extension image to Docker Hub with correct labels (`com.docker.desktop.extension.api.version`, etc.) does NOT make it appear as an extension on Docker Hub. It shows as a regular container image. Users who `docker pull` or `docker run` it get a container, not an extension.
+**Fix:** The image is correct for `docker extension install` from CLI. To appear in the Docker Desktop Extensions Marketplace, submit via [docker/extensions-submissions](https://github.com/docker/extensions-submissions) repo (open an issue with the automatic_review template). Automated validation runs `docker extension validate`. If it passes, the extension appears in the marketplace within hours (12h cache).
+**Pre-submit:** Run `docker extension validate <image:tag>` locally first. Test light/dark mode, cross-platform. Manual review by Docker is currently paused.
+
+## 78. hadolint False Positives on Docker Desktop Extension Dockerfiles
+
+**Platform:** Docker / hadolint
+**Issue:** Docker Desktop extension Dockerfiles use vendor-specific labels (`com.docker.desktop.extension.*`, `com.docker.extension.*`) and `COPY` without `WORKDIR` as standard patterns. hadolint flags these as DL3048 (invalid label key) and DL3045 (COPY to relative path without WORKDIR), but both are correct for extensions.
+**Fix:** Create `.hadolint.yaml` at the project root:
+
+```yaml
+ignored:
+  - DL3048
+  - DL3045
+```
+
+**Scope:** Applies to ALL Docker Desktop extensions (RunNotes, Runbooks, any future extension).
+
+## 79. GitHub Secrets UI Is Buried Under Expandable Sidebar
+
+**Platform:** GitHub
+**Issue:** Repository secrets for GitHub Actions are under Settings > Secrets and variables > Actions. The "Secrets and variables" item has a dropdown arrow that must be clicked to expand and reveal the "Actions" submenu. Easy to miss when looking at the Settings sidebar.
+**Fix:** Use CLI instead: `gh secret set SECRETNAME` (prompts for value). `gh secret list` to verify.
