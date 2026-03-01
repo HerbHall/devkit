@@ -1,8 +1,8 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 60
-last_updated: "2026-02-28"
+entry_count: 61
+last_updated: "2026-03-01"
 ---
 
 # Known Gotchas
@@ -789,3 +789,18 @@ go run github.com/swaggo/swag/cmd/swag@v1.16.4 init -g cmd/app/main.go -o api/sw
 ```
 
 **Key insight:** `go run` downloads the module to a temp cache and executes it directly, bypassing any filesystem permission issues with the `~/go/bin/` directory. Pin the version with `@vX.Y.Z` for reproducibility. Works for any Go tool: `swag`, `protoc-gen-go`, `golangci-lint`, etc.
+
+## 61. Claude Code settings.local.json Does NOT Cascade from Parent Directories
+
+**Platform:** Claude Code (all)
+**Issue:** Unlike `.editorconfig` which walks up directories, Claude Code `settings.local.json` and `settings.json` do NOT cascade from parent directories. `D:\DevSpace\.claude\settings.local.json` does NOT apply to `D:\DevSpace\ProjectA\`. Each project is an independent scope.
+**Impact:** Every new project requires manually approving every tool use, even when broad permissions exist in a parent directory.
+**Settings hierarchy (actual):**
+
+1. User-level: `~/.claude/settings.json` (applies to ALL projects)
+2. Project-level: `<project>/.claude/settings.json` (committed, collaborator-shared)
+3. Project-local: `<project>/.claude/settings.local.json` (gitignored, session accumulation)
+
+Permission arrays **merge** across scopes. Deny rules take precedence.
+**Fix:** Put broad tool permission wildcards in `~/.claude/settings.json` (user-level). These apply as defaults to every project. Use project-level `settings.json` only for project-specific deny rules or overrides. DevKit's `settings.template.json` has the correct broad wildcards -- apply them to `~/.claude/settings.json`, not to a parent workspace directory.
+**Prevention:** When scaffolding new projects, copy `project-templates/settings.json` to `<project>/.claude/settings.json`. See DevKit issue #131.

@@ -1,8 +1,8 @@
 ---
 description: Learned patterns from past sessions. Read when encountering similar situations.
 tier: 2
-entry_count: 75
-last_updated: "2026-02-28"
+entry_count: 76
+last_updated: "2026-03-01"
 ---
 
 # Learned Patterns
@@ -1109,3 +1109,15 @@ vi.mock('@/api/auth', () => ({
 3. For agent features, read the actual platform-specific files (e.g., `*_other.go` for Linux stubs)
 
 This can eliminate significant planned work when items are already implemented but unchecked.
+
+## 86. Two-Layer Permission Strategy for Claude Code Projects
+
+**Category:** workflow-pattern
+**Context:** Claude Code settings do NOT cascade from parent directories (unlike .editorconfig). Each project is independent. The `~/.claude/settings.json` (user-level) provides global defaults that merge into every project's permissions. Over time, interactive approvals accumulate hundreds of specific command entries (e.g., `Bash(gh pr merge 30 --squash --admin)`) instead of broad wildcards.
+**Fix:** Two-layer approach:
+
+1. **User-level** (`~/.claude/settings.json`): Broad wildcards: `"Bash"`, `"Read"`, `"Edit"`, `"Write"`, `"WebFetch"`, `"WebSearch"`, `"Glob"`, `"Grep"`, `"Task"`, `"Skill"`, `"mcp__*"`. These are baseline permissions for the machine owner.
+2. **Project-level** (`<project>/.claude/settings.json`): Tool-specific wildcards (`Bash(git:*)`, `Bash(gh:*)`, `Bash(make:*)`) committed to repo, shareable with collaborators. Project deny rules restrict dangerous operations.
+
+Periodically clean up user-level settings.json to remove accumulated specific approvals -- they are redundant when broad wildcards are present.
+**Proven:** Replaced 157 individual approvals with 11 broad wildcards. All projects immediately inherited tool access without per-command prompts.
