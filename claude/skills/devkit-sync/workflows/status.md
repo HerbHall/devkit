@@ -39,4 +39,24 @@ Show current sync state including symlink health, git status, and drift report.
      Local:    N *.local.md files
    ```
 
-4. **Flag issues** if any symlinks are broken, missing, or are real files instead of symlinks.
+4. **Rules drift report** -- compare entry counts between `~/.claude/rules/` and `<devkit>/claude/rules/` for each rules file:
+
+   ```bash
+   for f in autolearn-patterns.md known-gotchas.md workflow-preferences.md; do
+     local_count=$(grep -c '^## [0-9]' ~/.claude/rules/$f 2>/dev/null || echo 0)
+     devkit_count=$(grep -c '^## [0-9]' <devkit>/claude/rules/$f 2>/dev/null || echo 0)
+     echo "$f: local=$local_count devkit=$devkit_count"
+   done
+   ```
+
+   Include in formatted status:
+
+   ```text
+     Drift:    autolearn-patterns (local 99 = devkit 99 ✓)
+               known-gotchas (local 82 > devkit 79 -- push needed)
+               workflow-preferences (local 16 = devkit 16 ✓)
+   ```
+
+   Direction: local > devkit means "push needed", local < devkit means "pull needed".
+
+5. **Flag issues** if any symlinks are broken, missing, or are real files instead of symlinks.
