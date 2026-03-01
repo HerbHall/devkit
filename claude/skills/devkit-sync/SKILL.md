@@ -1,6 +1,6 @@
 ---
 name: devkit-sync
-description: Manual sync operations for DevKit multi-machine synchronization. Status, push, pull, init, diff, unlink, promote, and update.
+description: Manual sync operations for DevKit multi-machine synchronization. Status, push, pull, init, diff, unlink, promote, update, and new-project scaffolding.
 user_invocable: true
 ---
 
@@ -31,6 +31,7 @@ What sync operation do you need?
 8. **Promote** -- Promote local patterns/gotchas to universal rules files
 9. **Update** -- Check version and upgrade to a specific release or latest
 10. **Verify** -- Check if DevKit updates reached all active projects
+11. **New project** -- Scaffold a new project with DevKit templates and profile
 
 Or just type your question about DevKit sync.
 </intake>
@@ -48,6 +49,7 @@ Or just type your question about DevKit sync.
 | 8, "promote", "graduate", "elevate", "local to universal" | workflows/promote.md |
 | 9, "update", "upgrade", "version", "release" | workflows/update.md |
 | 10, "verify", "propagation", "check projects", "reach" | workflows/verify.md |
+| 11, "new-project", "scaffold", "create project", "new" | workflows/new-project.md |
 
 **After reading the workflow, follow it exactly.**
 </routing>
