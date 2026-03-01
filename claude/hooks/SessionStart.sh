@@ -257,8 +257,20 @@ if [ "$is_project" = false ]; then
     exit 0
 fi
 
-# Already has CLAUDE.md — nothing to do
-if [ -f "CLAUDE.md" ]; then
+# Check for missing project config files
+missing_claude_md=false
+missing_settings=false
+
+if [ ! -f "CLAUDE.md" ]; then
+    missing_claude_md=true
+fi
+
+if [ ! -f ".claude/settings.json" ]; then
+    missing_settings=true
+fi
+
+# Nothing missing — done
+if [ "$missing_claude_md" = false ] && [ "$missing_settings" = false ]; then
     exit 0
 fi
 
@@ -274,9 +286,17 @@ if [ -f ".gitignore" ] && ! grep -q "^\.claude-init-prompted$" .gitignore; then
     echo ".claude-init-prompted" >> .gitignore
 fi
 
-echo ""
-echo "This project doesn't have a CLAUDE.md file."
-echo "  Create one: 'Create a CLAUDE.md for this project'"
-echo ""
+if [ "$missing_claude_md" = true ]; then
+    echo ""
+    echo "This project doesn't have a CLAUDE.md file."
+    echo "  Create one: 'Create a CLAUDE.md for this project'"
+fi
 
+if [ "$missing_settings" = true ]; then
+    echo ""
+    echo "This project doesn't have .claude/settings.json (project-level permissions)."
+    echo "  Copy from DevKit: cp <devkit>/project-templates/settings.json .claude/settings.json"
+fi
+
+echo ""
 exit 0
