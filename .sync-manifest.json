@@ -100,13 +100,15 @@
       "description": "Per-repository config. Lives in project repos, not in DevKit. DevKit provides templates and a promotion path.",
       "templates": [
         "project-templates/claude-md-template.md",
-        "project-templates/workspace-claude-md-template.md"
+        "project-templates/workspace-claude-md-template.md",
+        "project-templates/settings.json"
       ],
       "convention": {
         "project_claude_md": "<project-root>/CLAUDE.md",
+        "project_settings_committed": "<project-root>/.claude/settings.json",
+        "project_settings_local": "<project-root>/.claude/settings.local.json",
         "project_rules": "<project-root>/.claude/rules/*.md",
-        "project_skills": "<project-root>/.claude/skills/*/",
-        "project_settings": "<project-root>/.claude/settings.local.json"
+        "project_skills": "<project-root>/.claude/skills/*/"
       }
     }
   },
