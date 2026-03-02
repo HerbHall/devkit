@@ -175,10 +175,10 @@ jobs:
               errors=$((errors + 1))
             else
               # Count all ## N. headings
-              total_entries=$(grep -cP '^## \d+\.' "$clean_file" || echo "0")
+              total_entries=$(grep -cP '^## \d+\.' "$clean_file" || true)
 
               # Count deprecated and superseded entries
-              inactive_entries=$(grep -cP '^\*\*Status:\*\* (deprecated|superseded)' "$clean_file" || echo "0")
+              inactive_entries=$(grep -cP '^\*\*Status:\*\* (deprecated|superseded)' "$clean_file" || true)
 
               # Active = total - inactive
               active_entries=$((total_entries - inactive_entries))

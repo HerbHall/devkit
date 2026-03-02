@@ -128,6 +128,37 @@ runtime panics, config collisions, and container-specific failures.
 Skip this for docs-only or test-only changes.
 ```
 
+## Docker Desktop Extension Checklist [DD-EXT-CI] (paste into DD extension agent prompts)
+
+```text
+## Pre-Commit CI Checklist -- Docker Desktop Extension (MUST verify before finishing)
+
+Run these checks and fix any errors:
+
+1. `npx tsc --noEmit` -- TypeScript compilation
+2. `npx eslint src/<your-files>` -- Lint check
+3. `npx vitest run` -- Unit tests (if vitest is configured)
+4. `docker build -t test-ext .` -- Dockerfile builds successfully
+5. `docker extension validate test-ext` -- Extension metadata validation
+
+Docker Desktop extension gotchas to watch for:
+- @docker/extension-api-client: CJS/ESM mismatch breaks vitest. Needs resolve alias
+  in vitest.config.ts pointing to src/__mocks__/@docker/extension-api-client.ts (KG#81).
+- hadolint false positives: DL3048 (vendor labels) and DL3045 (COPY without WORKDIR)
+  are correct for extensions. Ensure .hadolint.yaml ignores both (KG#78).
+- MUI v5 constraint: Docker extensions use @docker/docker-mui-theme which pins MUI v5.
+  Use InputProps (not slotProps.input) for TextField adornments. Check MUI v5 docs,
+  not current MUI docs which default to v6 (KG#85).
+- Dockerfile labels: screenshots (JSON array, min 3, 2400x1600px), changelog (HTML),
+  additional-urls (JSON array). All values must have escaped quotes (KG#83).
+- Multi-arch: Final image must support linux/amd64 + linux/arm64. Use docker buildx
+  with --platform flag (KG#84).
+- Version drift: Verify version matches across package.json, Dockerfile ARG, CHANGELOG,
+  and Docker image tag (KG#82).
+- docker extension update fails after rebuild: Use `docker extension install` instead
+  of `update` when testing locally after rebuilding the image (KG#39).
+```
+
 ## Markdown Agent Checklist [MD-CI] (paste into agent prompts that create .md files)
 
 ```text

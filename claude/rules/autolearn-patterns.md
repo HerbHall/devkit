@@ -1,8 +1,8 @@
 ---
 description: Learned patterns from past sessions. Read when encountering similar situations.
 tier: 2
-entry_count: 98
-last_updated: "2026-03-01"
+entry_count: 101
+last_updated: "2026-03-02"
 ---
 
 # Learned Patterns
@@ -1409,3 +1409,69 @@ Phase workflow:
 ```
 
 **Proven:** RunNotes restructured from 10 flat issues to 5 phases with 6 research + 5 gate + existing implementation issues. Forces thinking before coding at every stage.
+
+## 109. Standalone Python File for Regex-Heavy Bash Scripts
+
+**Added:** 2026-03-02 | **Source:** Runbooks | **Status:** active
+
+**Category:** correction
+**Context:** Embedding Python with complex regex inside bash scripts (heredocs, inline `-c` strings) fails repeatedly due to escaping conflicts. Backslashes in regex patterns, escaped quotes in JSON label values, and bash variable interpolation create a three-layer escaping nightmare. Three iterations on Runbooks PR #110 all failed with different escaping bugs.
+**Fix:** Write a standalone `.py` file and call it from a thin bash wrapper. This eliminates all escaping layers:
+
+```bash
+# BAD: inline Python with regex in bash heredoc (3 escaping layers)
+python3 -c "
+import re
+labels = re.findall(r'com\.docker\.extension\.(\w+)=\"([^\"]*?)\"', content)
+"
+
+# GOOD: standalone Python file called from bash
+python3 scripts/extract-labels.py "$dockerfile_path"
+```
+
+The Python file uses raw strings (`r'...'`) for regex with zero escaping issues. The bash wrapper only handles argument passing.
+**Extends:** AP#11 (Python as jq replacement on Windows MSYS). Same principle -- when bash can't handle the complexity, delegate to a real language.
+**Proven:** Runbooks PR #110: 3 failed inline attempts, standalone file worked first try.
+
+## 110. Docker Desktop Extension Marketplace Submission Checklist
+
+**Added:** 2026-03-02 | **Source:** Runbooks+RunNotes | **Status:** active
+
+**Category:** process-pattern
+**Context:** Docker Desktop extension marketplace submission has multiple prerequisites that are easy to miss. Missing any one causes rejection or broken marketplace display. Lessons consolidated from Runbooks (#38, #56, #57) and RunNotes (#9, #24, #25).
+**Fix:** Follow this checklist before submitting any extension to the marketplace:
+
+**Pre-build:**
+
+- Dockerfile labels populated (see KG#83 for exact formats):
+  - `com.docker.desktop.extension.api.version` -- API version
+  - `com.docker.desktop.extension.icon` -- local icon file reference
+  - `com.docker.extension.screenshots` -- JSON array, min 3, 2400x1600px recommended
+  - `com.docker.extension.changelog` -- HTML-formatted changelog
+  - `com.docker.extension.additional-urls` -- JSON array with docs/support/bug links
+  - `com.docker.extension.detailed-description` -- extended description (HTML)
+- `.hadolint.yaml` ignores DL3048 and DL3045 (see KG#78)
+- Icon is SVG, copied into image via `COPY docker.svg .`
+
+**Build:**
+
+- Multi-arch image built and pushed (see KG#84): `linux/amd64` + `linux/arm64`
+- Tagged with semantic version AND `latest`
+- Version matches across all files (see KG#82)
+
+**Validate:**
+
+- `docker extension validate IMAGE:TAG` passes locally
+- Extension installs cleanly: `docker extension install IMAGE:TAG`
+- Test in both light and dark mode (Docker Desktop > Settings > Appearance)
+- Test on at least one non-development machine
+
+**Submit:**
+
+- Open issue at `docker/extensions-submissions` using the `automatic_review` template
+- Automated validation runs within minutes
+- If passed, extension appears in marketplace within 12 hours (cache delay)
+- Manual review by Docker team is currently paused -- automated review is sufficient
+
+**Common rejection reasons:** empty screenshot/changelog labels, single-arch image, icon not bundled in image, missing API version label.
+**See also:** KG#77 (Docker Hub display), KG#78 (hadolint), KG#81 (vitest mock), KG#83 (label format), KG#84 (multi-arch)
