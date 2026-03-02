@@ -1,8 +1,8 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 80
-last_updated: "2026-03-01"
+entry_count: 85
+last_updated: "2026-03-02"
 ---
 
 # Known Gotchas
@@ -1062,3 +1062,121 @@ if ($manifest.tiers -and -not $hasShared) {
 ```
 
 **Note:** This does NOT affect hashtables (`$hash.missing` returns `$null` under StrictMode). Only `PSCustomObject` (from `ConvertFrom-Json`, `New-Object`, etc.) throws.
+
+## 81. @docker/extension-api-client Vitest Resolve Alias Needed
+
+**Added:** 2026-03-02 | **Source:** RunNotes | **Status:** active
+
+**Platform:** Docker Desktop Extensions (Vitest)
+**Issue:** `@docker/extension-api-client` declares `"type": "commonjs"` in its package.json but the actual entry file uses ESM exports. Vitest runs through Vite's ESM pipeline and cannot resolve the module, failing with cryptic import errors. Standard `vi.mock()` calls in every test file are verbose and fragile.
+**Diagnosis:** Vitest fails on any test importing `@docker/extension-api-client` with module resolution errors that don't mention the CJS/ESM mismatch.
+**Fix:** Add a resolve alias in `vitest.config.ts` pointing to a manual mock file. This centralizes the mock and eliminates per-file `vi.mock()` calls:
+
+```typescript
+// vitest.config.ts
+import path from "path";
+
+export default mergeConfig(
+  viteConfig,
+  defineConfig({
+    test: {
+      environment: "jsdom",
+      globals: true,
+      setupFiles: "./src/test-setup.ts",
+    },
+    resolve: {
+      alias: {
+        "@docker/extension-api-client": path.resolve(
+          __dirname,
+          "src/__mocks__/@docker/extension-api-client.ts"
+        ),
+      },
+    },
+  })
+);
+```
+
+The mock file exports a fake `ddClient` with `vi.fn()` stubs for all SDK methods (`docker.cli.exec`, `extension.vm.service.get`, etc.).
+**Scope:** Applies to ALL Docker Desktop extensions using Vitest for testing.
+
+## 82. Version Drift Across Release Files with Git Tag Workflows
+
+**Added:** 2026-03-02 | **Source:** Runbooks | **Status:** active
+
+**Platform:** Docker Desktop Extensions / Any multi-file version project
+**Issue:** Git tag-based release workflows (push tag -> CI builds and publishes) cause version drift when multiple files reference the version independently. Common drift pattern: `ui/package.json` says 0.1.0, Docker image tag is 0.1.1, Dockerfile ARG default is 0.1.0, CHANGELOG only documents 0.1.0. Root cause: pushing a git tag triggers Docker Hub publish with the tag version, but nobody bumps the other files.
+**Diagnosis:** `docker extension validate` or Docker Hub shows a version that doesn't match `package.json`, CHANGELOG, or Dockerfile ARG defaults.
+**Fix:** Designate one file as the version source of truth and have all build tools read from it:
+
+1. Choose the source: `package.json` (frontend-centric) or a `VERSION` file (language-agnostic)
+2. CI reads version from source: `jq -r .version ui/package.json` or `cat VERSION`
+3. Dockerfile ARG defaults become fallbacks only -- CI overrides via `--build-arg`
+4. Include "bump version in source of truth + update CHANGELOG" in every release checklist
+5. Consider a `make release VERSION=x.y.z` target that updates all files atomically
+
+**Prevention:** After every tagged release, verify all version references match: `grep -rn "0\.1\.0\|0\.1\.1" package.json Dockerfile CHANGELOG.md Makefile`.
+
+## 83. Docker Extension Dockerfile Label Format Requirements
+
+**Added:** 2026-03-02 | **Source:** Runbooks | **Status:** active
+
+**Platform:** Docker Desktop Extensions (all)
+**Issue:** Docker Desktop extension Dockerfiles require specific label formats that aren't well-documented. Labels must be valid JSON strings embedded in Dockerfile LABEL syntax with escaped quotes. Getting the format wrong causes `docker extension validate` failures or broken marketplace display.
+**Fix:** Use these exact formats for extension labels:
+
+```dockerfile
+# Screenshots: JSON array of {alt, url} objects. URLs must be publicly accessible.
+# Recommended dimensions: 2400x1600px. Minimum 3 screenshots.
+LABEL com.docker.extension.screenshots="[{\"alt\": \"Main View\", \"url\": \"https://raw.githubusercontent.com/OWNER/REPO/main/docs/screenshots/main.png\"},{\"alt\": \"Settings\", \"url\": \"https://raw.githubusercontent.com/OWNER/REPO/main/docs/screenshots/settings.png\"},{\"alt\": \"Detail View\", \"url\": \"https://raw.githubusercontent.com/OWNER/REPO/main/docs/screenshots/detail.png\"}]"
+
+# Changelog: HTML-safe string (no raw newlines, use <p> and <ul>/<li>)
+LABEL com.docker.extension.changelog="<p>v0.1.0: Initial release.</p><ul><li>Feature one</li><li>Feature two</li></ul>"
+
+# Additional URLs: JSON array of {title, url} objects
+LABEL com.docker.extension.additional-urls="[{\"title\":\"Documentation\",\"url\":\"https://github.com/OWNER/REPO#readme\"},{\"title\":\"Report a Bug\",\"url\":\"https://github.com/OWNER/REPO/issues/new\"},{\"title\":\"Support\",\"url\":\"https://github.com/OWNER/REPO/issues\"}]"
+
+# Icon: reference the local bundled file (COPY docker.svg . earlier in Dockerfile)
+LABEL com.docker.desktop.extension.icon="docker.svg"
+```
+
+**Gotcha:** Raw GitHub URLs (`https://raw.githubusercontent.com/...`) work for screenshots hosted in the repo. The icon label references the local file copied into the image, not a URL.
+**Reference:** [Docker extension labels documentation](https://docs.docker.com/extensions/extensions-sdk/extensions/labels/)
+
+## 84. Multi-Arch Buildx Required for Docker Desktop Extensions
+
+**Added:** 2026-03-02 | **Source:** Runbooks | **Status:** active
+
+**Platform:** Docker Desktop Extensions (all)
+**Issue:** Docker Desktop runs on macOS (arm64 Apple Silicon + amd64 Intel), Windows (amd64), and Linux (amd64/arm64). Extensions must provide multi-arch images for `linux/amd64` and `linux/arm64` at minimum. A single-arch image works on one platform but silently fails or shows "image not found" on the other. `docker extension validate` does not currently check for multi-arch -- the failure only surfaces when users on a different architecture try to install.
+**Fix:** Always build with `docker buildx` and push both architectures:
+
+```bash
+docker buildx build --push \
+  --platform=linux/amd64,linux/arm64 \
+  --tag=IMAGE:VERSION \
+  --tag=IMAGE:latest .
+```
+
+**Prerequisites:**
+
+- `docker buildx create --use` (one-time setup for multi-arch builder)
+- Multi-stage Dockerfile that doesn't use platform-specific binaries in the final stage (pure frontend extensions are inherently multi-arch)
+- If the extension includes a Go backend: use `GOARCH` build args or multi-stage with `--platform=$BUILDPLATFORM`
+
+**Verification:** `docker buildx imagetools inspect IMAGE:TAG` shows both `linux/amd64` and `linux/arm64` manifests.
+
+## 85. MUI v5 Pinned via @docker/docker-mui-theme
+
+**Added:** 2026-03-02 | **Source:** RunNotes | **Status:** active
+
+**Platform:** Docker Desktop Extensions (React/MUI)
+**Issue:** Docker Desktop extensions use `@docker/docker-mui-theme` for consistent theming with the Docker Desktop UI. This package pins MUI to v5. MUI v6+ changed several APIs, most notably TextField adornments: v5 uses `InputProps={{ startAdornment: ... }}` while v6+ uses `slotProps={{ input: { startAdornment: ... } }}`. Copying code examples from current MUI docs (which default to v6) produces TypeScript errors.
+**Diagnosis:** `InputProps is not assignable to type 'TextFieldProps'` or similar TypeScript errors when using MUI v6 patterns.
+**Fix:** Always reference MUI v5 documentation when building Docker Desktop extensions:
+
+- TextField adornments: `InputProps={{ startAdornment }}` (not `slotProps.input`)
+- Select: `SelectProps={{ ... }}` (not `slotProps.select`)
+- Input: `inputProps={{ ... }}` for native input attributes (lowercase `i`)
+- Check MUI version: `npm ls @mui/material` should show 5.x
+
+**Prevention:** When using Context7 or web search for MUI examples, always specify "MUI v5" in the query. Current docs and Stack Overflow answers default to v6 syntax.
