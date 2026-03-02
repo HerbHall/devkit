@@ -1,7 +1,7 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 85
+entry_count: 86
 last_updated: "2026-03-02"
 ---
 
@@ -1180,3 +1180,22 @@ docker buildx build --push \
 - Check MUI version: `npm ls @mui/material` should show 5.x
 
 **Prevention:** When using Context7 or web search for MUI examples, always specify "MUI v5" in the query. Current docs and Stack Overflow answers default to v6 syntax.
+
+## 86. grep -c With || echo "0" Doubles Output on No Match
+
+**Added:** 2026-03-02 | **Source:** DevKit | **Status:** active
+
+**Platform:** Bash (all, especially CI)
+**Issue:** `grep -c` outputs the match count to stdout (including "0" when no matches) AND exits with code 1 when the count is zero. Using `$(grep -cP 'pattern' file || echo "0")` captures BOTH the grep output "0" and the echo fallback "0", producing `"0\n0"`. This breaks bash arithmetic: `$((total - inactive))` fails with `syntax error in expression (error token is "0")`.
+**Diagnosis:** Bash arithmetic error in CI where one of the operands came from `grep -c`. The error token shows two values joined by a newline.
+**Fix:** Use `|| true` instead of `|| echo "0"` to suppress the non-zero exit code without duplicating the output:
+
+```bash
+# BAD: captures "0\n0" when grep finds no matches
+count=$(grep -cP '^pattern' "$file" || echo "0")
+
+# GOOD: grep -c already outputs "0", || true just suppresses exit code
+count=$(grep -cP '^pattern' "$file" || true)
+```
+
+**See also:** KG#62 (CRLF breaks grep value extraction) -- different root cause but similar symptom (arithmetic errors from unexpected characters in grep output).
