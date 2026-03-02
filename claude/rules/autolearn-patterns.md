@@ -1,7 +1,7 @@
 ---
 description: Learned patterns from past sessions. Read when encountering similar situations.
 tier: 2
-entry_count: 104
+entry_count: 105
 last_updated: "2026-03-02"
 ---
 
@@ -1548,3 +1548,25 @@ fmt.Fprintf(&b, "Active: %d issues\n", count)
 ```
 
 **Note:** For constant strings without formatting (no `%` verbs), `b.WriteString("literal")` is fine -- `preferFprint` only triggers when `fmt.Sprintf` is nested inside `WriteString`.
+
+## 114. React Callback Ref for MUI Popper Anchors (React Compiler Compliance)
+
+**Added:** 2026-03-02 | **Source:** Runbooks | **Status:** active
+
+**Category:** frontend-pattern
+**Context:** MUI `Popper` (and `Popover`, `Menu`) requires an `anchorEl` prop that must be a DOM element read during render. Using `useRef` + `ref.current` during render triggers the React Compiler's `react-hooks/refs` rule ("Cannot access ref during render"). KG#6 covers the general case (wrap ref mutations in `useEffect`), but Popper anchors are a special case because the value must be available during render, not in an effect.
+**Fix:** Use a callback ref with `useState` instead of `useRef`. The state setter as a ref callback updates state when the DOM element mounts, triggering a re-render with the anchor available:
+
+```tsx
+// BAD: triggers react-hooks/refs -- ref.current read during render
+const anchorRef = useRef<HTMLButtonElement>(null)
+<Button ref={anchorRef}>Menu</Button>
+<Popper anchorEl={anchorRef.current} open={open}>...</Popper>
+
+// GOOD: callback ref with state -- no ref.current during render
+const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null)
+<Button ref={setAnchorEl}>Menu</Button>
+<Popper anchorEl={anchorEl} open={open}>...</Popper>
+```
+
+**See also:** KG#6 (general refs-during-render gotcha with `useEffect` fix).
