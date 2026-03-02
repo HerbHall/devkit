@@ -1,7 +1,7 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 88
+entry_count: 89
 last_updated: "2026-03-02"
 ---
 
@@ -1249,3 +1249,19 @@ resolve: {
 
 **Alternative:** Add `<EnableWindowsTargeting>true</EnableWindowsTargeting>` to Directory.Build.props, but this may pull in unnecessary Windows SDK components on Linux.
 **See also:** AP#117 (cross-project compliance audit where this was discovered).
+
+## 89. go get Does Not Resolve All Transitive Dependencies
+
+**Added:** 2026-03-02 | **Source:** Samverk | **Status:** active
+
+**Platform:** Go (all)
+**Issue:** `go get github.com/example/module@vX.Y.Z` adds the module to `go.mod` and downloads it, but does NOT always resolve all transitive dependencies into `go.sum`. Running `go build` after `go get` can fail with missing module errors for indirect dependencies.
+**Diagnosis:** `go build ./...` fails with "missing go.sum entry for module providing package X" immediately after a successful `go get`.
+**Fix:** Always run `go mod tidy` after `go get`:
+
+```bash
+go get github.com/example/module@vX.Y.Z
+go mod tidy
+```
+
+`go mod tidy` resolves the full dependency graph and ensures `go.sum` is complete. This should be a reflexive habit after any `go get` invocation.
