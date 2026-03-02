@@ -296,6 +296,7 @@ if ($resp.StatusCode -eq 200) { ... }  # always works
 **Prevention:** Accept this as a tradeoff of parallel execution. The time saved by parallel agents outweighs the 2-minute sorting step. Alternatively, run agents sequentially with branch switches between them (slower but cleaner).
 **Update (2026-02-15):** Agents can self-recover if given clear branch context in their prompts. Include target branch name and exact file list in the agent prompt. Agents detect leaked files via `git status` and clean them with `git checkout --`. Agents on wrong branches recover with `git stash && git checkout <correct> && git stash pop`. See autolearn-patterns.md #48.
 **Update (2026-02-16):** If an agent autonomously commits and pushes (creating a PR), it runs `git checkout <branch>` which changes HEAD and **discards other parallel agents' unstaged tracked-file changes**. Untracked files (new directories) survive. Sprint 2: Agent H committed on `feature/issue-399`, discarding Agent B's unstaged changes to `main.go` and `recon.go`. Fix: Either restrict agents from committing (main context handles all git ops) or accept tracked file loss and re-apply from the agent's output summary.
+**Update (2026-03-02):** `git stash` while agents are still running is unsafe. Agents continue writing to the working tree AFTER the stash, so `git stash pop` fails with "Your local changes would be overwritten." Recovery: commit one agent's files directly (already in working tree), extract the other's from stash via `git diff stash@{0} -- <file>` (not `git stash show -p stash@{0} -- <file>`, which fails with "Too many revisions specified"), then apply manually.
 
 ## 26. Sequential Same-File PR Merge Requires Rebase Between Each
 
@@ -1098,6 +1099,7 @@ export default mergeConfig(
 
 The mock file exports a fake `ddClient` with `vi.fn()` stubs for all SDK methods (`docker.cli.exec`, `extension.vm.service.get`, etc.).
 **Scope:** Applies to ALL Docker Desktop extensions using Vitest for testing.
+**See also:** KG#87 (general pattern for browser-only package exports in Vitest).
 
 ## 82. Version Drift Across Release Files with Git Tag Workflows
 
@@ -1199,3 +1201,25 @@ count=$(grep -cP '^pattern' "$file" || true)
 ```
 
 **See also:** KG#62 (CRLF breaks grep value extraction) -- different root cause but similar symptom (arithmetic errors from unexpected characters in grep output).
+
+## 87. Vitest Cannot Resolve Browser-Only npm Package Exports
+
+**Added:** 2026-03-02 | **Source:** Runbooks | **Status:** active
+
+**Platform:** Vitest / Node.js
+**Issue:** npm packages that only export via the `browser` field in `package.json` (not `main` or `exports`) cannot be resolved by Vitest, even with `environment: 'jsdom'`. Vitest uses Node.js module resolution which skips the `browser` field entirely. The error is a cryptic module resolution failure that doesn't mention the browser/node distinction.
+**Diagnosis:** Vitest fails with import resolution errors on a package that works fine in the browser build (Vite). Check the package's `package.json` -- if it only has a `browser` field and no `main` or `exports`, this is the cause.
+**Fix:** Add a `resolve.alias` in `vitest.config.ts` pointing directly to the package's dist entry file:
+
+```typescript
+// vitest.config.ts
+resolve: {
+  alias: {
+    '@some/browser-only-pkg': path.resolve(
+      __dirname, 'node_modules/@some/browser-only-pkg/dist/index.js'
+    ),
+  },
+},
+```
+
+**See also:** KG#81 (`@docker/extension-api-client` specific case with mock file alias -- same root cause but uses a mock file instead of the real dist file).
