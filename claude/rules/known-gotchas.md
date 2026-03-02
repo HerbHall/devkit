@@ -1,7 +1,7 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 87
+entry_count: 88
 last_updated: "2026-03-02"
 ---
 
@@ -1223,3 +1223,29 @@ resolve: {
 ```
 
 **See also:** KG#81 (`@docker/extension-api-client` specific case with mock file alias -- same root cause but uses a mock file instead of the real dist file).
+
+## 88. .NET WPF Projects Fail dotnet restore on Linux CI
+
+**Added:** 2026-03-02 | **Source:** IPScan | **Status:** active
+
+**Platform:** .NET / GitHub Actions (Ubuntu runners)
+**Issue:** `dotnet restore` on a solution containing WPF projects (targeting `net10.0-windows10.0.19041.0`) fails on Ubuntu with `NETSDK1100: To build a project targeting Windows on this operating system, set EnableWindowsTargeting to true`. The error blocks ALL test execution even for cross-platform test projects in the same solution.
+**Diagnosis:** CI Test job fails at the restore step. The solution file includes both cross-platform libraries and Windows-only desktop projects. `dotnet restore` resolves the entire dependency graph including Windows TFMs.
+**Fix:** Scope `dotnet restore` and `dotnet test` to individual cross-platform .csproj files instead of the solution:
+
+```yaml
+# BAD: restores entire solution including WPF project
+- run: dotnet restore
+- run: dotnet test --no-restore
+
+# GOOD: restore only cross-platform test projects
+- run: |
+    dotnet restore tests/Project.Core.Tests/Project.Core.Tests.csproj
+    dotnet restore tests/Project.CLI.Tests/Project.CLI.Tests.csproj
+- run: |
+    dotnet test tests/Project.Core.Tests/Project.Core.Tests.csproj --no-restore
+    dotnet test tests/Project.CLI.Tests/Project.CLI.Tests.csproj --no-restore
+```
+
+**Alternative:** Add `<EnableWindowsTargeting>true</EnableWindowsTargeting>` to Directory.Build.props, but this may pull in unnecessary Windows SDK components on Linux.
+**See also:** AP#117 (cross-project compliance audit where this was discovered).
