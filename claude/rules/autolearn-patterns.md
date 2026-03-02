@@ -1,7 +1,7 @@
 ---
 description: Learned patterns from past sessions. Read when encountering similar situations.
 tier: 2
-entry_count: 105
+entry_count: 108
 last_updated: "2026-03-02"
 ---
 
@@ -1570,3 +1570,61 @@ const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null)
 ```
 
 **See also:** KG#6 (general refs-during-render gotcha with `useEffect` fix).
+
+## 115. golangci-lint v2 Formatters Are a Separate Top-Level Section
+
+**Added:** 2026-03-02 | **Source:** CLI-Play | **Status:** active
+
+**Category:** ci-config
+**Context:** golangci-lint v2 moved `gofmt` and `goimports` out of the `linters:` section into a new top-level `formatters:` section. Listing them under `linters: enable:` causes "unknown linters: gofmt, goimports" errors. This is a v1-to-v2 migration breaking change that isn't obvious from the error message alone.
+**Fix:** Move formatting tools to the `formatters:` top-level key:
+
+```yaml
+# BAD (v2): gofmt/goimports under linters
+linters:
+  enable:
+    - gofmt
+    - goimports
+
+# GOOD (v2): separate formatters section
+formatters:
+  enable:
+    - gofmt
+    - goimports
+```
+
+**See also:** AP#90 (v2 requires version field), KG#65 (v2 silent config failure), KG#66 (v7 action schema enforcement).
+
+## 116. golangci-lint v2 Absorbs gosimple Into staticcheck
+
+**Added:** 2026-03-02 | **Source:** CLI-Play | **Status:** active
+
+**Category:** ci-config
+**Context:** In golangci-lint v2, the `gosimple` linter was merged into `staticcheck`. Listing `gosimple` as a separate linter in `linters: enable:` causes "unknown linters: gosimple" error. This affects any project migrating a v1 `.golangci.yml` config to v2.
+**Fix:** Remove `gosimple` from the linters list. All gosimple rules (S1xxx) are now covered by `staticcheck` automatically.
+
+```yaml
+# BAD (v2): gosimple listed separately
+linters:
+  enable:
+    - staticcheck
+    - gosimple       # ERROR: unknown linter
+
+# GOOD (v2): staticcheck covers gosimple
+linters:
+  enable:
+    - staticcheck    # includes all S1xxx rules
+```
+
+**See also:** AP#90 (v2 requires version field), AP#115 (v2 formatters section).
+
+## 117. Cross-Project Compliance Audit via Parallel Independent-Repo Agents
+
+**Added:** 2026-03-02 | **Source:** DevKit | **Status:** active
+
+**Category:** workflow-pattern
+**Context:** Cross-project compliance enforcement (standardizing CI, hooks, lint config, licenses) can be parallelized across independent git repos with zero conflict. Unlike KG#25 (parallel agents in same repo share working tree), agents in separate repos have fully independent working trees, so each can autonomously create branches, commit, push, and create PRs.
+**Fix:** Launch one agent per repo with full git autonomy. Each agent gets: (1) the DevKit template files to copy, (2) project-specific customization instructions, (3) full CI checklist for verification. Main context handles orchestration only.
+**Example:** 5 parallel agents across Runbooks, DigitalRain, RunNotes, CLI-Play, IPScan deployed pre-push hooks, lint configs, and licenses. All 5 created PRs independently. 2 required follow-up CI fixes (golangci-lint v6->v7, .NET WPF scope) resolved by main context.
+**Proven:** 6 PRs total (5 parallel + 1 direct fix) merged in single session. ~10 min wall time for agent execution.
+**See also:** KG#25 (parallel agents share working tree -- different from this pattern), AP#48 (agents self-recover in shared tree).
