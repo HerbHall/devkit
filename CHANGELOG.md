@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- **Release standardization templates** (ADR-0015): release-please config, manifest, workflow, and git-cliff templates in `project-templates/`
+- **ADR-0015**: Documents the decision to standardize on release-please + git-cliff + VERSION file across all projects
+
 ## v2.3.0 -- 2026-03-01
 
 Rules reconciliation, drift detection, and project settings enforcement.

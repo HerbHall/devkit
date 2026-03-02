@@ -44,6 +44,10 @@ Setup creates symlinks from `~/.claude/` to the DevKit clone (or copies files in
 | `claude/settings.template.json` | User-level Claude Code settings — broad permissions, hooks, plugins |
 | `project-templates/settings.json` | Project-level Claude Code permissions — commit to repo for collaborators |
 | `project-templates/workspace-claude-md-template.md` | Workspace CLAUDE.md template — fill in your projects |
+| `project-templates/release-please-config.json` | release-please config — set `release-type` per stack (see ADR-0015) |
+| `project-templates/release-please-manifest.json` | release-please manifest — set current version on first setup |
+| `project-templates/release-please.yml` | GitHub Actions workflow — copy to `.github/workflows/` |
+| `project-templates/cliff.toml` | git-cliff changelog template — Phase 2 enhancement |
 | `mcp/memory-seeds.md` | MCP Memory bootstrap — replace with your profile |
 | `mcp/claude-desktop.template.json` | MCP server config — fill in tokens and paths |
 
