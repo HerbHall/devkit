@@ -109,9 +109,10 @@ jobs:
             # (a) Validate **Added:** line format
             # -------------------------------------------------------
             while IFS=: read -r lineno line; do
-              # Expected: **Added:** YYYY-MM-DD | **Source:** <word> | **Status:** <status>
-              if ! echo "$line" | grep -qP '^\*\*Added:\*\* \d{4}-\d{2}-\d{2} \| \*\*Source:\*\* \S+ \| \*\*Status:\*\* .+$'; then
-                echo "::error file=$file,line=$lineno::Malformed **Added:** line. Expected: **Added:** YYYY-MM-DD | **Source:** <word> | **Status:** <status>"
+              # Expected: **Added:** YYYY-MM-DD | **Source:** <words> | **Status:** <status>
+              # Source accepts multi-word values (e.g., "Runbooks, RunNotes" or "Runbooks+RunNotes")
+              if ! echo "$line" | grep -qP '^\*\*Added:\*\* \d{4}-\d{2}-\d{2} \| \*\*Source:\*\* .+? \| \*\*Status:\*\* .+$'; then
+                echo "::error file=$file,line=$lineno::Malformed **Added:** line. Expected: **Added:** YYYY-MM-DD | **Source:** <name> | **Status:** <status>"
                 errors=$((errors + 1))
                 continue
               fi
