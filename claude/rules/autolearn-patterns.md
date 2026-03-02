@@ -1,7 +1,7 @@
 ---
 description: Learned patterns from past sessions. Read when encountering similar situations.
 tier: 2
-entry_count: 101
+entry_count: 104
 last_updated: "2026-03-02"
 ---
 
@@ -1475,3 +1475,76 @@ The Python file uses raw strings (`r'...'`) for regex with zero escaping issues.
 
 **Common rejection reasons:** empty screenshot/changelog labels, single-arch image, icon not bundled in image, missing API version label.
 **See also:** KG#77 (Docker Hub display), KG#78 (hadolint), KG#81 (vitest mock), KG#83 (label format), KG#84 (multi-arch)
+
+## 111. MUI Tooltip Requires Span Wrapper for Disabled Buttons
+
+**Added:** 2026-03-02 | **Source:** RunNotes | **Status:** active
+
+**Category:** frontend-pattern
+**Context:** MUI `<Tooltip>` warns when a disabled `<IconButton>` is a direct child. Disabled elements don't fire mouse events, so the tooltip never appears and MUI logs a console warning.
+**Fix:** Wrap the disabled button in a `<span>`:
+
+```tsx
+// BAD: tooltip never shows, console warning
+<Tooltip title="Refresh">
+  <IconButton disabled={loading}><RefreshIcon /></IconButton>
+</Tooltip>
+
+// GOOD: span receives hover events
+<Tooltip title="Refresh">
+  <span>
+    <IconButton disabled={loading}><RefreshIcon /></IconButton>
+  </span>
+</Tooltip>
+```
+
+**Scope:** Applies to any MUI Tooltip wrapping a potentially disabled interactive element (IconButton, Button, Checkbox).
+
+## 112. useRef Guard to Prevent useEffect Re-Trigger Loops
+
+**Added:** 2026-03-02 | **Source:** RunNotes | **Status:** active
+
+**Category:** frontend-pattern
+**Context:** When a `useEffect` detects stale data and triggers state updates (e.g., reconciliation calls), those updates change the dependency array, re-triggering the same effect in an infinite loop. Common in data sync patterns where the effect reads query data and writes mutations.
+**Fix:** Use a `useRef(false)` flag to run the effect body only once per data load cycle. Reset the ref when the user explicitly triggers a refresh:
+
+```tsx
+const reconciledRef = useRef(false);
+
+useEffect(() => {
+  if (loading || reconciledRef.current) return;
+  const stale = detectStaleItems(data);
+  if (stale.length > 0) {
+    reconciledRef.current = true;
+    Promise.all(stale.map(item => updateMutation(item)));
+  }
+}, [data, loading, updateMutation]);
+
+// Reset on manual refresh
+const handleRefresh = () => {
+  reconciledRef.current = false;
+  refetchQuery();
+};
+```
+
+**Key insight:** The ref persists across renders without triggering re-renders itself, breaking the loop. Reset it only on intentional user actions.
+
+## 113. gocritic preferFprint: Use fmt.Fprintf Over WriteString+Sprintf
+
+**Added:** 2026-03-02 | **Source:** Samverk | **Status:** active
+
+**Category:** lint-fix
+**Context:** `b.WriteString(fmt.Sprintf(format, args...))` allocates a temporary string, then copies it into the builder. gocritic `preferFprint` flags this because `fmt.Fprintf(&b, format, args...)` writes directly to the builder, avoiding the intermediate allocation. Common in text renderers and format builders -- a single file can have 10+ instances.
+**Fix:** Replace `b.WriteString(fmt.Sprintf(...))` with `fmt.Fprintf(&b, ...)`:
+
+```go
+// BAD: triggers preferFprint -- intermediate string allocation
+b.WriteString(fmt.Sprintf("\n--- STATUS ---\n"))
+b.WriteString(fmt.Sprintf("Active: %d issues\n", count))
+
+// GOOD: direct write to builder
+fmt.Fprintf(&b, "\n--- STATUS ---\n")
+fmt.Fprintf(&b, "Active: %d issues\n", count)
+```
+
+**Note:** For constant strings without formatting (no `%` verbs), `b.WriteString("literal")` is fine -- `preferFprint` only triggers when `fmt.Sprintf` is nested inside `WriteString`.
