@@ -1435,7 +1435,7 @@ The Python file uses raw strings (`r'...'`) for regex with zero escaping issues.
 
 ## 110. Docker Desktop Extension Marketplace Submission Checklist
 
-**Added:** 2026-03-02 | **Source:** Runbooks, RunNotes | **Status:** active
+**Added:** 2026-03-02 | **Source:** Runbooks+RunNotes | **Status:** active
 
 **Category:** process-pattern
 **Context:** Docker Desktop extension marketplace submission has multiple prerequisites that are easy to miss. Missing any one causes rejection or broken marketplace display. Lessons consolidated from Runbooks (#38, #56, #57) and RunNotes (#9, #24, #25).
