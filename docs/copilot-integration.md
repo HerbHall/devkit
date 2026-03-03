@@ -21,7 +21,7 @@ files and serving different workflows:
 | File | Purpose | Scope | Used By |
 |------|---------|-------|---------|
 | `.github/copilot-instructions.md` | Project context, coding standards, style | Repo-wide | Completions, chat, code review |
-| `.github/AGENTS.md` | Behavioral guidance for autonomous agent | Repo-wide | Coding agent, chat |
+| `AGENTS.md` (repo root) | Behavioral guidance for autonomous agent | Repo-wide | Coding agent, chat |
 | `.github/workflows/copilot-setup-steps.yml` | Pre-install dependencies for agent sessions | CI runner | Coding agent only |
 | `.github/instructions/*.instructions.md` | Path-specific coding patterns | Per-file-glob | Completions, chat, code review |
 
@@ -126,12 +126,12 @@ DevKit provides ready-to-copy templates in `project-templates/`:
 |----------|------|-------------|
 | Go instructions | `project-templates/instructions/go.instructions.md` | Go-specific lint patterns, test conventions |
 | React/TypeScript instructions | `project-templates/instructions/react.instructions.md` | React/TS patterns, MUI conventions |
-| AGENTS.md | `project-templates/agents-template.md` | Three-tier boundary template |
-| copilot-instructions | `project-templates/copilot-instructions-template.md` | Five-section template |
-| copilot-setup-steps | `project-templates/copilot-setup-steps-template.yml` | Full workflow with job name |
-
-Note: As of the time of writing, the templates directory contains `instructions/` as
-a placeholder. Templates should be created as part of the Copilot integration rollout.
+| AGENTS.md | `project-templates/AGENTS.md` | Three-tier boundary template |
+| copilot-instructions | `project-templates/copilot-instructions.md` | Five-section template |
+| copilot-setup-steps (Go) | `project-templates/copilot-setup-steps-go.yml` | Go-only workflow |
+| copilot-setup-steps (React) | `project-templates/copilot-setup-steps-react.yml` | React-only workflow |
+| copilot-setup-steps (Fullstack) | `project-templates/copilot-setup-steps-fullstack.yml` | Go + React combined |
+| CodeQL | `project-templates/codeql.yml` | Security scanning workflow |
 
 ## Per-Project Rollout Checklist
 
@@ -139,7 +139,7 @@ For each existing project, complete in order:
 
 - [ ] Create `.github/copilot-instructions.md` with five sections (overview, stack,
   guidelines, structure, resources)
-- [ ] Create `.github/AGENTS.md` with three-tier boundaries (always/ask/never),
+- [ ] Create `AGENTS.md` at repo root with three-tier boundaries (always/ask/never),
   setup commands, and project-specific constraints
 - [ ] Create `.github/workflows/copilot-setup-steps.yml` as a full workflow with
   job name `copilot-setup-steps`; pre-install all dependencies
@@ -214,7 +214,7 @@ commit directly to main and never skip pre-push hooks. This is enforced by:
 ### Installation
 
 ```bash
-winget install GitHub.Copilot
+gh extension install github/gh-copilot
 ```
 
 Copilot CLI provides `gh copilot suggest` (shell command suggestions) and `gh copilot explain`
@@ -233,8 +233,8 @@ maintains its own context independently.
 
 | Capability | Copilot CLI | Claude Code |
 |-----------|-------------|-------------|
-| Shell command suggestions | Strong -- context-aware | Not a focus |
-| Quick PR reviews | Strong -- `gh copilot review` | Manual via `/code-review` |
+| Shell command suggestions | Strong -- `gh copilot suggest` | Not a focus |
+| Command explanation | Strong -- `gh copilot explain` | Not a focus |
 | Inline completions (VS Code) | Always active | Not applicable |
 | Deep codebase context | Limited -- single file focus | Strong -- multi-file, Glob/Grep |
 | Multi-file features | Not supported | Primary use case |

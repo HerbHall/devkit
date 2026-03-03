@@ -21,7 +21,7 @@
 ## Code Style
 
 - Conventional commits: `feat:`, `fix:`, `refactor:`, `docs:`, `test:`, `chore:`
-- Co-author tag: `Co-Authored-By: Claude <noreply@anthropic.com>`
+- Co-author tag: `Co-Authored-By: GitHub Copilot <noreply@github.com>`
 - Errors wrapped with context: `fmt.Errorf("operation: %w", err)`
 - Table-driven tests with `t.Run` and descriptive names
 - All lint checks must pass before committing (golangci-lint v2)
