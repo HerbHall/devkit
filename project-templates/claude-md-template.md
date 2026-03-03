@@ -44,8 +44,16 @@ The pre-push hook runs `build + test + lint` automatically before each push. See
 │   ├── decisions.md       # Architecture decision records (ADRs)
 │   └── decisions/         # Individual ADRs
 │
-└── .github/workflows/     # CI/CD pipelines
-    └── test.yml          # Automated tests on push
+├── .github/               # GitHub configuration
+│   ├── workflows/         # CI/CD pipelines
+│   │   ├── ci.yml         # Automated tests on push
+│   │   ├── codeql.yml     # Security scanning (CodeQL)
+│   │   └── copilot-setup-steps.yml  # Copilot agent environment
+│   ├── copilot-instructions.md      # Copilot code style guidance
+│   └── instructions/      # Language-specific Copilot instructions
+│       └── *.instructions.md
+│
+└── AGENTS.md              # Copilot coding agent behavioral guidance
 ```
 
 Replace {{PROFILE_EXT}} with appropriate extension (go, ts, rs, etc. based on profile).
