@@ -1265,3 +1265,56 @@ go mod tidy
 ```
 
 `go mod tidy` resolves the full dependency graph and ensures `go.sum` is complete. This should be a reflexive habit after any `go get` invocation.
+
+## 90. release-please node Type Requires package.json at Repo Root
+
+**Added:** 2026-03-03 | **Source:** Runbooks | **Status:** active
+
+**Platform:** GitHub Actions / release-please
+**Issue:** release-please's `node` release type requires a `package.json` at the repository root. Projects with subdirectory layouts (e.g., `ui/package.json`) or non-Node stacks fail with `Missing required file: package.json` during the Release Please workflow run. The error is silent in the workflow summary -- you only see it in the step logs.
+**Diagnosis:** Release Please Action step fails with "Missing required file: package.json" even though the project has a `package.json` in a subdirectory.
+**Fix:** Use `simple` release type with a `VERSION` file instead. This works for any stack and doesn't require `package.json` at root:
+
+```json
+{
+  "packages": {
+    ".": {
+      "release-type": "simple",
+      "version-file": "VERSION"
+    }
+  }
+}
+```
+
+DevKit provides a ready-to-use template at `project-templates/release-please-config.json`.
+
+To keep Dockerfile `ARG` defaults in sync with releases, use the `x-release-please-version` comment marker:
+
+```dockerfile
+ARG VERSION=0.1.0 # x-release-please-version
+```
+
+release-please automatically updates lines with this marker when creating release PRs.
+**See also:** ADR-0015 (release standardization), DevKit `project-templates/release-please-config.json`
+
+## 91. markdownlint-cli2 Nested node_modules Not Excluded by Root Pattern
+
+**Added:** 2026-03-03 | **Source:** Samverk | **Status:** active
+
+**Platform:** markdownlint-cli2 (all)
+**Issue:** The exclusion pattern `"#node_modules"` in markdownlint-cli2 arguments only excludes the root-level `node_modules/` directory, not nested ones like `web/node_modules/`. When `pnpm install` (or `npm install`) runs inside a subdirectory, the nested `node_modules/` contains thousands of `.md` files that markdownlint tries to lint -- causing massive failures (14,418 errors in one case).
+**Diagnosis:** Pre-push hook or CI markdownlint step suddenly reports thousands of errors in files like `web/node_modules/@mui/material/README.md`. The glob `"**/*.md"` matches everything, and `"#node_modules"` only excludes the root.
+**Fix:** Add `"#*/node_modules"` to exclusion patterns alongside the root exclusion:
+
+```bash
+# Makefile / pre-push hook / CI
+npx markdownlint-cli2 "**/*.md" "#node_modules" "#*/node_modules"
+```
+
+For projects with deeply nested `node_modules` (monorepos), use a broader pattern:
+
+```bash
+npx markdownlint-cli2 "**/*.md" "#**/node_modules"
+```
+
+**Scope:** Affects Makefile `lint-md` targets, `scripts/pre-push` hooks, and CI workflow markdownlint steps. Update all three locations when fixing.

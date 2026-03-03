@@ -100,6 +100,19 @@ git -C my-project add .claude/settings.json
 - **To allow a new tool globally:** Add an `allow` entry to `~/.claude/settings.json`
 - **To allow a project-specific tool:** Add an `allow` entry to `<project>/.claude/settings.json`
 
+## Skills Placement
+
+Skills follow the same scoping principle as settings: **generic skills at user level, project-specific skills at project level.**
+
+| Scope | Location | Example Skills |
+|-------|----------|---------------|
+| User | `~/.claude/skills/` | autolearn, devkit-sync, code-review, simplify |
+| Project | `<project>/.claude/skills/` | dashboard, dev-mode, coordination-sync, pm-view |
+
+**Rule of thumb:** If a skill reads project-specific files (e.g., `.coordination/status.md`) or routes to project-specific workflows, it belongs in `<project>/.claude/skills/`. If it works identically across all projects, it belongs at the user level.
+
+DevKit's `claude/skills/` directory contains user-level skills. When scaffolding a new project, create project-specific skills directly in `<project>/.claude/skills/`.
+
 ## Background
 
 - [KG#61](../claude/rules/known-gotchas.md) -- Discovery that Claude Code settings do not cascade from parent directories

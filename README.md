@@ -146,8 +146,10 @@ cp claude/CLAUDE.md ~/.claude/CLAUDE.md
 # Copy rules (auto-loaded every session)
 cp claude/rules/*.md ~/.claude/rules/
 
-# Copy skills (available as /skill-name in sessions)
+# Copy user-level skills (generic, available in all projects)
 cp -r claude/skills/* ~/.claude/skills/
+# Project-specific skills go in <project>/.claude/skills/ instead
+# (e.g., dashboard, dev-mode, coordination-sync belong at project level)
 
 # Copy agent templates
 cp claude/agents/*.md ~/.claude/agents/
