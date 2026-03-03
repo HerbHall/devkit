@@ -159,6 +159,12 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 3. Common issues: missing dependencies, platform-specific bugs, lint errors
 4. Push fix and re-run CI with `gh run rerun <run-id>`
 
+## Project Skills
+
+Project-specific skills live in `.claude/skills/` within this repo. These are skills that read project-specific files or route to project-specific workflows (e.g., dashboard, dev-mode). Generic skills (autolearn, code-review, devkit-sync) stay at the user level (`~/.claude/skills/`).
+
+To add a project skill, create `.claude/skills/<name>/SKILL.md` with YAML frontmatter and routing table. See DevKit's skill format for examples.
+
 ## References
 
 - **Architecture:** See `docs/ARCHITECTURE.md` for system design
