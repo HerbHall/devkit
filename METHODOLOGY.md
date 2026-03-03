@@ -172,7 +172,9 @@ This project is NOT worth pursuing if:
    - Verify with `/quality-control`
    - Create PR, merge after CI passes
 4. Use subagent parallel execution for independent features
-5. Run Docker QC gate for significant features
+5. Route simple issues (test expansion, docs, lint fixes, dep bumps) to Copilot coding
+   agent via `agent:copilot` label -- see `docs/copilot-integration.md` for delegation criteria
+6. Run Docker QC gate for significant features
 
 **Conventions**:
 

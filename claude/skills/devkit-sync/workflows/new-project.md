@@ -67,13 +67,45 @@ Scaffold a new project directory with DevKit templates and an optional stack pro
 
    Use the Read tool to load each template, perform substitutions, then Write the result.
 
-6. **Copy profile-specific templates (go-cli or go-web only):**
+6. **Copy Copilot templates (always-included):**
+
+   Create the directories:
+
+   ```bash
+   mkdir -p <devspace>/<project-name>/.github/instructions
+   ```
+
+   Copy with substitutions:
+
+   - `project-templates/copilot-instructions.md` to `<project>/.github/copilot-instructions.md`
+     - Replace `{{PROJECT_NAME}}` with the project name
+     - Replace `{{PROJECT_DESCRIPTION}}` with the description
+     - Replace `{{TECH_STACK_SECTION}}` with stack info based on profile
+   - `project-templates/AGENTS.md` to `<project>/AGENTS.md`
+     - Replace `{{PROJECT_NAME}}` with the project name
+     - Replace `{{PROJECT_DESCRIPTION}}` with the description
+     - Replace `{{TECH_STACK_SECTION}}` with stack info based on profile
+     - Replace `{{PROJECT_STRUCTURE}}` with the project structure from CLAUDE.md
+
+7. **Copy profile-specific templates (go-cli or go-web only):**
 
    If the user selected `go-cli` or `go-web`, copy these additional files:
 
    - `project-templates/golangci.yml` to `<project>/.golangci.yml`
    - `project-templates/Makefile.go` to `<project>/Makefile`
    - `project-templates/ci.yml` to `<project>/.github/workflows/ci.yml`
+   - `project-templates/codeql.yml` to `<project>/.github/workflows/codeql.yml`
+   - `project-templates/instructions/go.instructions.md` to `<project>/.github/instructions/go.instructions.md`
+
+   If `go-web` profile, also copy:
+
+   - `project-templates/instructions/react.instructions.md` to `<project>/.github/instructions/react.instructions.md`
+     - Replace `{{FRONTEND_PATH}}` with `web` (or the project's frontend path)
+   - `project-templates/copilot-setup-steps-fullstack.yml` to `<project>/.github/workflows/copilot-setup-steps.yml`
+
+   If `go-cli` profile, copy:
+
+   - `project-templates/copilot-setup-steps-go.yml` to `<project>/.github/workflows/copilot-setup-steps.yml`
 
    Create the `.github/workflows/` directory first:
 
@@ -81,9 +113,9 @@ Scaffold a new project directory with DevKit templates and an optional stack pro
    mkdir -p <devspace>/<project-name>/.github/workflows
    ```
 
-   These files are copied as-is without substitution.
+   CodeQL, instructions, and setup-steps files are copied as-is unless noted.
 
-7. **Optionally create a GitHub repo:**
+8. **Optionally create a GitHub repo:**
 
    Ask the user: "Create a GitHub repo for this project? [y/N]"
 
@@ -98,7 +130,7 @@ Scaffold a new project directory with DevKit templates and an optional stack pro
 
    Determine `<owner>` from `gh api user --jq '.login'` or `git config --global user.name`.
 
-8. **Report summary:**
+9. **Report summary:**
 
    Display what was created:
 
@@ -110,6 +142,8 @@ Scaffold a new project directory with DevKit templates and an optional stack pro
    Suggest next steps:
 
    - Edit `CLAUDE.md` to fill in remaining TODO sections
+   - Edit `AGENTS.md` to add project-specific tech stack and structure
+   - Edit `.github/copilot-instructions.md` to fill in tech stack details
    - Review `.claude/settings.json` and adjust permissions
    - Add source code and start building
    - Run `claude` in the project directory to begin development
