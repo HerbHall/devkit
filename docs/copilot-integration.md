@@ -209,6 +209,54 @@ commit directly to main and never skip pre-push hooks. This is enforced by:
 - `CLAUDE.md` Git Safety rules (Claude Code)
 - Pre-push hook (catches both)
 
+## Copilot CLI
+
+### Installation
+
+```bash
+winget install GitHub.Copilot
+```
+
+Copilot CLI provides `gh copilot suggest` (shell command suggestions) and `gh copilot explain`
+(command explanations) directly in the terminal. Requires GitHub Copilot Pro subscription
+and `gh auth login`.
+
+### Configuration
+
+Copilot CLI uses the same GitHub authentication as `gh`. No additional configuration
+files are needed -- it reads your Copilot subscription status from your GitHub account.
+
+MCP servers configured for Claude Code are not shared with Copilot CLI. Each tool
+maintains its own context independently.
+
+### Strengths vs Claude Code
+
+| Capability | Copilot CLI | Claude Code |
+|-----------|-------------|-------------|
+| Shell command suggestions | Strong -- context-aware | Not a focus |
+| Quick PR reviews | Strong -- `gh copilot review` | Manual via `/code-review` |
+| Inline completions (VS Code) | Always active | Not applicable |
+| Deep codebase context | Limited -- single file focus | Strong -- multi-file, Glob/Grep |
+| Multi-file features | Not supported | Primary use case |
+| Custom skills/hooks | Not supported | 18 skills, hook system |
+| Persistent memory | Not supported | MCP Memory + autolearn |
+| Architecture decisions | Not supported | Plan mode, `/plan-review` |
+
+### Recommended Usage
+
+- **Copilot CLI**: Quick shell command lookup (`gh copilot suggest "find large files"`),
+  PR reviews, inline completions while typing
+- **Claude Code**: Feature development, complex debugging, multi-file refactoring,
+  architecture decisions, sprint execution
+
+### Known Limitations
+
+- No custom skill system -- cannot define project-specific workflows
+- No hooks -- cannot enforce pre-commit verification or session startup checks
+- No persistent memory across sessions
+- PR review reads a limited context window (first ~4,000 chars of instructions)
+- Cannot be extended with MCP servers or custom tools
+
 ## References
 
 - [How to write a great AGENTS.md -- lessons from 2,500+ repositories](https://github.blog/ai-and-ml/github-copilot/how-to-write-a-great-agents-md-lessons-from-over-2500-repositories/)

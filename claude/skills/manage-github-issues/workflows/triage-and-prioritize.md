@@ -84,7 +84,26 @@ Also recommend:
 - Milestone if missing (based on phase label or content)
 - Whether the issue should be flagged as `blocked` or `needs-design`
 
-**Step 5: Present Recommendations**
+**Step 5: Recommend Agent Delegation**
+
+For each triaged issue, recommend an execution target based on task complexity:
+
+| Criteria | Delegate To | Label |
+|----------|------------|-------|
+| Test expansion, docs, simple refactor, dep bump, lint fixes | Copilot coding agent | `agent:copilot` |
+| Multi-file feature, security, complex debug, architecture | Claude Code subagent | `agent:claude` |
+| Design decision, architecture choice, user preference needed | Human | `agent:human` |
+
+Apply the delegation label alongside the priority label:
+
+```bash
+gh issue edit {NUMBER} --add-label "agent:{TARGET}"
+```
+
+Reference the delegation model in `docs/copilot-integration.md` for detailed routing
+criteria (good tasks for Copilot vs tasks to route to Claude Code).
+
+**Step 6: Present Recommendations**
 
 Show a table of recommendations for user review:
 
@@ -111,7 +130,7 @@ Ask the user:
 - "Should I apply all recommendations as shown?"
 - "Do you want to adjust any priorities before I apply them?"
 
-**Step 6: Apply Priority Updates**
+**Step 7: Apply Priority Updates**
 
 For each approved recommendation:
 
@@ -131,7 +150,7 @@ If additional labels are needed:
 gh issue edit {NUMBER} --add-label "{AREA_LABEL}"
 ```
 
-**Step 7: Identify Blocking Chains**
+**Step 8: Identify Blocking Chains**
 
 After triage, check for blocking relationships:
 
@@ -147,7 +166,7 @@ If blocking chains are found, present them:
   Recommendation: Elevate #15 to P1-high since it blocks #32
 ```
 
-**Step 8: Report Results**
+**Step 9: Report Results**
 
 Summarize all changes:
 

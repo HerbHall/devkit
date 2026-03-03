@@ -54,6 +54,14 @@ Common naming conventions:
 | `help wanted` | Actively seeking community help |
 | `mentor available` | Maintainer will guide the contributor |
 
+**Agent/Delegation Labels** (optional, applied during triage)
+
+| Label | Suggested Color | Meaning |
+|-------|----------------|---------|
+| `agent:copilot` | `#1F6FEB` | Suitable for Copilot coding agent (assign via GitHub UI) |
+| `agent:claude` | `#7C3AED` | Requires Claude Code subagent (deep context needed) |
+| `agent:human` | `#E8EAED` | Requires human decision or design input |
+
 **Status Labels** (optional, applied as needed)
 
 | Label | Meaning |
@@ -96,6 +104,11 @@ gh label create "P0-critical" --color "B60205" --description "Blocks current pha
 gh label create "P1-high" --color "D93F0B" --description "Important; resolve this sprint"
 gh label create "P2-medium" --color "FBCA04" --description "Should complete this phase"
 gh label create "P3-low" --color "0E8A16" --description "Nice to have; defer if tight"
+
+# Agent/delegation labels (universal)
+gh label create "agent:copilot" --color "1F6FEB" --description "Suitable for Copilot coding agent"
+gh label create "agent:claude" --color "7C3AED" --description "Requires Claude Code subagent"
+gh label create "agent:human" --color "E8EAED" --description "Requires human decision"
 
 # Area/module labels (project-specific -- customize these)
 gh label create "mod:example" --color "BFD4F2" --description "Example module"
