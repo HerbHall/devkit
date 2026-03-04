@@ -1,0 +1,103 @@
+# Nightly Build — Rust
+#
+# Cross-compiles nightly binaries from main.
+# Does NOT create a GitHub Release or git tag.
+#
+# Prerequisites:
+#   - Cargo.toml at repo root
+#   - cross (https://github.com/cross-rs/cross) for cross-compilation targets
+#
+# Template variables (replace before use):
+#   {{BINARY_NAME}} — binary name from Cargo.toml (e.g., digital-rain)
+
+name: Nightly Build
+
+on:
+  schedule:
+    - cron: '0 2 * * *' # Every day at 2 AM UTC
+  workflow_dispatch: # Manual trigger
+
+permissions:
+  contents: read
+
+jobs:
+  check-changes:
+    name: Check for Changes
+    runs-on: ubuntu-latest
+    outputs:
+      has_changes: ${{ steps.check.outputs.has_changes }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Check for commits since last nightly
+        id: check
+        run: |
+          # Skip build if no commits in the last 24 hours
+          RECENT=$(git log --since="24 hours ago" --oneline origin/main | head -1)
+          if [ -n "$RECENT" ]; then
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+            echo "Changes found since last nightly"
+          else
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+            echo "No changes in last 24 hours, skipping build"
+          fi
+
+  binaries:
+    name: Nightly Binaries
+    needs: check-changes
+    if: needs.check-changes.outputs.has_changes == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-latest
+          - target: x86_64-apple-darwin
+            os: macos-latest
+          - target: aarch64-apple-darwin
+            os: macos-latest
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install cross (Linux cross-compilation)
+        if: matrix.os == 'ubuntu-latest' && matrix.target == 'aarch64-unknown-linux-gnu'
+        run: cargo install cross --locked
+
+      - name: Build binary
+        run: |
+          if [ "${{ matrix.target }}" = "aarch64-unknown-linux-gnu" ]; then
+            cross build --release --target ${{ matrix.target }}
+          else
+            cargo build --release --target ${{ matrix.target }}
+          fi
+        shell: bash
+
+      - name: Package artifact
+        run: |
+          TARGET="${{ matrix.target }}"
+          if [[ "$TARGET" == *"windows"* ]]; then
+            EXT=".exe"
+          else
+            EXT=""
+          fi
+          cp "target/${TARGET}/release/{{BINARY_NAME}}${EXT}" "{{BINARY_NAME}}-${TARGET}${EXT}"
+        shell: bash
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: nightly-${{ matrix.target }}
+          path: |
+            {{BINARY_NAME}}-*
+          retention-days: 7
