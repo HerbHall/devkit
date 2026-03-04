@@ -102,10 +102,16 @@ Scaffold a new project directory with DevKit templates and an optional stack pro
    - `project-templates/instructions/react.instructions.md` to `<project>/.github/instructions/react.instructions.md`
      - Replace `{{FRONTEND_PATH}}` with `web` (or the project's frontend path)
    - `project-templates/copilot-setup-steps-fullstack.yml` to `<project>/.github/workflows/copilot-setup-steps.yml`
+   - `project-templates/nightly-go.yml` to `<project>/.github/workflows/nightly.yml`
+     - Replace `{{DOCKER_IMAGE}}`, `{{VERSION_PACKAGE}}`, `{{BINARY_NAME}}`, `{{BINARY_CMD}}`
+     - Keep FRONTEND blocks (project has a frontend)
 
    If `go-cli` profile, copy:
 
    - `project-templates/copilot-setup-steps-go.yml` to `<project>/.github/workflows/copilot-setup-steps.yml`
+   - `project-templates/nightly-go.yml` to `<project>/.github/workflows/nightly.yml`
+     - Replace `{{DOCKER_IMAGE}}`, `{{VERSION_PACKAGE}}`, `{{BINARY_NAME}}`, `{{BINARY_CMD}}`
+     - Remove all lines marked `# FRONTEND:` (CLI-only, no frontend)
 
    Create the `.github/workflows/` directory first:
 
@@ -114,6 +120,18 @@ Scaffold a new project directory with DevKit templates and an optional stack pro
    ```
 
    CodeQL, instructions, and setup-steps files are copied as-is unless noted.
+
+   **Release gate (all profiles with release-please):**
+
+   - `project-templates/release-gate.yml` to `<project>/.github/workflows/release-gate.yml`
+     - No substitutions needed (language-agnostic)
+
+   **Nightly builds for non-Go profiles:**
+
+   - `node` or Docker extension profile: copy `project-templates/nightly-node.yml` to `<project>/.github/workflows/nightly.yml`
+     - Replace `{{DOCKER_IMAGE}}`
+   - `rust` profile: copy `project-templates/nightly-rust.yml` to `<project>/.github/workflows/nightly.yml`
+     - Replace `{{BINARY_NAME}}`
 
 8. **Optionally create a GitHub repo:**
 
