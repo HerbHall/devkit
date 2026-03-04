@@ -1,0 +1,139 @@
+# Conformance Checklist
+
+13-point checklist for DevKit project conformance. Each check includes what to look for, which stacks need it, how to determine pass/fail, and which DevKit template provides the fix.
+
+## Stack Detection
+
+Before running checks, detect the project stack by inspecting the project root:
+
+| Indicator File | Stack |
+|----------------|-------|
+| `go.mod` | Go |
+| `package.json` | Node (check for Docker extension labels in Dockerfile for Node-Extension) |
+| `Cargo.toml` | Rust |
+| `*.csproj` or `*.sln` | .NET |
+| None of the above | Unknown |
+
+A project may match multiple stacks (e.g., Go backend + Node frontend). Apply checks for all detected stacks.
+
+## Checks
+
+### 1. CLAUDE.md
+
+- **What to check**: `CLAUDE.md` exists at the project root with project-specific content
+- **Stacks**: All
+- **Pass criteria**: File exists and contains at least a heading and a build/test command
+- **Fail indicators**: File is missing, or is an unmodified copy of the template (contains `{{PROJECT_NAME}}` placeholders)
+- **Fix reference**: `project-templates/workspace-claude-md-template.md` (workspace root variant) or `project-templates/claude-md-template.md` (generic)
+
+### 2. Claude Settings
+
+- **What to check**: `.claude/settings.json` exists
+- **Stacks**: All
+- **Pass criteria**: File exists and is valid JSON
+- **Fail indicators**: `.claude/` directory missing, or `settings.json` missing inside it
+- **Fix reference**: `project-templates/settings.json`
+
+### 3. CI Workflow
+
+- **What to check**: `.github/workflows/ci.yml` (or variant like `ci-node.yml`, `ci-rust.yml`, `ci-dotnet.yml`)
+- **Stacks**: All
+- **Pass criteria**: At least one CI workflow file exists under `.github/workflows/` with a name containing `ci` or `lint` or `test` or `build`
+- **Fail indicators**: No `.github/workflows/` directory, or no CI-related workflow files
+- **Fix reference**: `project-templates/ci.yml` (Go), `project-templates/ci-node.yml` (Node), `project-templates/ci-rust.yml` (Rust), `project-templates/ci-dotnet.yml` (.NET)
+- **Note**: CI workflows are too project-specific to auto-create; suggest the template but require manual customization
+
+### 4. Pre-push Hook
+
+- **What to check**: `scripts/pre-push` exists and is executable
+- **Stacks**: All
+- **Pass criteria**: File exists (executable bit is optional on Windows)
+- **Fail indicators**: `scripts/` directory missing, or `pre-push` not present
+- **Fix reference**: `git-templates/hooks/pre-push`
+
+### 5. Lint Config
+
+- **What to check**: Stack-appropriate lint configuration exists
+- **Stacks**: Stack-specific
+- **Pass criteria per stack**:
+  - Go: `.golangci.yml` exists and contains `version: "2"`
+  - Node/React: `eslint.config.js` or `.eslintrc.*` exists
+  - Rust: `Cargo.toml` contains `[lints]` section, or `clippy` appears in CI workflow
+  - .NET: skip (no standard external lint config file)
+- **Fail indicators**: Expected lint config missing for the detected stack
+- **Fix reference**: `project-templates/golangci.yml` (Go), `project-templates/eslint.config.js` (Node)
+
+### 6. Makefile
+
+- **What to check**: `Makefile` exists with standard targets
+- **Stacks**: All
+- **Pass criteria**: `Makefile` exists and contains at least `build`, `test`, and `lint` targets
+- **Fail indicators**: No Makefile, or Makefile missing standard targets
+- **Fix reference**: `project-templates/Makefile.go` (Go), `project-templates/Makefile.node` (Node), `project-templates/Makefile.node-extension` (Docker extension), `project-templates/Makefile.rust` (Rust)
+
+### 7. EditorConfig
+
+- **What to check**: `.editorconfig` exists with `root = false` (inherits from DevSpace)
+- **Stacks**: All
+- **Pass criteria**: File exists and does NOT contain `root = true` (so it inherits from the DevSpace parent)
+- **Fail indicators**: File missing, or contains `root = true` which blocks inheritance
+- **Fix reference**: Create minimal `.editorconfig` with `root = false`
+
+### 8. Release Please
+
+- **What to check**: release-please configuration files exist
+- **Stacks**: All
+- **Pass criteria**: All three files exist:
+  - `.release-please-manifest.json`
+  - `release-please-config.json`
+  - `.github/workflows/release-please.yml`
+- **Fail indicators**: Any of the three files missing
+- **Fix reference**: `project-templates/release-please-manifest.json`, `project-templates/release-please-config.json`, `project-templates/release-please.yml`
+
+### 9. LICENSE
+
+- **What to check**: `LICENSE` file exists at project root
+- **Stacks**: All
+- **Pass criteria**: File exists and is non-empty
+- **Fail indicators**: No LICENSE file
+- **Fix reference**: Create MIT license with current year and owner name
+
+### 10. VERSION
+
+- **What to check**: `VERSION` file exists at project root
+- **Stacks**: All
+- **Pass criteria**: File exists and contains a semver string (e.g., `0.1.0`)
+- **Fail indicators**: No VERSION file
+- **Fix reference**: Create with `0.1.0` as initial content
+
+### 11. Gitignore
+
+- **What to check**: `.gitignore` exists and is stack-appropriate
+- **Stacks**: All
+- **Pass criteria**: File exists and is non-empty
+- **Fail indicators**: No `.gitignore` file
+- **Fix reference**: `project-templates/gitignore-go` (Go), `project-templates/gitignore-node` (Node), `project-templates/gitignore-rust` (Rust), `project-templates/gitignore-dotnet` (.NET)
+
+### 12. Nightly Build Workflow
+
+- **What to check**: `.github/workflows/nightly.yml` (or variant) exists
+- **Stacks**: Go, Node/Docker extension, Rust (skip for .NET desktop)
+- **Pass criteria**: A workflow file exists under `.github/workflows/` with `nightly` in its name or containing a `schedule:` trigger with a cron expression
+- **Fail indicators**: No nightly/scheduled workflow found
+- **Fix reference**: `project-templates/nightly-go.yml` (Go), `project-templates/nightly-node.yml` (Node), `project-templates/nightly-rust.yml` (Rust)
+- **Note**: Nightly workflows are project-specific; suggest the template but require manual customization
+
+### 13. Release Gate Workflow
+
+- **What to check**: `.github/workflows/release-gate.yml` exists
+- **Stacks**: Only if release-please is configured (check 8 passes)
+- **Pass criteria**: File exists
+- **Fail indicators**: release-please is configured but no release-gate workflow
+- **Fix reference**: `project-templates/release-gate.yml`
+
+## Scoring
+
+- **Pass**: Check criteria met
+- **Fail**: Check criteria not met and the check applies to this stack
+- **Skip**: Check does not apply to this stack (e.g., nightly for .NET desktop, lint config for .NET)
+- **Score**: (pass count) / (pass count + fail count) as percentage; skipped checks excluded from denominator
