@@ -10,7 +10,7 @@ Scaffold a new project directory with DevKit templates and an optional stack pro
 
    - **Project name** (kebab-case, e.g., `my-tool`)
    - **One-line description** (what does this project do?)
-   - **Profile** -- one of: `go-cli`, `go-web`, `iot-embedded`, or `none`
+   - **Profile** -- one of: `go-cli`, `go-web`, `node-extension`, `go-extension`, `rust-cli`, `dotnet-desktop`, `react-frontend`, `iot-embedded`, or `none`
 
    Validate the project name: letters, numbers, and hyphens only, must start with a letter or number.
 
@@ -150,10 +150,55 @@ Scaffold a new project directory with DevKit templates and an optional stack pro
 
    **Nightly builds for non-Go profiles:**
 
-   - `node` or Docker extension profile: copy `project-templates/nightly-node.yml` to `<project>/.github/workflows/nightly.yml`
+   - `node-extension` or `go-extension` profile: copy `project-templates/nightly-node.yml` to `<project>/.github/workflows/nightly.yml`
      - Replace `{{DOCKER_IMAGE}}`
-   - `rust` profile: copy `project-templates/nightly-rust.yml` to `<project>/.github/workflows/nightly.yml`
+   - `rust-cli` profile: copy `project-templates/nightly-rust.yml` to `<project>/.github/workflows/nightly.yml`
      - Replace `{{BINARY_NAME}}`
+
+   **If `node-extension` profile**, copy these additional files:
+
+   - `project-templates/Makefile.node-extension` to `<project>/Makefile`
+     - Replace `{{DOCKER_IMAGE}}` with the Docker Hub image name
+   - `project-templates/eslint.config.js` to `<project>/eslint.config.js`
+   - `project-templates/tsconfig.json` to `<project>/tsconfig.json`
+   - `project-templates/gitignore-node` to `<project>/.gitignore`
+   - `project-templates/ci-node.yml` to `<project>/.github/workflows/ci.yml`
+   - `project-templates/instructions/react.instructions.md` to `<project>/.github/instructions/react.instructions.md`
+     - Replace `{{FRONTEND_PATH}}` with `ui`
+
+   **If `go-extension` profile**, copy these additional files:
+
+   - `project-templates/golangci.yml` to `<project>/.golangci.yml`
+   - `project-templates/Makefile.node-extension` to `<project>/Makefile`
+     - Replace `{{DOCKER_IMAGE}}` with the Docker Hub image name
+   - `project-templates/eslint.config.js` to `<project>/eslint.config.js`
+   - `project-templates/tsconfig.json` to `<project>/tsconfig.json`
+   - `project-templates/gitignore-go` to `<project>/.gitignore`
+   - `project-templates/ci.yml` to `<project>/.github/workflows/ci.yml`
+     - Replace `{{PROJECT_NAME}}` with the project name
+   - `project-templates/instructions/go.instructions.md` to `<project>/.github/instructions/go.instructions.md`
+   - `project-templates/instructions/react.instructions.md` to `<project>/.github/instructions/react.instructions.md`
+     - Replace `{{FRONTEND_PATH}}` with `ui`
+
+   **If `rust-cli` profile**, copy these additional files:
+
+   - `project-templates/Makefile.rust` to `<project>/Makefile`
+     - Replace `{{BINARY_NAME}}` with the binary name
+   - `project-templates/gitignore-rust` to `<project>/.gitignore`
+   - `project-templates/ci-rust.yml` to `<project>/.github/workflows/ci.yml`
+
+   **If `dotnet-desktop` profile**, copy these additional files:
+
+   - `project-templates/gitignore-dotnet` to `<project>/.gitignore`
+   - `project-templates/ci-dotnet.yml` to `<project>/.github/workflows/ci.yml`
+
+   **If `react-frontend` profile**, copy these additional files:
+
+   - `project-templates/Makefile.node` to `<project>/Makefile`
+   - `project-templates/eslint.config.js` to `<project>/eslint.config.js`
+   - `project-templates/tsconfig.json` to `<project>/tsconfig.json`
+   - `project-templates/gitignore-node` to `<project>/.gitignore`
+   - `project-templates/ci-node.yml` to `<project>/.github/workflows/ci.yml`
 
 8. **Validate template substitutions:**
 
@@ -206,5 +251,4 @@ Scaffold a new project directory with DevKit templates and an optional stack pro
 - `.devkit-config.json` missing: ask user for DevSpace path
 - `git-templates/` not found in DevKit: fall back to plain `git init`
 - `gh` not authenticated: skip GitHub repo creation, tell user the manual command
-- Profile `iot-embedded`: no extra templates are copied (only always-included files)
-- Profile `none`: no extra templates are copied (only always-included files)
+- Profile `iot-embedded` or `none`: no extra templates are copied (only always-included files)

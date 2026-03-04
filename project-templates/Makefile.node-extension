@@ -1,0 +1,49 @@
+.PHONY: build-extension install-extension update-extension push-extension validate \
+	fe-install fe-build fe-lint fe-typecheck fe-test \
+	lint-md ci hooks clean
+
+VERSION := $(shell cat VERSION)
+
+build-extension:
+	docker build -t {{DOCKER_IMAGE}}:local .
+
+install-extension:
+	docker extension install {{DOCKER_IMAGE}}:local
+
+update-extension:
+	echo "y" | docker extension update {{DOCKER_IMAGE}}:local
+
+push-extension:
+	docker buildx build --push \
+		--platform=linux/amd64,linux/arm64 \
+		--tag={{DOCKER_IMAGE}}:$(VERSION) \
+		--tag={{DOCKER_IMAGE}}:latest .
+
+validate:
+	docker extension validate {{DOCKER_IMAGE}}:local
+
+fe-install:
+	cd ui && pnpm install
+
+fe-build:
+	cd ui && pnpm run build
+
+fe-lint:
+	cd ui && npx eslint src/
+
+fe-typecheck:
+	cd ui && npx tsc --noEmit
+
+fe-test:
+	cd ui && npx vitest run
+
+lint-md:
+	npx markdownlint-cli2 "**/*.md" "#node_modules" "#*/node_modules"
+
+ci: fe-typecheck fe-lint fe-test lint-md build-extension
+
+hooks:
+	cp scripts/pre-push .git/hooks/pre-push && chmod +x .git/hooks/pre-push
+
+clean:
+	rm -rf ui/node_modules ui/dist

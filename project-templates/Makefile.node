@@ -1,0 +1,32 @@
+.PHONY: install build dev test lint typecheck lint-md lint-all ci hooks clean
+
+install:
+	pnpm install
+
+build:
+	pnpm run build
+
+dev:
+	pnpm run dev
+
+test:
+	pnpm run test
+
+lint:
+	npx eslint src/
+
+typecheck:
+	npx tsc --noEmit
+
+lint-md:
+	npx markdownlint-cli2 "**/*.md" "#node_modules" "#*/node_modules"
+
+lint-all: lint typecheck lint-md
+
+ci: lint-all test build
+
+hooks:
+	cp scripts/pre-push .git/hooks/pre-push && chmod +x .git/hooks/pre-push
+
+clean:
+	rm -rf node_modules dist .vite
