@@ -40,8 +40,7 @@ jobs:
         with:
           go-version-file: go.mod
 
-      # Update the build path to match your project entrypoint
-      - run: go build ./cmd/PROJECT_NAME/
+      - run: go build ./cmd/{{PROJECT_NAME}}/
 
   test:
     name: Test

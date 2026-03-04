@@ -65,6 +65,25 @@ Scaffold a new project directory with DevKit templates and an optional stack pro
      - Replace `{{DEVSPACE}}` with the resolved DevSpace path
    - `project-templates/settings.json` to `<project>/.claude/settings.json`
 
+   Community health files (also always-included):
+
+   ```bash
+   mkdir -p <devspace>/<project-name>/.github/ISSUE_TEMPLATE
+   ```
+
+   - `project-templates/CONTRIBUTING.md` to `<project>/CONTRIBUTING.md`
+     - Replace `{{PROJECT_NAME}}` with the project name
+   - `project-templates/CODE_OF_CONDUCT.md` to `<project>/CODE_OF_CONDUCT.md`
+   - `project-templates/SECURITY.md` to `<project>/SECURITY.md`
+     - Replace `{{PROJECT_NAME}}` with the project name
+   - `project-templates/CODEOWNERS` to `<project>/.github/CODEOWNERS`
+     - Replace `{{OWNER}}` with the GitHub owner
+   - `project-templates/pull_request_template.md` to `<project>/.github/pull_request_template.md`
+   - `project-templates/bug_report.yml` to `<project>/.github/ISSUE_TEMPLATE/bug_report.yml`
+     - Replace `{{PROJECT_NAME}}` with the project name
+   - `project-templates/feature_request.yml` to `<project>/.github/ISSUE_TEMPLATE/feature_request.yml`
+     - Replace `{{PROJECT_NAME}}` with the project name
+
    Use the Read tool to load each template, perform substitutions, then Write the result.
 
 6. **Copy Copilot templates (always-included):**
@@ -93,7 +112,10 @@ Scaffold a new project directory with DevKit templates and an optional stack pro
 
    - `project-templates/golangci.yml` to `<project>/.golangci.yml`
    - `project-templates/Makefile.go` to `<project>/Makefile`
+     - Replace `{{PROJECT_NAME}}` with the project name
+     - Replace `{{OWNER}}` with the GitHub owner (from `gh api user --jq '.login'`)
    - `project-templates/ci.yml` to `<project>/.github/workflows/ci.yml`
+     - Replace `{{PROJECT_NAME}}` with the project name
    - `project-templates/codeql.yml` to `<project>/.github/workflows/codeql.yml`
    - `project-templates/instructions/go.instructions.md` to `<project>/.github/instructions/go.instructions.md`
 
@@ -133,7 +155,19 @@ Scaffold a new project directory with DevKit templates and an optional stack pro
    - `rust` profile: copy `project-templates/nightly-rust.yml` to `<project>/.github/workflows/nightly.yml`
      - Replace `{{BINARY_NAME}}`
 
-8. **Optionally create a GitHub repo:**
+8. **Validate template substitutions:**
+
+   Scan all files in the new project for unreplaced template placeholders:
+
+   ```bash
+   grep -rn '{{' <devspace>/<project-name>/ --include='*' || echo "All placeholders replaced"
+   ```
+
+   If any `{{PLACEHOLDER}}` patterns remain, report them with file path and line number. Do NOT proceed to GitHub repo creation or the summary until all placeholders are resolved.
+
+   For each unreplaced placeholder, tell the user: "Replace `{{PLACEHOLDER}}` with the actual value in `<file>`"
+
+9. **Optionally create a GitHub repo:**
 
    Ask the user: "Create a GitHub repo for this project? [y/N]"
 
@@ -148,23 +182,23 @@ Scaffold a new project directory with DevKit templates and an optional stack pro
 
    Determine `<owner>` from `gh api user --jq '.login'` or `git config --global user.name`.
 
-9. **Report summary:**
+10. **Report summary:**
 
-   Display what was created:
+    Display what was created:
 
-   - Project directory path
-   - Files created (list each one)
-   - Git initialized (with or without template)
-   - GitHub repo URL (if created)
+    - Project directory path
+    - Files created (list each one)
+    - Git initialized (with or without template)
+    - GitHub repo URL (if created)
 
-   Suggest next steps:
+    Suggest next steps:
 
-   - Edit `CLAUDE.md` to fill in remaining TODO sections
-   - Edit `AGENTS.md` to add project-specific tech stack and structure
-   - Edit `.github/copilot-instructions.md` to fill in tech stack details
-   - Review `.claude/settings.json` and adjust permissions
-   - Add source code and start building
-   - Run `claude` in the project directory to begin development
+    - Edit `CLAUDE.md` to fill in remaining TODO sections
+    - Edit `AGENTS.md` to add project-specific tech stack and structure
+    - Edit `.github/copilot-instructions.md` to fill in tech stack details
+    - Review `.claude/settings.json` and adjust permissions
+    - Add source code and start building
+    - Run `claude` in the project directory to begin development
 
 ## Edge Cases
 
