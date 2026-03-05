@@ -1,6 +1,6 @@
 # Conformance Checklist
 
-16-point checklist for DevKit project conformance. Each check includes what to look for, which stacks need it, how to determine pass/fail, and which DevKit template provides the fix.
+19-point checklist for DevKit project conformance. Each check includes what to look for, which stacks need it, how to determine pass/fail, and which DevKit template provides the fix.
 
 ## Stack Detection
 
@@ -155,6 +155,31 @@ A project may match multiple stacks (e.g., Go backend + Node frontend). Apply ch
 - **Pass criteria**: `gh api repos/OWNER/REPO --jq '.allow_auto_merge'` returns `true`
 - **Fail indicators**: auto-merge is disabled, causing release-gate's auto-merge step to fail silently
 - **Fix reference**: `gh api repos/OWNER/REPO -X PATCH -f allow_auto_merge=true`
+
+### 17. Copilot PR Review Ruleset
+
+- **What to check**: A ruleset named "Copilot PR Review" (or similar) exists and is `active`
+- **Stacks**: All
+- **Pass criteria**: `gh api repos/OWNER/REPO/rulesets --jq '.[] | select(.name | test("copilot|Copilot")) | .enforcement'` returns `active`
+- **Fail indicators**: No ruleset with copilot-related name, or ruleset is `disabled`
+- **Fix reference**: `project-templates/copilot-ruleset.json` (create via API, then confirm UI toggle)
+- **Note**: The Copilot auto-review UI toggle must be confirmed manually after API creation (see KG#92 on #193 branch)
+
+### 18. Branch Protection Has No Review Requirement
+
+- **What to check**: Branch protection does not include `required_pull_request_reviews` when a Copilot ruleset exists (check 17 passes)
+- **Stacks**: Only if check 17 passes
+- **Pass criteria**: `gh api repos/OWNER/REPO/branches/main/protection --jq '.required_pull_request_reviews'` returns `null` or 404
+- **Fail indicators**: Branch protection has review requirements alongside the Copilot ruleset, creating a double review gate
+- **Fix reference**: Remove `required_pull_request_reviews` from branch protection, keeping only status checks
+
+### 19. CODEOWNERS
+
+- **What to check**: `CODEOWNERS` or `.github/CODEOWNERS` file exists
+- **Stacks**: All
+- **Pass criteria**: File exists and contains at least one ownership rule
+- **Fail indicators**: No CODEOWNERS file
+- **Fix reference**: `project-templates/CODEOWNERS`
 
 ## Scoring
 

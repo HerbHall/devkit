@@ -1,6 +1,6 @@
 # Conformance Audit: Full Audit
 
-Run the 16-point conformance checklist across all projects in the DevSpace workspace.
+Run the 19-point conformance checklist across all projects in the DevSpace workspace.
 
 ## Steps
 
@@ -134,6 +134,18 @@ ls "$project/.github/workflows/"*retrigger* 2>/dev/null | grep -q .
 
 # Check 16: Auto-merge enabled (only if check 13 passes)
 gh api "repos/$(gh repo view "$project" --json nameWithOwner -q .nameWithOwner 2>/dev/null)" --jq '.allow_auto_merge' 2>/dev/null | grep -q 'true'
+
+# Check 17: Copilot PR Review ruleset exists
+REPO_SLUG=$(gh repo view "$project" --json nameWithOwner -q .nameWithOwner 2>/dev/null)
+gh api "repos/$REPO_SLUG/rulesets" --jq '.[] | select(.name | test("copilot|Copilot")) | .enforcement' 2>/dev/null | grep -q 'active'
+
+# Check 18: Branch protection has no review requirement (only if check 17 passes)
+# Returns null or 404 = pass, non-null = fail
+REVIEWS=$(gh api "repos/$REPO_SLUG/branches/main/protection" --jq '.required_pull_request_reviews' 2>/dev/null)
+[ "$REVIEWS" = "null" ] || [ -z "$REVIEWS" ]
+
+# Check 19: CODEOWNERS exists
+[ -f "$project/CODEOWNERS" ] || [ -f "$project/.github/CODEOWNERS" ] || [ -f "$project/docs/CODEOWNERS" ]
 ```
 
 ### 5. Generate Summary Report
@@ -143,11 +155,11 @@ Present results as a table. Use checkmarks and X marks for visual clarity:
 ```text
 ## Conformance Audit Report
 
-| Project | Stack | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | Score |
-|---------|-------|---|---|---|---|---|---|---|---|---|----|----|----|----|----|----|-------|-------|
-| SubNetree | go,node | + | + | + | + | + | + | + | + | + | + | + | + | + | + | + | + | 100% |
-| Runbooks | node | + | + | + | + | + | - | + | + | + | + | + | - | - | + | + | + | 81% |
-| DigitalRain | rust | + | - | + | + | + | - | + | + | + | + | + | - | - | ~ | ~ | ~ | 69% |
+| Project | Stack | 1-7 | 8 | 9-11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | Score |
+|---------|-------|-----|---|------|----|----|----|----|----|----|----|----|-------|
+| SubNetree | go,node | 7/7 | + | 3/3 | + | + | + | + | + | + | + | + | 100% |
+| Runbooks | node | 6/7 | + | 3/3 | - | + | + | + | + | + | + | + | 89% |
+| DigitalRain | rust | 5/7 | + | 3/3 | - | - | ~ | ~ | ~ | - | ~ | - | 63% |
 
 Legend: + = pass, - = fail, ~ = skip (not applicable)
 ```
