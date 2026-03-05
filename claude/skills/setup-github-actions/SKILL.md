@@ -108,10 +108,9 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      - uses: golangci/golangci-lint-action@v6
+      - uses: golangci/golangci-lint-action@v7
         with:
-          version: latest
-          install-mode: binary
+          version: v2.10.1
 
   vulncheck:
     runs-on: ubuntu-latest
@@ -137,7 +136,7 @@ jobs:
 - **`CGO_ENABLED=0`** is required for cross-compilation even with pure-Go projects
 - **`shell: bash`** ensures `date -u` and other Unix commands work on Windows runners
 - **`-timeout=10m`** prevents tests from hanging indefinitely in CI
-- **`install-mode: binary`** is faster than `goinstall` for golangci-lint
+- **golangci-lint-action@v7** is required for golangci-lint v2 (v6 rejects v2.x). Use default binary install mode (do not set `install-mode: goinstall`)
 - **`govulncheck`** scans actual call graphs, not just dependency lists
 </pattern>
 
@@ -679,11 +678,12 @@ Without it, Go may attempt to use the system C compiler for certain stdlib packa
 which fails during cross-compilation (e.g., building linux/arm64 on ubuntu-latest/amd64).
 </lesson>
 
-<lesson name="golangci_lint_install_mode">
-**golangci-lint Install Mode**
-Use `install-mode: binary` (not `goinstall`) with `golangci/golangci-lint-action@v6`.
-The `goinstall` mode compiles from source, which is slower and may fail with Go version
-mismatches. The `binary` mode downloads a pre-built binary.
+<lesson name="golangci_lint_action_version">
+**golangci-lint Action Version**
+Use `golangci/golangci-lint-action@v7` for golangci-lint v2.x. Action v6 explicitly
+rejects v2.x versions. Pin the version (e.g., `version: v2.10.1`) instead of `latest`
+for reproducible CI. Use default binary install mode -- `install-mode: goinstall` does
+not work with v2 (constructs v1 module path).
 </lesson>
 
 <lesson name="goreleaser_v2_deprecations">
