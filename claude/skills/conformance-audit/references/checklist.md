@@ -1,6 +1,6 @@
 # Conformance Checklist
 
-13-point checklist for DevKit project conformance. Each check includes what to look for, which stacks need it, how to determine pass/fail, and which DevKit template provides the fix.
+16-point checklist for DevKit project conformance. Each check includes what to look for, which stacks need it, how to determine pass/fail, and which DevKit template provides the fix.
 
 ## Stack Detection
 
@@ -130,6 +130,31 @@ A project may match multiple stacks (e.g., Go backend + Node frontend). Apply ch
 - **Pass criteria**: File exists
 - **Fail indicators**: release-please is configured but no release-gate workflow
 - **Fix reference**: `project-templates/release-gate.yml`
+
+### 14. Workflow Trigger Patterns
+
+- **What to check**: No separate workflow uses `on: push: tags: v*` when release-please is configured
+- **Stacks**: Only if release-please is configured (check 8 passes)
+- **Pass criteria**: No workflow file (other than release-please.yml) contains a `tags:` trigger with `v*` pattern
+- **Fail indicators**: A separate `release.yml` or `publish.yml` has `on: push: tags: ['v*']` -- these will never fire because GITHUB_TOKEN-created tags don't trigger push events (see KG#92)
+- **Fix reference**: Move publish/deploy jobs into `release-please.yml` using the `release_created` output, or use `on: release: types: [published]` trigger
+
+### 15. Retrigger CI Workflow
+
+- **What to check**: `.github/workflows/retrigger-ci.yml` (or similar) exists
+- **Stacks**: Only if release-please is configured (check 8 passes)
+- **Pass criteria**: A workflow exists that triggers on `workflow_run` after Release Please and can close/reopen stale PRs
+- **Fail indicators**: release-please is configured but no retrigger workflow exists
+- **Fix reference**: `project-templates/retrigger-ci.yml`
+- **Note**: Without this, release-please PRs may have missing CI checks due to a GitHub Actions race condition (see KG#92 on #191 branch)
+
+### 16. Auto-Merge Enabled
+
+- **What to check**: Repository has auto-merge enabled
+- **Stacks**: Only if release-gate is configured (check 13 passes)
+- **Pass criteria**: `gh api repos/OWNER/REPO --jq '.allow_auto_merge'` returns `true`
+- **Fail indicators**: auto-merge is disabled, causing release-gate's auto-merge step to fail silently
+- **Fix reference**: `gh api repos/OWNER/REPO -X PATCH -f allow_auto_merge=true`
 
 ## Scoring
 
