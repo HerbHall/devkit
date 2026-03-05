@@ -1,8 +1,8 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 91
-last_updated: "2026-03-03"
+entry_count: 93
+last_updated: "2026-03-05"
 ---
 
 # Known Gotchas
@@ -1318,3 +1318,40 @@ npx markdownlint-cli2 "**/*.md" "#**/node_modules"
 ```
 
 **Scope:** Affects Makefile `lint-md` targets, `scripts/pre-push` hooks, and CI workflow markdownlint steps. Update all three locations when fixing.
+
+## 92. Gitignore Directory Slash Prevents Negation Override
+
+**Added:** 2026-03-05 | **Source:** DigitalRain | **Status:** active
+
+**Platform:** Git (all)
+**Issue:** `.claude/` (trailing slash) in `.gitignore` ignores the entire directory as a unit. Git's negation pattern `!.claude/settings.json` cannot override a directory-level ignore -- once a directory is ignored, all contents are invisible to git regardless of negation rules.
+**Diagnosis:** `git add .claude/settings.json` silently does nothing. `git status` does not show the file. `git check-ignore -v .claude/settings.json` reports the `.claude/` rule.
+**Fix:** Use `.claude/*` (glob) instead of `.claude/` (directory). The glob ignores individual files inside the directory, which CAN be negated:
+
+```gitignore
+# BAD: directory-level ignore blocks all negation
+.claude/
+!.claude/settings.json    # does NOT work
+
+# GOOD: glob-level ignore allows negation
+.claude/*
+!.claude/settings.json    # works correctly
+```
+
+**Impact:** All projects that need `.claude/settings.json` committed while ignoring `.claude/settings.local.json` and other local files.
+
+## 93. Git Init Template CLAUDE.md Breaks Markdownlint
+
+**Added:** 2026-03-05 | **Source:** DigitalRain | **Status:** active
+
+**Platform:** Git (all) / markdownlint-cli2
+**Issue:** When `git init.templateDir` copies a `CLAUDE.md` into `.git/`, markdownlint's `**/*.md` glob picks it up. Since `.git/CLAUDE.md` is a template file (not project-specific), it may have lint errors that cannot be fixed in the repo. The file is inside `.git/` and not version-controlled.
+**Diagnosis:** Markdownlint reports errors in `.git/CLAUDE.md` (or `.git/hooks/*.md` if any exist). These errors are unfixable because the file is managed by git's template system.
+**Fix:** Add `"#.git"` to all markdownlint exclusion patterns -- in Makefile `lint-md` targets, `scripts/pre-push` hooks, and CI workflow globs:
+
+```bash
+# Makefile / pre-push hook / CI
+npx markdownlint-cli2 "**/*.md" "#node_modules" "#*/node_modules" "#.git"
+```
+
+**Impact:** All projects using the DevKit git init template with markdownlint. The `.git/` directory should always be excluded from linting.
