@@ -1,8 +1,8 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 91
-last_updated: "2026-03-03"
+entry_count: 92
+last_updated: "2026-03-05"
 ---
 
 # Known Gotchas
@@ -1318,3 +1318,35 @@ npx markdownlint-cli2 "**/*.md" "#**/node_modules"
 ```
 
 **Scope:** Affects Makefile `lint-md` targets, `scripts/pre-push` hooks, and CI workflow markdownlint steps. Update all three locations when fixing.
+
+## 92. GITHUB_TOKEN-Created Tags Don't Trigger Push Events
+
+**Added:** 2026-03-05 | **Source:** Runbooks | **Status:** active
+
+**Platform:** GitHub Actions
+**Issue:** When release-please (or any workflow) creates a git tag using `GITHUB_TOKEN`, the resulting `push` event does NOT trigger other workflows. This is a GitHub anti-recursion safeguard to prevent infinite workflow loops. A separate `release.yml` with `on: push: tags: v*` will never fire after release-please creates a tag.
+**Diagnosis:** Tags appear in the repo after release-please merges, but the publish/release workflow never runs. No workflow run appears in the Actions tab for the tag event. Releases are silently skipped.
+**Fix:** Chain the publish/deploy job inside the SAME workflow as release-please, using the `release_created` output:
+
+```yaml
+# Inside release-please.yml
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: release
+
+  publish:
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      # Build and publish using needs.release-please.outputs.tag_name
+```
+
+**Alternative:** Use `on: release: types: [published]` in a separate workflow (release-please creates GitHub Releases, which DO trigger the `release` event).
+**Anti-pattern:** `on: push: tags: v*` in a separate workflow -- will never fire when tags are created by `GITHUB_TOKEN`.
