@@ -1,7 +1,7 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 96
+entry_count: 98
 last_updated: "2026-03-05"
 ---
 
@@ -1413,3 +1413,56 @@ gh api repos/OWNER/REPO -X PATCH -f allow_auto_merge=true
 ```
 
 **Prevention:** Include this step in the repo setup checklist. The release-gate template header now documents this prerequisite.
+
+## 97. Copilot Auto-Review Is UI-Only (No REST API)
+
+**Added:** 2026-03-05 | **Source:** Runbooks | **Status:** active
+
+**Platform:** GitHub
+**Issue:** The "Automatically request Copilot code review" toggle in GitHub rulesets is only available through the GitHub web UI. The REST API can create the `copilot_code_review` rule type with `review_on_push: true`, but the UI toggle may still need manual confirmation. There is no REST API endpoint to read or write this setting independently.
+**Diagnosis:** After creating a ruleset via API with `copilot_code_review` rule, Copilot doesn't review PRs. The ruleset exists but the UI toggle appears unchecked.
+**Fix:** After creating the ruleset via API, manually confirm the setting:
+
+1. Go to repo Settings > Rules > Rulesets > "Copilot PR Review"
+2. Click Edit on "Require a pull request before merging"
+3. Under "Additional settings", verify "Require review from GitHub Copilot" is checked
+4. Also enable "Review new pushes" for re-review on each push
+5. Save changes
+
+**URL pattern:** `https://github.com/OWNER/REPO/settings/rules/RULESET_ID`
+**Workaround:** Create a test PR with a real file change to verify Copilot reviews it after setup.
+
+## 98. Rulesets and Branch Protection Review Requirements Conflict
+
+**Added:** 2026-03-05 | **Source:** Runbooks | **Status:** active
+
+**Platform:** GitHub
+**Issue:** GitHub rulesets and classic branch protection are separate systems that can both require PR reviews independently. If a ruleset requires 1 approving review (for Copilot auto-review) AND branch protection also requires 1 review, the effective requirement becomes 2 reviews -- one from each system. For solo maintainers, this blocks all PRs.
+**Diagnosis:** PR has Copilot approval but still shows "Review required" and cannot be merged. `gh pr view --json reviews` shows 1 approval but merge is blocked.
+**Fix:** Use rulesets for review requirements (enables Copilot auto-review) and branch protection only for CI status checks. Remove `required_pull_request_reviews` from branch protection:
+
+```bash
+# Remove review requirement from branch protection
+# Keep only status checks
+gh api repos/OWNER/REPO/branches/main/protection -X PUT \
+  --input - << 'JSON'
+{
+  "required_status_checks": {
+    "strict": true,
+    "contexts": ["Build", "Lint", "Test"]
+  },
+  "enforce_admins": false,
+  "required_pull_request_reviews": null,
+  "restrictions": null
+}
+JSON
+```
+
+**Protection architecture:**
+
+| Concern | System | Reason |
+|---------|--------|--------|
+| CI status checks | Branch protection | API-configurable, well-supported |
+| PR review requirement | Ruleset | Enables Copilot auto-review |
+| Copilot auto-review | Ruleset (UI toggle) | Only available in rulesets |
+| Auto-merge | Repo setting | Required for release-gate workflow |
