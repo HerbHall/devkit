@@ -19,6 +19,8 @@ Platform-specific issues, tool quirks, and surprising behaviors discovered throu
 
 ## 2. GitHub Branch Protection Requires --admin for Merge
 
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+
 **Platform:** GitHub
 **Issue:** When branch protection rules require PR reviews or status checks, `gh pr merge` fails even when all checks pass if you're the only maintainer.
 **Workaround:** Use `gh pr merge --admin` to bypass branch protection (only for repo admins).
@@ -26,11 +28,15 @@ Platform-specific issues, tool quirks, and surprising behaviors discovered throu
 
 ## 3. Git Stash Before PR Merge
 
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+
 **Platform:** Git
 **Issue:** `gh pr merge` with `--merge` or `--squash` can fail if there are uncommitted local changes, even if they're unrelated to the PR.
 **Workaround:** `git stash` before merging, `git stash pop` after.
 
 ## 4. Force Push to Already-Merged Branch Creates Orphan
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Platform:** GitHub
 **Issue:** If a PR branch was already merged and you `git push --force` to it, GitHub creates a new remote branch (orphaned from the PR). The PR remains merged.
@@ -39,11 +45,15 @@ Platform-specific issues, tool quirks, and surprising behaviors discovered throu
 
 ## 5. Incomplete Range Variable Replacement in Loop Refactoring
 
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+
 **Platform:** Go (all)
 **Issue:** When changing `for _, v := range slice` to `for i := range slice`, it's easy to miss references to `v` deeper in the loop body. The compiler will catch `undefined: v` but only if you try to build.
 **Fix:** After changing the range declaration, search the entire loop body for the old variable name. Replace ALL occurrences with `slice[i]`.
 
 ## 6. React Compiler Lint: Cannot Access Refs During Render
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Platform:** React 19+ / ESLint react-hooks/refs rule
 **Issue:** Mutating `ref.current` at the top level of a custom hook (during render) is flagged by the React compiler ESLint plugin. Common pattern `onMessageRef.current = onMessage` triggers "Cannot update ref during render". Also applies to storing function implementations in refs.
@@ -58,6 +68,8 @@ useEffect(() => { onMessageRef.current = onMessage }, [onMessage])
 ```
 
 ## 7. React Compiler Lint: Recursive useCallback Self-Reference
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Platform:** React 19+ / ESLint react-hooks/immutability rule
 **Issue:** A `useCallback` function that calls itself recursively (e.g., a `connect()` function calling `connect()` inside an `onclose` handler) triggers "Cannot access variable before it is declared". The linter sees the variable used before its `const` declaration completes.
@@ -74,6 +86,8 @@ useEffect(() => {
 
 ## 8. Windows Python Aliases Shadow Real Python
 
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+
 **Platform:** Windows (MSYS_NT)
 **Issue:** `python3`, `python`, and `py` all resolve to Windows Store alias stubs (at `~/AppData/Local/Microsoft/WindowsApps/python*.exe`) that just prompt "Install from Microsoft Store" instead of running Python. `command -v` reports them as found, but they don't actually work.
 **Diagnosis:** `python --version` outputs "Python was not found; run without arguments to install from the Microsoft Store" and exits non-zero.
@@ -87,11 +101,15 @@ done
 
 ## 9. jq Not Available on Windows MSYS by Default
 
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+
 **Platform:** Windows (MSYS_NT)
 **Issue:** `jq` is not included in Git for Windows / MSYS2 by default. Scripts that use `jq` for JSON processing fail with "command not found".
 **Fix:** Use Python's `json` module instead of `jq` for bash scripts that need JSON escaping/parsing. Python is more commonly available (once you work around gotcha #8).
 
 ## 10. UserPromptSubmit Hooks Block Slash Commands and Menu Selections
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Platform:** Claude Code (all platforms)
 **Issue:** `UserPromptSubmit` hooks with `type: "prompt"` block slash commands (`/reflect`, `/whats-next`, etc.) and bare numeric inputs (`1`, `7`, `12`) used as menu selections. The small model evaluating the hook prompt interprets these as "not a valid or actionable request" and generates refusal messages.
@@ -111,6 +129,8 @@ done
 Regular prompts containing numbers still fire normally (e.g., "fix issue #297").
 
 ## 11. GitHub API Returns Empty Without User-Agent Header
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Platform:** All (curl, fetch)
 **Issue:** GitHub REST API requires a `User-Agent` header. Requests without it return empty or 403 responses. Curl on some platforms sends a User-Agent by default; others don't.
@@ -132,11 +152,15 @@ TimeToThreshold *time.Duration `json:"time_to_threshold,omitempty" swaggertype:"
 
 ## 13. Swagger Drift After Any Handler/Model Change
 
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+
 **Platform:** Go (swaggo/swag)
 **Issue:** ANY change to Go types referenced in swagger-annotated handlers requires regenerating the swagger spec. This includes: adding new types (e.g., `ThemeLayer`), adding/removing fields on existing structs (e.g., `Layers` on `ThemeDefinition`), changing response types, or removing routes. The CI Swagger Drift Check catches stale specs but costs a round-trip.
 **Fix:** Always run `swag init -g cmd/subnetree/main.go -o api/swagger --parseDependency --parseInternal` (or `make swagger`) after modifying any handler, request/response struct, or type used in swagger annotations. Commit the regenerated files alongside the Go changes.
 
 ## 14. Go Nil Guard: Split Chained Nil Checks Into Separate Blocks
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Platform:** Go (all)
 **Issue:** When guarding against nil with `if obj.Field == nil || obj.Field.Sub == 0`, any code in the same block that accesses `obj.Field.X` (e.g., logging) will panic when `obj.Field` is nil. The `||` short-circuits the condition, but the log statement still executes before the return.
@@ -162,11 +186,15 @@ if len(de.Device.IPAddresses) == 0 {
 
 ## 15. Squash-Merged Branches Don't Appear in `git branch --merged`
 
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+
 **Platform:** Git (all)
 **Issue:** After squash-merging a PR, the local branch tip and the squash commit on main have different hashes. `git branch --merged main` won't list the branch because the original commits aren't ancestors of main.
 **Fix:** Use `git branch -D` (force delete) instead of `git branch -d` for cleanup. Verify safety by checking that the remote tracking ref was already pruned (`git remote prune origin` first), confirming the PR was merged and the remote branch was deleted.
 
 ## 16. GitHub `Closes #N` Comma Syntax Only Closes First Issue
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Platform:** GitHub
 **Issue:** `Closes #1, #2, #3` in a PR body only auto-closes #1. GitHub requires the keyword before **each** issue number. The comma-separated list without repeated keywords is silently ignored for all but the first reference.
@@ -205,6 +233,8 @@ if err != nil {
 
 ## 18. Windows Start-Process Gives Child a Real Console (ModeCharDevice)
 
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+
 **Platform:** Windows (PowerShell)
 **Issue:** `Start-Process` in PowerShell gives the child process a real console, even with `-WindowStyle Hidden` and `-RedirectStandardOutput/-StandardError`. Go's `os.Stdin.Stat()` returns `ModeCharDevice=true`, so code that checks for an interactive terminal (e.g., vault passphrase prompt) will still prompt on stdin, blocking the process.
 **Contrast:** On Linux, backgrounding with `&` or piping stdin makes `ModeCharDevice=false`, so terminal-detection code correctly skips interactive prompts.
@@ -218,6 +248,8 @@ $proc = Start-Process -FilePath $binary -ArgumentList $args -PassThru -WindowSty
 For bash scripts, `export VAR=value` before backgrounding the process achieves the same effect.
 
 ## 19. PowerShell 5.1 ConvertFrom-Json Drops Empty Arrays
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Platform:** Windows (PowerShell 5.1)
 **Issue:** `ConvertFrom-Json` on an empty JSON array `[]` returns `$null` instead of an empty PowerShell array `@()`. This means `$null -ne $result` evaluates to `$false` even when the API returned HTTP 200 with a valid empty response.
@@ -236,6 +268,8 @@ if ($resp.StatusCode -eq 200) { ... }  # always works
 
 ## 20. Stacked PR Rebase After Squash-Merge Requires Skip
 
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+
 **Platform:** Git / GitHub
 **Issue:** When squash-merging a base PR (e.g., PR #143) to main, downstream stacked branches (e.g., PR #144, #145) still contain the original pre-squash commits. Running `git rebase origin/main` on the downstream branch produces conflicts for every already-merged commit because the squash commit hash differs from the original commits.
 **Fix:** Use `git rebase --skip` for each conflicting commit that was part of the squash-merged PR. Git will drop the already-applied commits and keep only the unique downstream commits. For a 3-PR stack (A->B->C) merged bottom-up:
@@ -249,6 +283,8 @@ if ($resp.StatusCode -eq 200) { ... }  # always works
 
 ## 21. VS Code YAML Extension Conflict: jumpToSchema
 
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+
 **Platform:** VS Code (all)
 **Issue:** Codecov VS Code extension (v0.1.1) and Red Hat YAML both bundle `yaml-language-server` internally. Both try to register the `jumpToSchema` command at startup. The second to load crashes with `command 'jumpToSchema' already exists`, preventing the Codecov extension from initializing.
 **Diagnosis:** Error in Codecov Extension output channel: `Server initialization failed. Error: command 'jumpToSchema' already exists`.
@@ -257,12 +293,16 @@ if ($resp.StatusCode -eq 200) { ... }  # always works
 
 ## 22. Project Renames Create Competitive Research Blind Spots
 
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+
 **Platform:** GitHub / All
 **Issue:** When GitHub projects rename (often for trademark reasons), searches for the OLD name return nothing and searches for the NEW name miss historical context. Docker Hub images, Proxmox community scripts, and Unraid app listings may retain old names for months. Example: Scanopy was "NetVisor" (mayanayza/netvisor) from Sep-Dec 2025, renamed to scanopy/scanopy on Dec 15, 2025. Docker images still show `mayanayza/netvisor-server`.
 **Impact:** Competitive research using keyword searches misses renamed projects entirely. Our research concluded "no competitors" while Scanopy had 3k+ stars.
 **Fix:** When researching a competitive space: (1) Search by function, not product name ("network topology visualization self-hosted" not "NetVisor"), (2) Check Docker Hub for related images (old names persist), (3) Look at GitHub topics/tags, (4) Check star counts on GitHub search results to find established projects, (5) Re-scan monthly.
 
 ## 23. GitHub Rulesets Return 404 on Branch Protection API
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Platform:** GitHub
 **Issue:** Repos using GitHub **rulesets** (Settings > Rules > Rulesets) instead of classic **branch protection** (Settings > Branches) return 404 from `gh api repos/{owner}/{repo}/branches/main/protection`. This makes it look like there's no protection when there actually is. Rulesets are the newer system and repos may have been migrated without the maintainer realizing.
@@ -271,6 +311,8 @@ if ($resp.StatusCode -eq 200) { ... }  # always works
 **Related:** Required review count is nested under "Require a pull request before merging" > "Show additional settings" in the ruleset UI -- easy to miss.
 
 ## 24. cla-assistant.io Blocks Dependabot PRs
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Platform:** GitHub
 **Issue:** The external cla-assistant.io integration creates a `license/cla` status check that stays permanently "pending" on Dependabot PRs because `dependabot[bot]` cannot sign a CLA. This is separate from a GitHub Actions CLA workflow (`cla.yml`) which can allowlist bots. Having both creates duplicate CLA checks with different results.
@@ -300,6 +342,8 @@ if ($resp.StatusCode -eq 200) { ... }  # always works
 
 ## 26. Sequential Same-File PR Merge Requires Rebase Between Each
 
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+
 **Platform:** Git / GitHub
 **Issue:** When multiple PRs modify the same file (e.g., README.md), merging one immediately conflicts the others -- even if all had passing CI when created. The second PR's diff is computed against the old main, not the post-merge main.
 **Diagnosis:** `gh pr merge` fails with "Pull Request is not mergeable" after a sibling PR was just merged.
@@ -316,6 +360,8 @@ if ($resp.StatusCode -eq 200) { ... }  # always works
 
 ## 27. SQLite strftime Returns NULL for RFC3339Nano Timestamps
 
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+
 **Platform:** SQLite (all)
 **Issue:** `strftime('%Y-%m-%dT%H', timestamp_col)` returns NULL when the timestamp column contains RFC3339Nano format (`2026-02-14T10:30:00.123456789Z`). SQLite's strftime only recognizes a subset of ISO 8601 formats -- specifically, it expects `YYYY-MM-DD HH:MM:SS` or `YYYY-MM-DDTHH:MM:SS` without fractional seconds beyond milliseconds.
 **Diagnosis:** SQL queries using `GROUP BY strftime(...)` return zero rows even when the table has data. The grouping key is NULL for every row.
@@ -328,6 +374,8 @@ bucket := ts.Truncate(interval).UTC().Format(time.RFC3339)
 Query all points within the time range with a simple `WHERE timestamp BETWEEN ? AND ?` (string comparison works for RFC3339), then aggregate in Go.
 
 ## 28. Recharts v3 Uses TooltipContentProps, Not TooltipProps
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Platform:** React / recharts 3.x
 **Issue:** In recharts v3 (3.7.0+), the `<Tooltip content={...} />` callback receives `TooltipContentProps`, not `TooltipProps`. Using `TooltipProps` causes TypeScript errors: `Property 'payload' does not exist on type` and same for `label`. The properties `payload`, `label`, `active` are context-provided and only exist on `TooltipContentProps`.
@@ -347,6 +395,8 @@ function CustomTooltip({ active, payload, label }: TooltipContentProps<number, s
 
 ## 29. Build-Tag Files Invisible to Local Lint on Different OS
 
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+
 **Platform:** Go (cross-platform development)
 **Issue:** Files with `//go:build !windows` tags are completely excluded from `golangci-lint` when running on Windows (and vice versa). Lint errors in these files -- `gocritic filepathJoin` (absolute paths in `filepath.Join`), `gosec G115` (int->int32 overflow), `gocritic paramTypeCombine`, `prealloc` -- only appear in Linux CI. This caused 2 fix-push cycles on PR #262 (Linux Scout).
 **Common errors in `!windows` files caught only by Linux CI:**
@@ -359,6 +409,8 @@ function CustomTooltip({ active, payload, label }: TooltipContentProps<number, s
 
 ## 30. Background Agents Can't Prompt for Tool Permissions
 
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+
 **Platform:** Claude Code (all platforms)
 **Issue:** Background agents launched with `Task(run_in_background=true)` inherit the session's current tool permission state. If a tool hasn't been approved yet (user hasn't clicked "allow"), the background agent gets denied silently and cannot prompt the user for approval. The agent burns tool calls futilely trying alternatives.
 **Diagnosis:** Agent output shows repeated "Permission to use [tool] has been denied" for WebSearch, WebFetch, Bash, MCP tools, etc. One agent burned 27 tool calls (all denied) before giving up.
@@ -366,6 +418,8 @@ function CustomTooltip({ active, payload, label }: TooltipContentProps<number, s
 **Prevention:** Launch a "warm-up" foreground call using each tool type before going parallel. Or accept partial failure by launching redundant agents across different tool types -- if 2 of 3 succeed, you still get actionable data.
 
 ## 31. Reddit Blocks WebFetch but gh api Works
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Platform:** All (Claude Code)
 **Issue:** Reddit's robots.txt blocks WebFetch and most scraping tools. `WebFetch("https://www.reddit.com/...")` and `WebFetch("https://old.reddit.com/...")` both fail. Web search with `allowed_domains: ["reddit.com"]` also returns nothing.
@@ -388,6 +442,8 @@ gh api -X GET "$URL.json" --jq '.[1].data.children[].data | {author, body, score
 
 ## 32. SessionStart Hook: Use `type: "command"` Not `type: "prompt"`
 
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+
 **Platform:** Claude Code (all)
 **Issue:** `SessionStart` hooks with `type: "prompt"` send the prompt text to a small model for yes/no evaluation. If the prompt is an instruction ("Run /dashboard to display..."), the small model doesn't know what to do with it and the hook produces no useful output. The hook appears to fire but nothing happens.
 **Diagnosis:** No `SessionStart hook success` message appears in system reminders despite the hook being correctly configured in settings.json.
@@ -406,11 +462,15 @@ gh api -X GET "$URL.json" --jq '.[1].data.children[].data | {author, body, score
 
 ## 33. Claude Code Hooks Cannot Initiate Conversation
 
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+
 **Platform:** Claude Code (all)
 **Issue:** Hooks (including `SessionStart`) inject context as system reminders but cannot make Claude proactively start a conversation. Claude only sees hook output when the user sends their first message. This means "auto-run X on startup" requires the user to type something first.
 **Workaround:** Accept this as a two-step startup: (1) hook fires silently, (2) user types anything (even "go"), (3) Claude sees the hook output and acts. Pair with a static file that auto-opens (VS Code task with `runOn: folderOpen`) so the user has orientation while the hook waits for input.
 
 ## 34. Chrome Ignores autocomplete="off" on Form Fields
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Platform:** All browsers (Chrome since v34, Firefox/Safari similar)
 **Issue:** Setting `autocomplete="off"` on form inputs has no effect -- browsers ignore it. Additionally, non-standard `name` attributes (e.g., `name="new-username"`) prevent browsers from correctly identifying form field roles. When Chrome fills a saved password, it looks for a companion username field and picks the nearest text/email input, causing autofill to overwrite the wrong field.
@@ -435,12 +495,16 @@ gh api -X GET "$URL.json" --jq '.[1].data.children[].data | {author, body, score
 
 ## 35. Go Race Detection Requires CGO on Windows MSYS
 
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+
 **Platform:** Windows (MSYS_NT)
 **Issue:** `go test -race ./...` fails immediately with `go: -race requires cgo; enable cgo by setting CGO_ENABLED=1`. The race detector is implemented in C and requires CGO, which isn't available in the standard MSYS/Git-for-Windows Go installation.
 **Impact:** Local Windows verification cannot include race detection. Race bugs are only caught by CI (Linux runners have CGO enabled).
 **Workaround:** Run `go test ./...` locally (without `-race`). Rely on CI's Linux runner for race detection. If race detection is critical locally, use WSL2 or Docker with a Linux Go image.
 
 ## 36. Go uint64 Subtraction Wraps Instead of Going Negative
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Platform:** Go (all)
 **Issue:** `uint64` subtraction wraps around to a huge positive number when the result would be negative (e.g., `50 - 100` becomes `~2^64 - 50`). A subsequent `float64()` conversion produces a huge positive float, not a negative one. This means `if float64(a - b) < 0` is **always false** for uint64 values -- the check is dead code.
@@ -461,6 +525,8 @@ cpuDelta := float64(newUsage - oldUsage)
 
 ## 37. VS Code Locks Workspace Root Directories
 
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+
 **Platform:** Windows (VS Code)
 **Issue:** `rm -rf` on a directory that VS Code has open as a workspace root fails with "Device or resource busy". VS Code's file watcher holds handles on the directory. Individual files inside CAN be removed, but the empty directory shell persists until VS Code reloads with an updated workspace file that no longer references that root.
 **Diagnosis:** After updating `subnetree.code-workspace` from 3-root to single-root, the old `.coordination/` directory (previously a workspace root) couldn't be deleted despite all its files being removed.
@@ -468,6 +534,8 @@ cpuDelta := float64(newUsage - oldUsage)
 **Prevention:** When restructuring workspaces, plan to reload VS Code between removing directory contents and deleting the directory itself.
 
 ## 38. Playwright getByLabel Resolves Multiple Elements with Toggle Buttons
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Platform:** Playwright (all browsers)
 **Issue:** `page.getByLabel('Password')` resolves to 2+ elements when a password input has a companion show/hide toggle button whose `aria-label` contains "password" (e.g., "Show password", "Hide password"). Playwright's `getByLabel` matches both the input (via `for=` attribute) and the button (via `aria-label` substring).
@@ -477,11 +545,15 @@ cpuDelta := float64(newUsage - oldUsage)
 
 ## 39. Docker Extension `update` Fails After Image Rebuild
 
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+
 **Platform:** Docker Desktop Extensions (all)
 **Issue:** `docker extension update <tag>` returns "the extension is not installed" after rebuilding the Docker image, even if the extension was previously installed with the same tag. This happens because rebuilding replaces the image SHA, and Docker Desktop tracks extensions by image digest, not tag.
 **Fix:** Use `docker extension install <tag>` instead of `update` when the image has been rebuilt. The install command works whether or not the extension is currently registered. Pipe `echo "y"` to auto-confirm the prompt in scripts.
 
 ## 40. User Manual Commits During Context Compaction Gap
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Platform:** Claude Code (all)
 **Issue:** When context compacts and the session is continued, the user may have made manual git commits between the old session ending and the new session starting. The continuation summary says "files need committing" but the working tree is clean -- the user already committed (possibly with a different message or extra files bundled in).
@@ -490,11 +562,15 @@ cpuDelta := float64(newUsage - oldUsage)
 
 ## 41. .claude/settings.local.json Should Be Gitignored
 
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+
 **Platform:** Claude Code (all)
 **Issue:** `.claude/settings.local.json` contains local Claude Code tool permission settings. If not in `.gitignore`, it can be accidentally committed via `git add -A` or manual commits, exposing local configuration to the repo.
 **Fix:** Add `.claude/` to `.gitignore`. If already committed, remove with `git rm --cached .claude/settings.local.json` and add to `.gitignore`.
 
 ## 42. BMAD Method Generates 42 Slash Commands in .claude/commands/
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Platform:** Claude Code (all)
 **Issue:** `npx bmad-method install --modules bmm --tools claude-code` generates 42 slash commands (all prefixed `bmad-bmm-*` or `bmad-*`) in `.claude/commands/`. This can overwhelm Claude Code's command namespace if the project already has its own commands, making tab-completion and command discovery harder. Spec Kit only generates 9 commands for comparison.
@@ -503,6 +579,8 @@ cpuDelta := float64(newUsage - oldUsage)
 **Note:** BMAD's `/bmad-help` command provides guidance on which workflows to use, but the sheer volume of 42 commands is intimidating for new users.
 
 ## 43. Spec Kit `specify init` Hangs on Windows MSYS
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Platform:** Windows (MSYS_NT) / Python Rich library
 **Issue:** `specify init <path> --ai claude --no-git --force` hangs indefinitely on Windows MSYS. The Rich library's interactive prompt blocks even with `PYTHONIOENCODING=utf-8 NO_COLOR=1` env vars, `echo "" |` piping, and `2>&1 | cat` redirection. The `specify version` command also crashes with `UnicodeEncodeError` from `legacy_windows_render`.
@@ -522,6 +600,8 @@ This bypasses the CLI entirely and gives you the raw template files. For `specif
 
 ## 44. BMAD npm Package Name Is Not Obvious
 
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+
 **Platform:** npm / Node.js
 **Issue:** The BMAD Method v6 npm package is `bmad-method`. Common wrong guesses: `@anthropics/bmad-cli`, `bmad-cli`, `@bmadcode/bmad`, `bmad-builder`. There are 15+ BMAD-related packages on npm from different authors.
 **Fix:** The correct install command is:
@@ -535,6 +615,8 @@ Key flag names (easy to get wrong): `install` (not `init`), `--modules` (not `--
 
 ## 45. markdownlint-cli2 Config Must Be at Repo Root for CI
 
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+
 **Platform:** GitHub Actions / markdownlint-cli2
 **Issue:** `DavidAnson/markdownlint-cli2-action@v19` `config` parameter does not reliably override the config file lookup. markdownlint-cli2 discovers `.markdownlint.json` by walking up from each file's directory. If the config is only in a subdirectory (e.g., `devspace/.markdownlint.json`), CI uses default rules instead.
 **Diagnosis:** CI fails with MD013 (line-length) errors even though the config has `"MD013": false`. Locally, lint passes because the parent directory's config is found via filesystem walk.
@@ -542,12 +624,16 @@ Key flag names (easy to get wrong): `install` (not `init`), `--modules` (not `--
 
 ## 46. markdownlint MD060 Auto-Enabled by Default: True
 
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+
 **Platform:** markdownlint v0.40.0+
 **Issue:** MD060 (table-column-style) is a newer rule that gets auto-enabled when config has `"default": true`. It flags tables where separator rows use compact style (`|---|`) but content rows use padded style (`| text |`). If your config was written before this rule existed, it will suddenly appear in CI after a markdownlint version upgrade.
 **Diagnosis:** CI shows dozens of `MD060/table-column-style` errors on tables that look fine visually. The errors say "Table pipe is missing space to the left/right for style compact".
 **Fix:** Add `"MD060": false` to `.markdownlint.json` to disable, or fix all table pipe spacing to be consistent. When using `"default": true`, review release notes after markdownlint upgrades for newly added rules.
 
 ## 47. PowerShell [Mandatory] Validates Each Element in String Arrays
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Platform:** PowerShell 7+
 **Issue:** `[Parameter(Mandatory)] [string[]]$Param` validates EACH element in the array, not just the array itself. Empty strings `''` used as visual separator lines in instruction arrays fail with "Cannot bind argument to parameter because it is an empty string."
@@ -563,6 +649,8 @@ Key flag names (easy to get wrong): `install` (not `init`), `--modules` (not `--
 **Note:** `[AllowNull()]` is different — it allows `$null`, not empty strings. You need `[AllowEmptyString()]` specifically.
 
 ## 48. Win32_Processor.VirtualizationFirmwareEnabled False When Hypervisor Running
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Platform:** Windows (Hyper-V)
 **Issue:** `(Get-CimInstance Win32_Processor).VirtualizationFirmwareEnabled` returns `$false` when Hyper-V (or any hypervisor) is already active. The CPU reports VT-x as "not available" because the hypervisor has already claimed it. This creates a false negative in virtualization readiness checks.
@@ -580,6 +668,8 @@ if ($virtCheck.Met -or $hyperVMet) {
 
 ## 49. PowerShell Get-ChildItem Misses Dotfiles Without -Force
 
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+
 **Platform:** PowerShell (all versions)
 **Issue:** `Get-ChildItem -Filter 'credentials*'` does NOT match `.credentials.json` because dotfiles (files starting with `.`) are treated as hidden on Windows. Without `-Force`, they're invisible. Additionally, the filter `credentials*` doesn't match `.credentials*` — the dot prefix is significant.
 **Diagnosis:** Claude Code auth check reports "not authenticated" despite `~/.claude/.credentials.json` existing and containing valid tokens.
@@ -594,6 +684,8 @@ $dotCredFiles = Get-ChildItem -Path $dir -Filter '.credentials*' -File -Force -E
 **General rule:** Always use `-Force` when searching for config/credential files that might be dotfiles.
 
 ## 50. Winget Exit Code -1978335189 Means Already Installed
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Platform:** Windows (winget)
 **Issue:** `winget install <id>` returns exit code `-1978335189` (`0x8A150011` = `APPINSTALLER_CLI_ERROR_UPDATE_NOT_APPLICABLE`) when the package is already installed and no upgrade is available. Scripts treating non-zero exit codes as failures incorrectly report these as installation failures.
@@ -615,6 +707,8 @@ if ($exitCode -eq 0) {
 
 ## 51. Winget Installs Update Registry PATH but Current Session Is Stale
 
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+
 **Platform:** Windows (PowerShell / MSYS)
 **Issue:** When winget installs tools (gh, go, rustup, cmake), they add to the registry `PATH` (`HKLM\...\Environment` or `HKCU\...\Environment`). But the current PowerShell or bash session still has the old `$env:PATH` from process start. Newly installed tools appear as "not found" in the same session.
 **Diagnosis:** Phase 6 verification reports tools as missing immediately after Phase 2 installed them. Restarting the terminal resolves it.
@@ -634,6 +728,8 @@ export PATH="/c/Program Files/GitHub CLI:$PATH"
 
 ## 52. Physical Drive Migration Preserves Old User SID
 
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+
 **Platform:** Windows 11
 **Issue:** Moving a physical drive from one PC to another preserves the old user's SID on all files and directories. Windows shows security warnings about untrusted files. Applications may fail to read/write files they previously owned. Copying files (via network share or Explorer) creates new ownership; moving/migrating the physical drive does not.
 **Diagnosis:** Windows security popup says "we can't verify who created this file" on files from the migrated drive.
@@ -648,6 +744,8 @@ icacls D:\* /reset /T /C /Q   # Reset ACLs to inherited defaults
 **Gotcha:** `icacls <drive>:\` on the drive root may fail with "un-usable ACL" — use `<drive>:\*` instead to skip the root directory's special system ACLs. Stale symlinks (e.g., old pnpm links) will fail — these are harmless.
 
 ## 53. VS Code CLI Opens Editor Tabs When Stdin Not Redirected
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Platform:** Windows (PowerShell)
 **Issue:** `Start-Process -FilePath 'code' -RedirectStandardOutput ... -RedirectStandardError ...` (without `-RedirectStandardInput`) still opens `code-stdin-*` editor tabs. VS Code's CLI wrapper inherits the parent process's stdin handle and interprets pending input as a file to open. This happens with `--list-extensions`, `--install-extension`, and any other `code` subcommand.
@@ -670,6 +768,8 @@ $proc = Start-Process -FilePath 'code' `
 
 ## 54. PowerShell param() Must Be First Executable Statement
 
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+
 **Platform:** PowerShell 7+
 **Issue:** `Set-StrictMode -Version Latest` placed before `param()` causes: "The function or command was called as if it were a method. Parameters should be separated by spaces." Only comments and `#Requires` directives are allowed before `param()`.
 **Diagnosis:** Script fails on first invocation with a confusing error message that doesn't mention `param()` at all.
@@ -690,6 +790,8 @@ Set-StrictMode -Version Latest  # Must come AFTER param()
 **Note:** This is a PowerShell language requirement, not a style preference. The parser treats the script block differently when `param()` is not the first statement.
 
 ## 55. VS 2022 Bundled Node.js as Fallback for Frontend Builds
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Platform:** Windows (MSYS_NT)
 **Issue:** Node.js, npm, and pnpm may not be on the system PATH or MSYS PATH, but Visual Studio 2022 bundles Node.js v20.x at `C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VisualStudio\NodeJs\`. Running commands via `cmd.exe` from MSYS swallows output; `\$env:PATH` escaping breaks in bash heredocs.
@@ -712,6 +814,8 @@ powershell.exe -NoProfile -File /tmp/frontend-cmd.ps1 2>&1
 - `npx pnpm` downloads pnpm on the fly but pnpm then needs `node` on PATH -- set PATH before the npx call
 
 ## 56. Subagent pnpm-lock.yaml Drift When Node.js Unavailable
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Platform:** Claude Code (Windows)
 **Issue:** When a subagent adds npm dependencies to `package.json` but cannot run `pnpm install` because Node.js/pnpm aren't on PATH, CI fails with `ERR_PNPM_OUTDATED_LOCKFILE Cannot install with "frozen-lockfile"`. The agent's changes are correct but incomplete.
@@ -737,6 +841,8 @@ grep -c "x-enum-descriptions" api/swagger/*
 ```
 
 ## 58. Local Main Diverges After Squash-Merge When Merge Commits Exist
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Platform:** Git (all)
 **Issue:** If local `main` has merge commits (e.g., from `git pull` without `--ff-only`), squash-merging a PR on GitHub creates a new commit on `origin/main` that isn't an ancestor of local `main`. `git pull --ff-only` then fails with "Not possible to fast-forward, aborting" because the histories diverged.
@@ -793,6 +899,8 @@ go run github.com/swaggo/swag/cmd/swag@v1.16.4 init -g cmd/app/main.go -o api/sw
 
 ## 61. Claude Code settings.local.json Does NOT Cascade from Parent Directories
 
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+
 **Platform:** Claude Code (all)
 **Issue:** Unlike `.editorconfig` which walks up directories, Claude Code `settings.local.json` and `settings.json` do NOT cascade from parent directories. `D:\DevSpace\.claude\settings.local.json` does NOT apply to `D:\DevSpace\ProjectA\`. Each project is an independent scope.
 **Impact:** Every new project requires manually approving every tool use, even when broad permissions exist in a parent directory.
@@ -807,6 +915,8 @@ Permission arrays **merge** across scopes. Deny rules take precedence.
 **Prevention:** When scaffolding new projects, copy `project-templates/settings.json` to `<project>/.claude/settings.json`. See DevKit issue #131 and [Settings Strategy](../docs/settings-strategy.md).
 
 ## 62. Windows CRLF Breaks Bash grep Value Extraction in CI
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Platform:** GitHub Actions (Ubuntu runners) / Windows-committed files
 **Issue:** Files committed from Windows have `\r\n` line endings. When a CI bash script uses `grep -oP` to extract values (e.g., status fields from markdown metadata), the extracted string includes a trailing `\r`. This causes: (1) string comparisons to fail silently (`"active\r" != "active"`), (2) arithmetic expressions to fail with `syntax error in expression (error token is "0")` when `grep -cP` returns `"77\r"`, and (3) `::error` annotations to display split across two lines.
@@ -825,6 +935,8 @@ rm -f "$clean_file"
 
 ## 63. Lipgloss Emoji Variation Selector Width Mismatch
 
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+
 **Platform:** Go (charmbracelet/lipgloss, all terminals)
 **Issue:** Emoji with variation selector U+FE0F (e.g., U+2328+FE0F `⌨️`) renders as 2 cells wide in terminals, but lipgloss counts U+2328 (Misc Technical block) as 1 cell. This causes a 1-character width discrepancy on any line containing the emoji, pushing content past the border and creating a stray disconnected right border bar.
 **Diagnosis:** A vertical `│` appears detached to the right of the panel border, at the same row as the mismatched emoji.
@@ -842,6 +954,8 @@ rm -f "$clean_file"
 
 ## 64. lipgloss.Place Output Is Not Safely ANSI-Strippable
 
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+
 **Platform:** Go (charmbracelet/lipgloss)
 **Issue:** `lipgloss.Place(w, h, Center, Center, panel)` produces a full-terminal output with ANSI styling, borders rendered as box-drawing characters, and space-based centering. Stripping ANSI codes from this output to get "plain text positions" fails because: (1) lipgloss's internal width calculations account for styled content widths that change after stripping, (2) border characters become depositable content (not just chrome), and (3) emoji width mismatches compound across styled vs plain rendering.
 **Diagnosis:** Transition animation deposits characters (including border chars) at wrong positions. The revealed text doesn't align with the real View() when it takes over.
@@ -857,6 +971,8 @@ menuText := m.menu.TransitionText()
 
 ## 65. golangci-lint v2 Silent Config Failure Without version Field
 
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+
 **Platform:** Go (all)
 **Issue:** `.golangci.yml` files written for golangci-lint v1 lack the `version: "2"` field required by v2. Running golangci-lint v2 with a v1 config produces `Error: can't load config: unsupported version of the configuration: ""` and exits non-zero. This only manifests when running golangci-lint itself -- `go build` and `go test` pass fine, so the issue isn't caught until CI or a pre-push hook runs linting.
 **Diagnosis:** Linting step fails but build and test steps pass. Error message mentions "unsupported version" but doesn't suggest the fix.
@@ -864,6 +980,8 @@ menuText := m.menu.TransitionText()
 **Prevention:** Use the devkit template `project-templates/golangci.yml` which includes the version field. Pin the golangci-lint version in CI with `version: v2.10.1` instead of `version: latest`.
 
 ## 66. golangci-lint-action v7 Runs config verify (Schema Enforcement)
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Platform:** GitHub Actions (all)
 **Issue:** `golangci-lint-action@v7` runs `golangci-lint config verify` before linting, which enforces strict JSON schema on `.golangci.yml`. Action v6 did NOT do this. Config keys that worked with v6 fail with `additional properties '<key>' not allowed` on v7. Known schema changes between v2.1 and v2.10: top-level `linters-settings:` moved under `linters:` as `settings:`, and `issues: exclude-rules:` moved to `linters: exclusions: rules:`.
@@ -896,6 +1014,8 @@ linters:
 
 ## 67. Agent-Generated Markdown Tables: Pipes in Cells and Missing Columns
 
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+
 **Platform:** All (markdownlint)
 **Issue:** Subagent-generated markdown tables have two common MD056 (table-column-count) errors: (1) pipe characters `|` inside code spans in table cells are interpreted as column separators, creating extra columns; (2) agents sometimes omit columns when cell content is wide, generating 2-column rows in 3-column tables.
 **Diagnosis:** `markdownlint` reports MD056 with "Expected: N columns, found: M columns" on specific table rows.
@@ -903,6 +1023,8 @@ linters:
 **Prevention:** Include in markdown agent checklist: "Verify all table rows have the same number of columns. Do not use pipe characters inside table cells."
 
 ## 68. Proxmox Installer Injects noapic Which Blocks IOMMU
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Platform:** Proxmox VE (all versions)
 **Issue:** The Proxmox installer writes `noapic` to `/etc/default/grub.d/installer.cfg` which is silently appended to `GRUB_CMDLINE_LINUX`. This blocks IOMMU even when `intel_iommu=on iommu=pt` is correctly set in `/etc/default/grub`. The main grub file looks clean, so you don't suspect a drop-in config.
@@ -921,6 +1043,8 @@ update-grub && reboot
 
 ## 69. Proxmox VM Re-Boots Into ISO Installer After Guest OS Install
 
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+
 **Platform:** Proxmox VE (QEMU/KVM)
 **Issue:** After a guest OS (Ubuntu, Debian) finishes installing in a Proxmox VM, clicking "Reboot" in the installer boots back into the ISO installer instead of the installed OS. The ISO is still attached to ide2 and has higher boot priority.
 **Fix:** Detach the ISO and set boot order to the installed disk:
@@ -932,6 +1056,8 @@ qm reboot <vmid>
 
 ## 70. Ubuntu Point Release URLs 404 When Superseded
 
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+
 **Platform:** Ubuntu / Proxmox ISO downloads
 **Issue:** Ubuntu ISO download URLs include the point release version (e.g., `ubuntu-24.04.2-live-server-amd64.iso`). When a newer point release ships (24.04.4), the old URL returns 404. Proxmox `wget` commands referencing the old version fail silently or with a cryptic error.
 **Fix:** Check the current filename before downloading:
@@ -941,6 +1067,8 @@ curl -s https://releases.ubuntu.com/24.04/ | grep -oP 'ubuntu-24\.04\.\d+-live-s
 ```
 
 ## 71. NVIDIA Driver Package Names Vary by Ubuntu PPA
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Platform:** Ubuntu (Proxmox VMs)
 **Issue:** `apt install nvidia-driver-560` may fail with "package not found" because the exact driver version depends on which PPA is enabled and the Ubuntu release. The `ppa:graphics-drivers/ppa` PPA has newer versions than the default repos.
@@ -954,6 +1082,8 @@ apt-cache search nvidia-driver | grep -E '^nvidia-driver-[0-9]' | sort -t- -k3 -
 ```
 
 ## 72. ESLint react-hooks/set-state-in-effect Cannot Be Inline-Disabled
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Platform:** React / ESLint (eslint-plugin-react-hooks v7+)
 **Issue:** The `react-hooks/set-state-in-effect` rule does NOT support `// eslint-disable-next-line` inline comments. Adding the directive produces "Unused eslint-disable directive" while the underlying error persists. This is unusual -- most ESLint rules support inline disable.
@@ -970,11 +1100,15 @@ rules: {
 
 ## 73. ESLint 10 Breaks react-hooks Plugin Peer Dependency
 
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+
 **Platform:** npm / React ecosystem
 **Issue:** Running `npm install eslint` without version pinning pulls ESLint 10.x. `eslint-plugin-react-hooks` (v7.x as of 2026-02) requires `eslint@^9` as a peer dependency. The install succeeds but lint commands fail with peer dependency warnings or crashes.
 **Fix:** Pin ESLint to v9: `npm install --save-dev eslint@^9 @eslint/js@^9`. Check peer requirements of all ESLint plugins before installing.
 
 ## 74. gh repo edit Lacks --disable-* Flags
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Platform:** GitHub CLI (gh)
 **Issue:** `gh repo edit` has `--enable-squash-merge`, `--enable-discussions`, etc. but does NOT have `--disable-merge-commit`, `--disable-rebase-merge`, or `--disable-wiki`. Running with `--disable-*` flags gives "unknown flag" errors.
@@ -996,11 +1130,15 @@ gh api repos/{owner}/{repo}/private-vulnerability-reporting -X PUT
 
 ## 75. Branch Protection Requires Pre-Existing CI Check Names
 
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+
 **Platform:** GitHub
 **Issue:** `required_status_checks.contexts` in branch protection must reference job names that have already appeared in at least one CI run on the repo. Setting protection before the CI workflow runs with those job names causes all PRs to be blocked with "Expected — Waiting for status to be reported."
 **Fix:** Merge the CI workflow PR first, verify the job names appear in the Actions tab, THEN apply branch protection. This creates a dependency ordering: CI config must ship before protection can reference it.
 
 ## 76. go build Compiles Untracked Files in Working Tree
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Platform:** Go (all)
 **Issue:** `go build ./...` compiles ALL `.go` files in the module directory tree, including untracked files. When parallel agents create files for different branches (gotcha #25), untracked files from Agent B can reference symbols that only exist on Agent A's branch. Pre-push hooks running `go build` fail with "undefined" errors even though the committed code on the current branch is correct.
@@ -1017,12 +1155,16 @@ git stash pop
 
 ## 77. Docker Hub Shows Extension Images as Regular Containers
 
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+
 **Platform:** Docker Hub / Docker Desktop
 **Issue:** Pushing a Docker Desktop Extension image to Docker Hub with correct labels (`com.docker.desktop.extension.api.version`, etc.) does NOT make it appear as an extension on Docker Hub. It shows as a regular container image. Users who `docker pull` or `docker run` it get a container, not an extension.
 **Fix:** The image is correct for `docker extension install` from CLI. To appear in the Docker Desktop Extensions Marketplace, submit via [docker/extensions-submissions](https://github.com/docker/extensions-submissions) repo (open an issue with the automatic_review template). Automated validation runs `docker extension validate`. If it passes, the extension appears in the marketplace within hours (12h cache).
 **Pre-submit:** Run `docker extension validate <image:tag>` locally first. Test light/dark mode, cross-platform. Manual review by Docker is currently paused.
 
 ## 78. hadolint False Positives on Docker Desktop Extension Dockerfiles
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Platform:** Docker / hadolint
 **Issue:** Docker Desktop extension Dockerfiles use vendor-specific labels (`com.docker.desktop.extension.*`, `com.docker.extension.*`) and `COPY` without `WORKDIR` as standard patterns. hadolint flags these as DL3048 (invalid label key) and DL3045 (COPY to relative path without WORKDIR), but both are correct for extensions.
@@ -1038,11 +1180,15 @@ ignored:
 
 ## 79. GitHub Secrets UI Is Buried Under Expandable Sidebar
 
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+
 **Platform:** GitHub
 **Issue:** Repository secrets for GitHub Actions are under Settings > Secrets and variables > Actions. The "Secrets and variables" item has a dropdown arrow that must be clicked to expand and reveal the "Actions" submenu. Easy to miss when looking at the Settings sidebar.
 **Fix:** Use CLI instead: `gh secret set SECRETNAME` (prompts for value). `gh secret list` to verify.
 
 ## 80. PowerShell StrictMode Throws on Nonexistent Property Access in Conditionals
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Platform:** PowerShell 7+
 **Issue:** Under `Set-StrictMode -Version Latest`, accessing a property that doesn't exist on a `PSCustomObject` throws `PropertyNotFoundException` -- even inside a boolean conditional like `if (-not $obj.prop)`. The error fires before the `-not` operator evaluates. This breaks backward-compatibility shims that check for a property before adding it (e.g., `if (-not $manifest.shared) { Add-Member ... }`).
