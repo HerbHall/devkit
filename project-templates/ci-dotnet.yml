@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      # Scope to cross-platform projects only.
+      # WPF/WinForms projects require Windows and will fail on Linux.
+      # Add each cross-platform test .csproj explicitly.
+      - name: Restore
+        run: |
+          dotnet restore tests/{{PROJECT_NAME}}.Core.Tests/{{PROJECT_NAME}}.Core.Tests.csproj
+
+      - name: Build
+        run: |
+          dotnet build tests/{{PROJECT_NAME}}.Core.Tests/{{PROJECT_NAME}}.Core.Tests.csproj --no-restore
+
+      - name: Test
+        run: |
+          dotnet test tests/{{PROJECT_NAME}}.Core.Tests/{{PROJECT_NAME}}.Core.Tests.csproj --no-restore --no-build
+
+  markdown:
+    name: Markdown Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: DavidAnson/markdownlint-cli2-action@v19
+        with:
+          globs: "**/*.md"

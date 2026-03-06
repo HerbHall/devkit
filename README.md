@@ -32,7 +32,7 @@ Setup creates symlinks from `~/.claude/` to the DevKit clone (or copies files in
 | Component | Count | Location |
 |-----------|-------|----------|
 | Rules (auto-loaded every session) | 10 files | `claude/rules/` |
-| Skills (invoke with `/skill-name`) | 18 skills | `claude/skills/` |
+| Skills (invoke with `/skill-name`) | 19 skills | `claude/skills/` |
 | Agent templates | 7 agents | `claude/agents/` |
 | SessionStart hook | 1 | `claude/hooks/` |
 | Setup + verification scripts | 3 | `setup/legacy/` |
@@ -61,7 +61,7 @@ See [Settings Strategy](docs/settings-strategy.md) for the two-layer permission 
 
 | Directory | Purpose |
 |-----------|---------|
-| `claude/` | Global Claude Code config — CLAUDE.md, 10 rules files (135+ patterns), 18 skills, 7 agent templates, hooks |
+| `claude/` | Global Claude Code config — CLAUDE.md, 10 rules files (135+ patterns), 19 skills, 7 agent templates, hooks |
 | `devspace/` | Workspace shared configs — .editorconfig, .markdownlint.json, VS Code fragments |
 | `docs/` | Human-readable guides — architecture decisions, profile format spec |
 | `machine/` | Machine state snapshots — VS Code extensions, tool versions |
@@ -264,6 +264,7 @@ Claude.ai Chat uses a separate skill store - install via Settings > Skills in th
 | code-review | Independent code review gate before commits | Code |
 | plan-review | Independent plan review gate before implementation | Code |
 | devkit-sync | Multi-machine DevKit sync: status, push, pull, init, diff, verify, promote, update | Code |
+| conformance-audit | 19-point project conformance checklist against DevKit standards | Code |
 
 ### Agent Templates
 

@@ -1,13 +1,13 @@
 .PHONY: build test test-race test-coverage lint lint-md lint-all ci hooks run clean
 
-# Binary -- replace with your project name
-BIN=PROJECT_NAME
+# Binary name
+BIN={{PROJECT_NAME}}
 
-# Version injection -- update VERSION_PKG to match your module path
+# Version injection
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 COMMIT  ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 DATE    ?= $(shell date -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || echo "unknown")
-VERSION_PKG = github.com/OWNER/PROJECT_NAME/internal/version
+VERSION_PKG = github.com/{{OWNER}}/{{PROJECT_NAME}}/internal/version
 
 LDFLAGS=-ldflags "-s -w \
 	-X $(VERSION_PKG).Version=$(VERSION) \

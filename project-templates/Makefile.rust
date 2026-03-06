@@ -1,0 +1,29 @@
+.PHONY: build test lint fmt lint-md lint-all ci run hooks clean
+
+build:
+	cargo build --release
+
+test:
+	cargo test
+
+lint:
+	cargo clippy -- -D warnings
+
+fmt:
+	cargo fmt --check
+
+lint-md:
+	npx markdownlint-cli2 "**/*.md" "#node_modules"
+
+lint-all: lint fmt lint-md
+
+ci: build test lint-all
+
+hooks:
+	cp scripts/pre-push .git/hooks/pre-push && chmod +x .git/hooks/pre-push
+
+run:
+	cargo run
+
+clean:
+	cargo clean
