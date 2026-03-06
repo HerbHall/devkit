@@ -133,6 +133,81 @@ DevKit provides ready-to-copy templates in `project-templates/`:
 | copilot-setup-steps (Fullstack) | `project-templates/copilot-setup-steps-fullstack.yml` | Go + React combined |
 | CodeQL | `project-templates/codeql.yml` | Security scanning workflow |
 
+## Three-Layer Protection Model
+
+All projects use three complementary layers for PR quality:
+
+### Layer 1: Access Control (repo permissions)
+
+Contributors cannot merge -- only the owner has write access. This is the gatekeeper.
+No workflow or ruleset needed; repo permissions handle it.
+
+### Layer 2: CI Status Checks (branch protection)
+
+Branch protection requires CI jobs to pass before merge. Configured via the GitHub API:
+
+```bash
+gh api repos/OWNER/REPO/branches/main/protection -X PUT --input - << 'JSON'
+{
+  "required_status_checks": { "strict": true, "contexts": ["Build", "Lint", "Test"] },
+  "enforce_admins": false,
+  "required_pull_request_reviews": null,
+  "restrictions": null
+}
+JSON
+```
+
+Branch protection handles CI checks **only** -- no review requirement here (that's Layer 3).
+Adding a review requirement to branch protection AND the ruleset creates a double gate.
+
+### Layer 3: Copilot Auto-Review (ruleset)
+
+A GitHub ruleset named "Copilot PR Review" handles code review:
+
+- **Owner PRs**: Copilot reviews automatically; auto-merge when CI + Copilot approve (hands-free)
+- **Contributor PRs**: Copilot reviews automatically; owner reviews after Copilot approves; owner merges manually
+- **Admin bypass**: Solo maintainers can merge even if Copilot hasn't reviewed yet
+
+Template: `project-templates/copilot-ruleset.json`
+
+Key settings:
+
+- `required_approving_review_count: 1` -- Copilot satisfies this for owner PRs
+- `dismiss_stale_reviews_on_push: true` -- forces re-review on new pushes
+- `copilot_code_review` with `review_on_push: true` -- triggers review on each push
+- Admin role (RepositoryRole id 5) as bypass actor
+- `allowed_merge_methods: ["squash"]` -- squash-only merge
+
+### Setup and Audit
+
+```bash
+# Set up Copilot auto-review on a repo
+bash scripts/copilot-review-setup.sh setup OWNER/REPO
+
+# Audit a single repo
+bash scripts/copilot-review-setup.sh audit OWNER/REPO
+
+# Audit all repos for an owner
+bash scripts/copilot-review-setup.sh audit-all OWNER
+```
+
+### Manual Steps After Setup
+
+The Copilot auto-review UI toggle cannot be set via API:
+
+1. Go to repo Settings > Rules > Rulesets > "Copilot PR Review"
+2. Click Edit on "Require a pull request before merging"
+3. Under "Additional settings", enable "Require review from GitHub Copilot"
+4. Also enable "Review new pushes" for re-review on each push
+5. Create a test PR with a real file change to verify Copilot reviews it
+
+### Why These Specific Settings
+
+- **`required_approving_review_count: 1`** (not 0 or 2): Copilot's approval counts as the 1 required review for owner PRs. Setting to 0 would skip review entirely. Setting to 2 would block solo maintainers.
+- **Admin bypass**: Required for solo maintainers who need to merge when Copilot is unavailable or reviewing incorrectly.
+- **No review in branch protection**: Branch protection review + ruleset review = double gate. Use rulesets only for reviews, branch protection only for CI checks.
+- **`review_on_push: true`**: Only fires on push events, not open/reopen. Forces re-review when code changes after initial review.
+
 ## Per-Project Rollout Checklist
 
 For each existing project, complete in order:
