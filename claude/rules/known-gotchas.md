@@ -1612,3 +1612,23 @@ JSON
 | PR review requirement | Ruleset | Enables Copilot auto-review |
 | Copilot auto-review | Ruleset (UI toggle) | Only available in rulesets |
 | Auto-merge | Repo setting | Required for release-gate workflow |
+
+## 99. Split Rulesets Break Copilot Auto-Merge Pipeline
+
+**Added:** 2026-03-06 | **Source:** DevKit | **Status:** active
+
+**Platform:** GitHub
+**Issue:** Using two separate rulesets -- one for PR review requirements ("PR Merge Policy") and one for Copilot review ("Copilot Code Review") -- prevents Copilot auto-merge from working. The PR review ruleset had `required_approving_review_count: 0` (so no approval needed) while the Copilot ruleset had no PR review rule (so Copilot's approval didn't satisfy anything). Result: Copilot reviews with COMMENTED instead of APPROVED, and PRs require manual `--admin` merge.
+**Diagnosis:** Copilot shows "COMMENTED" status on PRs instead of "APPROVED". Auto-merge never triggers. `gh api repos/OWNER/REPO/rulesets --jq '.[] | {name, id}'` shows two separate rulesets instead of one combined.
+**Fix:** Replace split rulesets with a single combined "Copilot PR Review" ruleset containing both `pull_request` (with `required_approving_review_count: 1`) and `copilot_code_review` (with `review_on_push: true`) rules. Template: `project-templates/copilot-ruleset.json`. Audit: `scripts/copilot-review-setup.sh audit OWNER/REPO`.
+
+```bash
+# Delete old split rulesets
+gh api repos/OWNER/REPO/rulesets/OLD_ID_1 -X DELETE
+gh api repos/OWNER/REPO/rulesets/OLD_ID_2 -X DELETE
+
+# Create combined standard
+gh api repos/OWNER/REPO/rulesets -X POST --input project-templates/copilot-ruleset.json
+```
+
+**Anti-revert policy:** The combined ruleset configuration is protected. Agents must never split the ruleset, lower the review count, remove the Copilot review rule, or require human approval for owner PRs. Only an explicit user request for a specific repo can override this. See `claude/rules/review-policy.md`.

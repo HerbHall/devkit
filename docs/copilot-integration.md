@@ -208,6 +208,22 @@ The Copilot auto-review UI toggle cannot be set via API:
 - **No review in branch protection**: Branch protection review + ruleset review = double gate. Use rulesets only for reviews, branch protection only for CI checks.
 - **`review_on_push: true`**: Only fires on push events, not open/reopen. Forces re-review when code changes after initial review.
 
+### Protected Configuration
+
+This auto-merge model is the standard for all projects. Agents must
+never weaken it by:
+
+- Lowering `required_approving_review_count` below 1
+- Removing the `copilot_code_review` rule
+- Adding review requirements to branch protection (conflicts with rulesets)
+- Splitting the combined ruleset into separate rulesets
+- Requiring human approval for owner PRs
+- Disabling auto-merge on any repository
+
+These protections can only be overridden by an explicit user request
+for a specific repository. See `claude/rules/review-policy.md` for
+the full anti-revert policy.
+
 ## Per-Project Rollout Checklist
 
 For each existing project, complete in order:
