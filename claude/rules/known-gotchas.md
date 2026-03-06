@@ -1,7 +1,7 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 94
+entry_count: 96
 last_updated: "2026-03-05"
 ---
 
@@ -1387,3 +1387,29 @@ jobs:
 
 **Alternative:** Use `on: release: types: [published]` in a separate workflow (release-please creates GitHub Releases, which DO trigger the `release` event).
 **Anti-pattern:** `on: push: tags: v*` in a separate workflow -- will never fire when tags are created by `GITHUB_TOKEN`.
+
+## 95. Release-Please Branch Updates Don't Always Trigger CI
+
+**Added:** 2026-03-05 | **Source:** Runbooks | **Status:** active
+
+**Platform:** GitHub Actions
+**Issue:** When release-please pushes a new commit to its PR branch, the `pull_request: synchronize` event sometimes doesn't fire. This is a GitHub Actions race condition with workflow-generated commits. The release-please PR ends up with stale or missing status checks, and branch protection blocks the merge.
+**Diagnosis:** Release-please PR shows no CI checks or checks against an old commit SHA, not the current HEAD. `gh pr view N --json statusCheckRollup` shows empty or stale entries.
+**Fix:** Deploy a `retrigger-ci.yml` workflow that triggers on `workflow_run` after Release Please completes. It finds the open release-please PR, checks if CI ran on the current HEAD, and close/reopens the PR to force a re-trigger if missing.
+**Manual workaround:** `gh pr close N && sleep 2 && gh pr reopen N` to force CI re-trigger.
+**Template:** `project-templates/retrigger-ci.yml`
+
+## 96. Auto-Merge Requires Explicit Repo Setting
+
+**Added:** 2026-03-05 | **Source:** Runbooks | **Status:** active
+
+**Platform:** GitHub
+**Issue:** `gh pr merge --auto` fails silently when auto-merge is not enabled on the repository. The release-gate workflow's auto-merge step requires this setting. By default, new GitHub repos have auto-merge disabled.
+**Diagnosis:** Release-gate workflow runs successfully but the PR is not auto-merged. No error in workflow logs -- the `gh pr merge --auto` command exits 0 but the PR stays open.
+**Fix:** Enable auto-merge on the repo before deploying release-gate:
+
+```bash
+gh api repos/OWNER/REPO -X PATCH -f allow_auto_merge=true
+```
+
+**Prevention:** Include this step in the repo setup checklist. The release-gate template header now documents this prerequisite.

@@ -6,6 +6,9 @@
 # Prerequisites:
 #   - release-please configured (see release-please-config.json template)
 #   - .release-please-manifest.json at repo root
+#   - Auto-merge enabled on the repo:
+#     gh api repos/OWNER/REPO -X PATCH -f allow_auto_merge=true
+#   - retrigger-ci.yml deployed (see retrigger-ci.yml template)
 #
 # Release tiers:
 #   Immediate  — Critical/security fix (fix!:, CVE, breaking change) → auto-merge
