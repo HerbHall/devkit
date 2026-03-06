@@ -281,4 +281,3 @@ Claude.ai Chat uses a separate skill store - install via Settings > Skills in th
 ## License
 
 MIT
-
