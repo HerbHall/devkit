@@ -1,6 +1,6 @@
 # Conformance Audit: Full Audit
 
-Run the 13-point conformance checklist across all projects in the DevSpace workspace.
+Run the 16-point conformance checklist across all projects in the DevSpace workspace.
 
 ## Steps
 
@@ -70,7 +70,7 @@ detect_stack() {
 
 Record the detected stack(s) alongside each project name.
 
-### 4. Run 13-Point Checklist
+### 4. Run 16-Point Checklist
 
 For each project, run every check from `references/checklist.md`. For each check:
 
@@ -121,6 +121,19 @@ ls "$project/.github/workflows/"*nightly* 2>/dev/null | grep -q . || grep -ql 's
 
 # Check 13: Release gate (only if check 8 passes)
 [ -f "$project/.github/workflows/release-gate.yml" ]
+
+# Check 14: Workflow trigger patterns (only if check 8 passes)
+# FAIL if any non-release-please workflow has 'tags: v*' or "tags: ['v*']"
+for wf in "$project/.github/workflows/"*.yml; do
+    [ "$(basename "$wf")" = "release-please.yml" ] && continue
+    grep -q "tags:.*v\*" "$wf" 2>/dev/null && echo "FAIL: $(basename "$wf") has tag trigger"
+done
+
+# Check 15: Retrigger CI (only if check 8 passes)
+ls "$project/.github/workflows/"*retrigger* 2>/dev/null | grep -q .
+
+# Check 16: Auto-merge enabled (only if check 13 passes)
+gh api "repos/$(gh repo view "$project" --json nameWithOwner -q .nameWithOwner 2>/dev/null)" --jq '.allow_auto_merge' 2>/dev/null | grep -q 'true'
 ```
 
 ### 5. Generate Summary Report
@@ -130,11 +143,11 @@ Present results as a table. Use checkmarks and X marks for visual clarity:
 ```text
 ## Conformance Audit Report
 
-| Project | Stack | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | Score |
-|---------|-------|---|---|---|---|---|---|---|---|---|----|----|----|----|-------|
-| SubNetree | go,node | + | + | + | + | + | + | + | + | + | + | + | + | + | 100% |
-| Runbooks | node | + | + | + | + | + | - | + | + | + | + | + | - | - | 77% |
-| DigitalRain | rust | + | - | + | + | + | - | + | + | + | + | + | - | - | 69% |
+| Project | Stack | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | Score |
+|---------|-------|---|---|---|---|---|---|---|---|---|----|----|----|----|----|----|-------|-------|
+| SubNetree | go,node | + | + | + | + | + | + | + | + | + | + | + | + | + | + | + | + | 100% |
+| Runbooks | node | + | + | + | + | + | - | + | + | + | + | + | - | - | + | + | + | 81% |
+| DigitalRain | rust | + | - | + | + | + | - | + | + | + | + | + | - | - | ~ | ~ | ~ | 69% |
 
 Legend: + = pass, - = fail, ~ = skip (not applicable)
 ```
