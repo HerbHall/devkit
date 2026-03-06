@@ -201,3 +201,68 @@ jobs:
             exit 1
           fi
           echo "All rule metadata is valid"
+
+  validate-templates:
+    name: Validate project templates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate YAML templates
+        run: |
+          pip install pyyaml
+          python -c "
+          import yaml, glob, sys
+          errors = 0
+          for f in sorted(glob.glob('project-templates/*.yml')):
+              try:
+                  with open(f) as fh:
+                      yaml.safe_load(fh)
+                  print(f'OK: {f}')
+              except yaml.YAMLError as e:
+                  print(f'::error file={f}::Invalid YAML: {e}')
+                  errors += 1
+          if errors:
+              sys.exit(1)
+          print(f'All {len(glob.glob(\"project-templates/*.yml\"))} YAML templates valid')
+          "
+
+      - name: Validate JSON templates
+        run: |
+          python -c "
+          import json, glob, sys
+          errors = 0
+          for f in sorted(glob.glob('project-templates/*.json')):
+              try:
+                  with open(f) as fh:
+                      json.load(fh)
+                  print(f'OK: {f}')
+              except json.JSONDecodeError as e:
+                  print(f'::error file={f}::Invalid JSON: {e}')
+                  errors += 1
+          if errors:
+              sys.exit(1)
+          print(f'All {len(glob.glob(\"project-templates/*.json\"))} JSON templates valid')
+          "
+
+      - name: Validate other JSON configs
+        run: |
+          python -c "
+          import json, glob, sys
+          errors = 0
+          configs = glob.glob('claude/settings.template.json') + glob.glob('mcp/*.json')
+          for f in sorted(configs):
+              try:
+                  with open(f) as fh:
+                      json.load(fh)
+                  print(f'OK: {f}')
+              except json.JSONDecodeError as e:
+                  print(f'::error file={f}::Invalid JSON: {e}')
+                  errors += 1
+          if errors:
+              sys.exit(1)
+          print(f'All {len(configs)} config JSON files valid')
+          "
