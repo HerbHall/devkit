@@ -206,7 +206,7 @@ This project is NOT worth pursuing if:
 1. Write/update README
 2. Create GitHub release with changelog
 3. Submit to relevant lists/directories (if applicable)
-4. Run `/reflect` (session review) to capture all learnings
+4. Run `/autolearn` (session review) to capture all learnings
 5. Update devkit repo if new patterns or skills were created
 
 **Gate**: Is the README honest about what's shipped? Are the learnings captured? Ship it.
@@ -252,7 +252,7 @@ IPScan is the cautionary example: a network scanner that grew into a full monito
 
 ```text
 Session work
-  → /reflect captures learnings
+  → /autolearn captures learnings
     → MCP Memory (deep store, searchable)
     → Tier 2 rules files (fast path, auto-loaded)
     → DevKit issues for Tier 1 changes
@@ -264,7 +264,7 @@ Session work
 Projects discover improvements through daily work. Changes flow to
 DevKit through issues, not direct file edits:
 
-1. **During project work**: `/reflect` stores learnings in MCP Memory
+1. **During project work**: `/autolearn` stores learnings in MCP Memory
    and Tier 2 rules files (patterns, gotchas). For Tier 1 changes
    (workflow preferences, review policy), it creates DevKit issues.
 2. **During DevKit work**: Address accumulated issues, validate
@@ -309,7 +309,7 @@ The methodology should evolve. Version 1 is a starting point, not a final answer
 | Plan review (before implementation) | `/plan-review` skill | Manual review |
 | Code review (before commit) | `/code-review` skill | PR review plugins |
 | Full code review + security | `/quality-control` skill | PR review plugins |
-| Learning capture | `/reflect` (autolearn) | Manual rules file update |
+| Learning capture | `/autolearn` | Manual rules file update |
 | Competitive research | `gh api` + blog aggregation | Project-specific `/research-mode` skill |
 
 > **Windows users**: See known-gotchas.md #42-44 before using BMAD or Spec Kit.

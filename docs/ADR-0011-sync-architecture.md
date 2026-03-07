@@ -14,7 +14,7 @@ DevKit stores Claude Code configuration (rules, skills, agents, hooks) in a git-
 
 This created a **drift problem** on multiple levels:
 
-- **Invisible edits**: Changes to `~/.claude/rules/autolearn-patterns.md` during a session (via `/reflect` or manual edits) were invisible to `git diff` in the DevKit clone. The user had to remember to copy files back.
+- **Invisible edits**: Changes to `~/.claude/rules/autolearn-patterns.md` during a session (via `/autolearn` or manual edits) were invisible to `git diff` in the DevKit clone. The user had to remember to copy files back.
 - **Multi-machine divergence**: On two machines, each accumulates its own patterns and gotchas independently. There was no mechanism to merge learnings from machine A into machine B.
 - **Manual sync tax**: The "Updating" section of the README described a manual `cp` workflow that was easy to forget, especially at the end of a productive session when new patterns were fresh.
 
@@ -51,14 +51,14 @@ Claude Code loads all `*.md` from `~/.claude/rules/` automatically. The local fi
 2. The `/devkit-sync push` skill commits changes and pushes to a `sync/<machine-id>` branch
 3. Pull requests are the merge point -- changes from each machine are reviewed before merging to main
 4. The `SessionStart.sh` hook auto-pulls main on every new Claude Code session (with a 5-second network timeout to avoid blocking)
-5. The `/reflect` and session review workflows check for uncommitted DevKit changes and prompt the user to run `/devkit-sync push`
+5. The `/autolearn` and session review workflows check for uncommitted DevKit changes and prompt the user to run `/devkit-sync push`
 
 ### Automatic triggers
 
 | Trigger | Action | Mechanism |
 |---------|--------|-----------|
 | Session start | Pull latest from main | `SessionStart.sh` hook |
-| `/reflect` or session review | Prompt to push if dirty | Workflow step 6 in `quick-reflect.md` |
+| `/autolearn` or session review | Prompt to push if dirty | Workflow step 6 in `quick-reflect.md` |
 | `/devkit-sync push` | Commit, push to sync branch, create PR | Skill workflow |
 | `/devkit-sync pull` | Fetch and merge main | Skill workflow |
 

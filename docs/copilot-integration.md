@@ -308,7 +308,7 @@ Copilot and Claude Code serve different workflows and do not conflict:
 | Multi-file features | No | Yes -- main tool |
 | Architecture decisions | No | Yes -- `/create-plan` |
 | Codebase exploration | No | Yes -- Glob/Grep agents |
-| Rule learning (`/reflect`) | No | Yes -- autolearn pipeline |
+| Rule learning (`/autolearn`) | No | Yes -- autolearn pipeline |
 
 Both tools read different instruction files. `AGENTS.md` governs Copilot agent behavior.
 `CLAUDE.md` governs Claude Code behavior. Changes to one do not affect the other.

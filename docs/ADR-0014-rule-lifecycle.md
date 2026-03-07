@@ -42,7 +42,7 @@ Fields:
 | `**Added:**` | Yes | `YYYY-MM-DD` | Date first committed (infer from git log) |
 | `**Source:**` | Yes | Project name | Where discovered: `SubNetree`, `devkit`, `global`, `samverk`, etc. |
 | `**Status:**` | Yes | See below | Lifecycle state |
-| `**Last relevant:**` | No | `YYYY-MM-DD` | Updated by `/reflect` when pattern is applied in a session |
+| `**Last relevant:**` | No | `YYYY-MM-DD` | Updated by `/autolearn` when pattern is applied in a session |
 | `**See also:**` | No | Entry references | Cross-references: `AP#17`, `KG#12`, etc. |
 
 ### Status Values

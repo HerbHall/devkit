@@ -74,7 +74,7 @@ When spawning subagents, include the [CORE] block from
 
 ## Autolearn
 
-Proactively suggest the user run `/reflect` when any of these occur:
+Proactively suggest the user run `/autolearn` when any of these occur:
 
 - You corrected a mistake or changed approach mid-task
 - A platform-specific gotcha or environment issue was encountered
@@ -83,8 +83,8 @@ Proactively suggest the user run `/reflect` when any of these occur:
 - Before the user ends a productive session
 
 Keep the suggestion brief and specific:
-"Tip: run `/reflect` to capture [what was learned]."
-Do NOT run /reflect automatically -- always let the user trigger it.
+"Tip: run `/autolearn` to capture [what was learned]."
+Do NOT run /autolearn automatically -- always let the user trigger it.
 
 ## Environment
 

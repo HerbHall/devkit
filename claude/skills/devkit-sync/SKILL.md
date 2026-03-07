@@ -6,7 +6,7 @@ user_invocable: true
 
 # DevKit Sync
 
-Manual control for DevKit multi-machine synchronization. While auto-pull (SessionStart) and auto-push (/reflect) handle routine sync, this skill provides manual operations for setup, forced sync, conflict resolution, and portable snapshots.
+Manual control for DevKit multi-machine synchronization. While auto-pull (SessionStart) and auto-push (/autolearn) handle routine sync, this skill provides manual operations for setup, forced sync, conflict resolution, and portable snapshots.
 
 <essential_principles>
 
