@@ -39,7 +39,9 @@
         "claude/skills/webapp-testing",
         "claude/skills/windows-development",
         "claude/skills/code-review",
-        "claude/skills/plan-review"
+        "claude/skills/plan-review",
+        "claude/skills/conformance-audit",
+        "claude/skills/rules-compact"
       ],
       "agents": [
         "claude/agents/go-test-writer.md",
