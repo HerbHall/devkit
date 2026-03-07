@@ -71,12 +71,6 @@ Run the verification kit:
 pwsh -File devkit/setup/setup.ps1 -Kit verify
 ```
 
-> **Note**: `verify.ps1` is currently a stub (see [issue #204](https://github.com/HerbHall/devkit/issues/204)). As a workaround, use the bootstrap Phase 6 verification:
->
-> ```powershell
-> pwsh -File devkit/setup/bootstrap.ps1 -Phase 6
-> ```
-
 Verification checks that:
 
 - Symlinks from `~/.claude/` point to the correct DevKit files
