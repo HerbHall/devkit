@@ -1,7 +1,7 @@
 ---
 description: Learned patterns from past sessions. Read when encountering similar situations.
 tier: 2
-entry_count: 68
+entry_count: 70
 last_updated: "2026-03-07"
 ---
 
@@ -724,3 +724,19 @@ On resume: `git status`, `git diff --stat`, `go build ./...`, then commit. Subag
 **Context:** Cross-project compliance can be parallelized across independent repos with zero conflict (unlike KG#25 same-repo agents).
 **Fix:** One agent per repo with full git autonomy: DevKit templates, customization instructions, CI checklist. Main context handles orchestration only.
 **See also:** KG#25, AP#48
+
+## 118. Skill Routing Must Have Explicit Cancel for Skip/Dismiss Intake
+
+**Added:** 2026-03-07 | **Source:** DevKit | **Status:** active
+
+**Category:** process-pattern
+**Context:** If a skill's intake prompt mentions "skip" or "dismiss", users will try it. Without a routing table entry for cancel/skip, the input falls through to the default route and triggers unintended work.
+**Fix:** Any skill with optional steps or confirmations must have an explicit cancel entry in its SKILL.md routing table that exits cleanly.
+
+## 119. Known-Gotchas Frontmatter Must Update With New Entries
+
+**Added:** 2026-03-07 | **Source:** DevKit | **Status:** active
+
+**Category:** process-pattern
+**Context:** Adding a KG entry without updating `entry_count` and `last_updated` in the YAML frontmatter causes drift between metadata and actual content.
+**Fix:** Always update `entry_count` and `last_updated` in the same commit that adds or removes entries. Applies to both `known-gotchas.md` and `autolearn-patterns.md`.
