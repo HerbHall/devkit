@@ -1,7 +1,7 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 81
+entry_count: 82
 last_updated: "2026-03-07"
 ---
 
@@ -724,3 +724,14 @@ All parallel agents write to the same working directory. Changes mix as unstaged
 - `sed` is also unreliable on MSYS (literal `t` instead of tab with `\t` escapes)
 
 **See also:** KG#62 (CRLF breaks bash grep in CI -- same root cause, different tool)
+
+## 102. Samverk Dispatcher False-Positive on Issues Without Frontmatter
+
+**Added:** 2026-03-07 | **Source:** Samverk | **Status:** active
+
+**Platform:** Samverk dispatcher
+**Issue:** The dispatcher's `classify` path requires YAML frontmatter in issue bodies. Issues that are valid but have no frontmatter (e.g., plain prose issues, Copilot-generated issues) trigger `invalid_frontmatter` escalation, which applies `status:needs-human` and halts routing. The issue is not actually blocked -- the label is a false positive.
+**Symptom:** Valid issue receives `status:needs-human` label immediately after creation or assignment. Dispatcher comment reads: `ESCALATE [dispatcher] trigger: invalid_frontmatter details: classify issue ... no frontmatter found`.
+**Workaround:** Remove the `status:needs-human` label manually. The issue is valid; proceed normally.
+**Fix needed:** Dispatcher should treat `invalid_frontmatter` as a soft warning, not a hard escalation. Options: (1) skip frontmatter requirement for issues created by Copilot or external agents, (2) route to a fallback classify path using title/label heuristics, (3) only escalate if frontmatter is present but malformed. See Samverk issue #180.
+**See also:** KG#99 (Copilot review is informational -- same "Copilot-as-actor" surface area)
