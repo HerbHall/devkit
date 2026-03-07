@@ -25,6 +25,23 @@ This skill provides systematic quality verification for code changes. It catches
 | Branch Freshness | PR branch is up to date with base | `gh pr view <number> --json mergeStateStatus` |
 | CLA Compliance | CLA check passes for all contributors | Check CLA status in checks |
 
+**Forge Compatibility**
+
+On Gitea-hosted repos, `gh pr checks` has no equivalent. Before running
+any workflow that checks CI status, detect the forge:
+
+```bash
+source scripts/forge-wrappers.sh
+if [[ "$(devkit-forge-detect)" == "gitea" ]]; then
+  echo "[WARN] Gitea detected. CI status checking is unavailable via CLI."
+  echo "       Verify CI manually at: <repo-url>/actions"
+fi
+```
+
+Affected workflows: check-pr, audit-prs, post-push-verify, fix-ci-failures.
+These workflows should emit the warning and skip CI status checks gracefully
+rather than failing silently.
+
 **Quality Principles**
 
 1. **Fail fast, fix fast.** Identify failures immediately after pushing. The longer a broken PR sits, the harder it is to fix.
