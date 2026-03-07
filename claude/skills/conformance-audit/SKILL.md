@@ -21,21 +21,27 @@ Cross-project conformance auditing against DevKit standards. Run a 16-point chec
 </essential_principles>
 
 <intake>
-What kind of conformance audit do you need?
+**conformance-audit triggered.** What kind of conformance audit do you need?
 
 1. **Full audit** -- Run 16-point conformance check across all projects
 2. **Single project** -- Audit one specific project
 3. **Fix gaps** -- Auto-fix common conformance gaps for a project
 
-Or describe what you want to check.
+Type a number, project name, or **skip** to dismiss.
+
+> Note: This skill blocks on user input. If triggered unintentionally,
+> type **skip** or **dismiss** to cancel.
 </intake>
 
 <routing>
 | Response | Workflow |
 |----------|----------|
-| 1, "all", "full", "everything", "cross-project" | workflows/full-audit.md |
-| 2, "project", "single", "check", a project name | workflows/single-project.md |
-| 3, "fix", "remediate", "apply", "scaffold" | workflows/fix-gaps.md |
+| 1, "full audit", "all projects", "cross-project" | workflows/full-audit.md |
+| 2, "single project", "check project", a project name | workflows/single-project.md |
+| 3, "fix gaps", "remediate", "apply fixes", "scaffold" | workflows/fix-gaps.md |
+
+If the input does not clearly match any option above, respond:
+"conformance-audit was triggered but your input didn't match a workflow. Options: 1-3 (listed above). Type **skip** to dismiss."
 
 **After reading the workflow, follow it exactly.**
 </routing>
