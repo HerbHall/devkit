@@ -1,8 +1,8 @@
 ---
 description: Learned patterns from past sessions. Read when encountering similar situations.
 tier: 2
-entry_count: 108
-last_updated: "2026-03-02"
+entry_count: 68
+last_updated: "2026-03-07"
 ---
 
 # Learned Patterns
@@ -14,61 +14,91 @@ Patterns discovered through past sessions. Each entry includes the pattern, cont
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** lint-fix
-**Context:** gosec G101 flags constants as "hardcoded credentials" when their **name** contains "credential", "password", "secret", "token", or "passphrase", OR when their **value** contains sensitive-looking strings like "snmp". In vault/credential modules, expect 5-10+ false positives across type labels, event topics, and env var name constants. These appear incrementally in CI -- fixing one batch may reveal more on the next run.
-**Fix:** Add `//nolint:gosec // G101: <reason>` on each flagged line. Proactively annotate ALL credential-adjacent constants in a single pass rather than fixing them one CI run at a time.
-**Example:**
+**Context:** gosec G101 flags constants as "hardcoded credentials" when their name contains "credential", "password", "secret", "token", or "passphrase", OR when their value contains sensitive-looking strings. Expect 5-10+ false positives in vault/credential modules.
+**Fix:** Add `//nolint:gosec // G101: <reason>` on each flagged line. Proactively annotate ALL credential-adjacent constants in a single pass.
 
-```go
-RoleCredentialStore = "credential_store" //nolint:gosec // G101: role name, not a credential
-```
+## 2. gocritic Lint Patterns (Consolidated Reference)
 
-## 2. gocritic rangeValCopy for Large Structs
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+**Added:** 2026-02-17 | **Source:** Multiple | **Status:** active
+**Consolidates:** AP#14, AP#15, AP#59, AP#61, AP#62, AP#64, AP#65, AP#66, AP#105, AP#113 (archived)
 
 **Category:** lint-fix
-**Context:** `for _, v := range slice` copies the struct on each iteration. Structs over 64 bytes trigger gocritic rangeValCopy.
-**Fix:** Use index-based iteration: `for i := range slice { ... slice[i].Field ... }`
-**Gotcha:** Must replace ALL references to the loop variable, not just the range declaration. Check every line in the loop body.
+
+Comprehensive reference for gocritic lint rules encountered across projects.
+
+### rangeValCopy
+
+**Context:** `for _, v := range slice` copies structs >64 bytes each iteration.
+**Fix:** Use `for i := range slice` with `slice[i].Field`. Replace ALL loop body references.
+
+### builtinShadow
+
+**Context:** Parameters named `new`, `make`, `len`, `cap`, `close`, `delete`, `copy`, `append`, `min`, `max`, `clear` shadow Go builtins.
+**Fix:** Rename to `n`, `count`, `limit`, `val`, `updated`, etc.
+
+### httpNoBody
+
+**Context:** `http.NewRequestWithContext(ctx, http.MethodGet, url, nil)` -- nil body is ambiguous.
+**Fix:** Use `http.NoBody` instead of `nil` for GET/HEAD/DELETE requests.
+
+### commentedOutCode
+
+**Context:** Math-heavy comments like `// OUI(15) + Port(15) = 30` look like code.
+**Fix:** Rephrase to natural language: `// Expected: OUI weight + Port weight`.
+
+### unnamedResult
+
+**Context:** Functions returning `(float64, string)` without named returns.
+**Fix:** Add names, then change `:=` to `=` for those variables and remove redundant `var` declarations.
+
+### appendCombine
+
+**Context:** Two consecutive `append()` calls to the same slice.
+**Fix:** Combine into single `append` with multiple elements.
+
+### paramTypeCombine
+
+**Context:** `(a int, b int)` -- consecutive same-type params.
+**Fix:** Combine: `(a, b int)`. Only applies to adjacent params.
+
+### dupBranchBody
+
+**Context:** Identical `if/else` branch bodies.
+**Fix:** Remove the conditional, keep just the body.
+
+### emptyStringTest
+
+**Context:** `len(s) > 0` for string emptiness.
+**Fix:** Use `s != ""` (or `s == ""`).
+
+### sloppyReassign
+
+**Context:** `if err = f(); err != nil` overwrites named return `err`.
+**Fix:** Use `:=` to shadow: `if err := f(); err != nil { return err }`.
+
+### preferFprint
+
+**Context:** `b.WriteString(fmt.Sprintf(...))` allocates intermediate string.
+**Fix:** Use `fmt.Fprintf(&b, ...)` to write directly to builder.
 
 ## 3. golangci-lint install-mode for CI
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** ci-config
-**Context:** Pre-built golangci-lint binaries (`install-mode: binary`) may be compiled with an older Go version than the project requires.
-**Fix:** Use `install-mode: goinstall` in the golangci-lint GitHub Action to build from source with the project's Go version.
+**Context:** Pre-built golangci-lint binaries may be compiled with an older Go version than the project requires.
+**Fix:** Use `install-mode: goinstall` in the GitHub Action to build from source with the project's Go version.
 
 ## 4. go-licenses Blocked License Check
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** ci-config
-**Context:** `go-licenses check --allowed_licenses` strict allowlist fails on packages with non-standard license file locations or unrecognized licenses (BSL 1.1).
-**Fix:** Use grep-based blocked-license approach instead:
+**Context:** `go-licenses check --allowed_licenses` strict allowlist fails on non-standard license locations or unrecognized licenses (BSL 1.1).
+**Fix:** Use grep-based blocked-license approach:
 
 ```bash
 go-licenses check ./... 2>&1 | grep -E "GPL|AGPL|LGPL|SSPL" && exit 1 || echo "No blocked licenses found"
-```
-
-## 5. WebSocket Auth: JWT via Query Parameter
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** architecture-pattern
-**Context:** Browser WebSocket API doesn't support custom headers (`Authorization: Bearer ...`). Standard auth middleware can't validate WS connections.
-**Fix:** Pass JWT as `?token=xxx` query parameter. Skip WS paths in auth middleware with prefix check, then validate token manually in the WS handler before calling `websocket.Accept()`.
-**Example:**
-
-```go
-// Middleware: skip WS paths
-if strings.HasPrefix(r.URL.Path, "/api/v1/ws/") {
-    next.ServeHTTP(w, r)
-    return
-}
-// Handler: validate from query param
-token := r.URL.Query().Get("token")
-claims, err := h.tokens.ValidateAccessToken(token)
 ```
 
 ## 6. GoReleaser Release Workflow Prerequisites
@@ -76,221 +106,127 @@ claims, err := h.tokens.ValidateAccessToken(token)
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** ci-config
-**Context:** GoReleaser v2 with Docker and SBOM support requires explicit setup steps in GitHub Actions that are NOT included automatically.
-**Fix:** Add these steps before `goreleaser/goreleaser-action`:
-
-1. `docker/setup-buildx-action@v3` -- required for `use: buildx` in docker config
-2. `docker/login-action@v3` -- required for pushing to GHCR (use `secrets.GITHUB_TOKEN`)
-3. `anchore/sbom-action/download-syft@v0` -- required for `sboms:` section
-
-**Also:** Add `packages: write` and `id-token: write` permissions to the workflow.
+**Context:** GoReleaser v2 with Docker and SBOM support requires explicit setup steps not included automatically.
+**Fix:** Add before `goreleaser/goreleaser-action`: (1) `docker/setup-buildx-action@v3`, (2) `docker/login-action@v3`, (3) `anchore/sbom-action/download-syft@v0`. Add `packages: write` and `id-token: write` permissions.
 
 ## 8. Dockerfile ldflags Must Match Go Variable Names
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** ci-config
-**Context:** Dockerfile ARG names for version injection via `-ldflags -X` must exactly match the Go `var` names in `internal/version/version.go`. Mismatch causes version info to show "unknown".
-**Fix:** Cross-reference Dockerfile ldflags with version.go. Common mismatch: `version.Commit` vs `version.GitCommit`, `version.BuildTime` vs `version.BuildDate`.
-
-## 9. React Flow Test Mocking Pattern
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** testing
-**Context:** `@xyflow/react` components require DOM measurements and `ReactFlowProvider`. Unit tests fail without comprehensive mocking.
-**Fix:** Use `vi.mock('@xyflow/react')` that stubs: `ReactFlow` as a div, `Handle` as null, `Position`/`MarkerType` as objects, `useReactFlow` returning mock functions (`fitView`, `zoomIn`, `zoomOut`), and `useNodesState`/`useEdgesState` returning `[initialValue, vi.fn(), vi.fn()]`. This allows testing custom node/edge components without a real canvas.
-
-## 10. Slash Command / Skill Overlap Prevention
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** tooling
-**Context:** Creating a slash command (`commands/foo.md`) that overlaps with an existing skill (`skills/foo/SKILL.md`) causes duplicate entries in the skill list and user confusion.
-**Fix:** Always check existing skills before creating a new command. If a skill already handles the use case, don't create a redundant command. Skills are the preferred format for complex functionality; commands are for simple one-shot prompts.
+**Context:** Dockerfile ARG names for `-ldflags -X` must exactly match Go `var` names in version.go. Mismatch causes "unknown" version info.
+**Fix:** Cross-reference Dockerfile ldflags with version.go. Common mismatch: `version.Commit` vs `version.GitCommit`.
 
 ## 11. Python as jq Replacement on Windows MSYS
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** platform-workaround
-**Context:** `jq` is not available on Windows MSYS by default. Bash scripts needing JSON escaping/parsing fail. Python's `json` + `urllib.request` modules provide equivalent functionality and are more commonly available.
-**Fix:** Use inline Python for JSON operations in bash scripts:
-
-```bash
-$PYTHON -c "
-import json, urllib.request, sys
-content = sys.stdin.read()
-payload = json.dumps({'model': '$MODEL', 'prompt': content}).encode()
-req = urllib.request.Request('$URL', data=payload, headers={'Content-Type': 'application/json'})
-resp = urllib.request.urlopen(req, timeout=300)
-print(json.loads(resp.read()).get('response', ''))
-" < "$file"
-```
-
-**Note:** Combine with Windows Python path detection (see known-gotchas.md #8).
-
-## 12. Astro Image Optimization: src/assets vs public/
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** framework-pattern
-**Context:** Astro's `<Image />` component from `astro:assets` only optimizes images imported from `src/assets/`. Images in `public/` are served as-is without optimization.
-**Fix:** Place images in `src/assets/` and import them: `import img from '../assets/photo.jpg'`. Pass to `<Image src={img} />` with width/height. Astro converts to WebP at build time with dramatic size reduction (67KB JPEG -> 3KB WebP, 53KB PNG -> 1KB WebP).
-
-## 13. Astro Static on Cloudflare Pages (No Adapter)
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** framework-pattern
-**Context:** Astro v5 with `output: 'static'` produces plain HTML/CSS/JS in `dist/`. Cloudflare Pages serves static files natively.
-**Fix:** No Cloudflare adapter needed for static-only Astro sites. Set Cloudflare Pages build command: `npm run build`, output: `dist`. Only add `@astrojs/cloudflare` adapter if using SSR/server routes.
-
-## 14. gocritic builtinShadow for Go Builtins
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** lint-fix
-**Context:** Go has predeclared identifiers (builtins) that trigger gocritic `builtinShadow` when used as parameter or variable names. This includes Go 1.0 builtins (`new`, `make`, `len`, `cap`, `close`, `delete`, `copy`, `append`, `panic`, `recover`, `print`, `println`, `error`, `complex`, `real`, `imag`) and Go 1.21+ additions (`min`, `max`, `clear`). Common in diff functions (`ComputeDiff(old, new string)`), functional options (`WithMaxTokens(max int)`), and factory patterns.
-**Fix:** Rename the parameter to something that doesn't shadow: `n`, `count`, `limit`, `val`, `updated`, etc.
-**Example:**
-
-```go
-// BAD: shadows builtin new (Go 1.0) or max (Go 1.21+)
-func ComputeDiff(old, new string) []DiffLine { ... }
-func WithMaxTokens(max int) CallOption { ... }
-
-// GOOD: no shadow
-func ComputeDiff(old, updated string) []DiffLine { ... }
-func WithMaxTokens(n int) CallOption { ... }
-```
-
-**Go builtins to watch:** `new`, `make`, `len`, `cap`, `close`, `delete`, `copy`, `append` (Go 1.0); `min`, `max`, `clear` (Go 1.21+)
-
-## 15. gocritic httpNoBody for GET/HEAD Requests
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** lint-fix
-**Context:** `http.NewRequestWithContext(ctx, http.MethodGet, url, nil)` triggers gocritic `httpNoBody` lint. The `nil` body is ambiguous -- the linter wants explicit intent.
-**Fix:** Use `http.NoBody` instead of `nil` for requests that have no body (GET, HEAD, DELETE without body).
-**Example:**
-
-```go
-// BAD: triggers httpNoBody
-req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-
-// GOOD: explicit no-body intent
-req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
-```
+**Context:** `jq` unavailable on Windows MSYS. Python's `json` + `urllib.request` modules provide equivalent functionality.
+**Fix:** Use inline Python for JSON operations. Combine with Windows Python path detection (KG#8).
 
 ## 16. Remove Heavy Dependencies for Unfixable Vulnerabilities
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** architecture-pattern
-**Context:** When a Go dependency has a vulnerability with no fix available (e.g., server-side code in a client library), `govulncheck` and CI will flag it forever. If the API surface is small, rewriting with `net/http` is faster than waiting for an upstream fix.
-**Fix:** Replace the dependency with raw HTTP calls. For REST APIs with simple JSON request/response patterns, a thin wrapper using `net/http` + `encoding/json` is typically under 200 lines. This also reduces transitive dependencies (Ollama client brought 54 indirect deps).
+**Context:** When a Go dependency has an unfixable vulnerability and the API surface is small, rewriting with `net/http` is faster than waiting for upstream.
+**Fix:** Replace with raw HTTP calls. A thin `net/http` + `encoding/json` wrapper is typically under 200 lines and reduces transitive deps.
 
-## 17. swaggertype Tags for Platform-Specific Type Enums
+## 17. Swagger Platform-Specific Issues (Consolidated Reference)
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-**See also:** AP#35, KG#12, KG#57, KG#59
+**Consolidates:** AP#35 (archived)
+**See also:** KG#12, KG#57, KG#59
 
 **Category:** ci-fix
-**Context:** swag (swaggo/swag) introspects Go types like `time.Duration` and generates platform-specific enum definitions. The same swag version (e.g., v1.16.4) produces different enum values on Linux vs Windows (e.g., `minDuration`/`maxDuration` present or absent). This causes swagger drift check failures in CI when specs are generated locally on a different platform.
-**Fix:** Add `swaggertype:"integer"` (or `"string"`) struct tag to override swag's introspection:
 
-```go
-TimeToThreshold *time.Duration `json:"time_to_threshold,omitempty" swaggertype:"integer"`
-```
+### swaggertype tags for type enums
 
-This eliminates the entire type definition block from the swagger spec. Also pin the swag version in CI (`@v1.16.4` not `@latest`) for reproducibility.
+**Context:** swag introspects `time.Duration` and generates platform-specific enum definitions that differ between Linux and Windows.
+**Fix:** Add `swaggertype:"integer"` struct tag to override introspection. Pin swag version in CI.
+
+### CI swagger job needs go mod download
+
+**Context:** Dependabot bumps change `go.sum` cache key. Without explicit download, `swag init --parseDependency` fails.
+**Fix:** Add `go mod download` step before `swag init` in CI.
 
 ## 18. Documentation Drift Audit After PR Bursts
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** process-pattern
-**Context:** After merging many PRs in a burst (e.g., release prep, multi-PR features), roadmap checklists, README claims, and architecture docs drift from reality. Aspirational language implies features exist that haven't shipped yet.
-**Fix:** After a burst of merges, audit: 1) List all merged PRs since last doc update, 2) Cross-reference with roadmap checklist items, 3) Check README claims against actual capabilities, 4) Fix aspirational language for unimplemented features. Found 8 unchecked items that were done, false claims in README for unimplemented features, and missing modules in architecture docs.
+**Context:** After merging many PRs in a burst, roadmap checklists, README claims, and architecture docs drift from reality.
+**Fix:** Audit: (1) list merged PRs since last doc update, (2) cross-reference with roadmap, (3) check README claims against actual capabilities, (4) fix aspirational language.
 
-## 19. golangci-lint nilerr: Must Propagate Non-Nil Errors
+## 19. golangci-lint Rules (Consolidated Reference)
 
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+**Added:** 2026-02-17 | **Source:** Multiple | **Status:** active
+**Consolidates:** AP#102, AP#103, AP#104 (archived)
 
 **Category:** lint-fix
-**Context:** When a function receives a non-nil error and returns `(result, nil)` -- encoding the error into the result struct instead of propagating it -- golangci-lint `nilerr` flags the return. Common in check/probe patterns where you want to return a "failure result" rather than an error.
-**Fix:** Return both the populated result AND a wrapped error. The caller decides what to use:
 
-```go
-// BAD: nilerr flagged
-if runErr != nil {
-    return &CheckResult{ErrorMessage: runErr.Error()}, nil
-}
+### nilerr
 
-// GOOD: propagate error alongside result
-if runErr != nil {
-    return &CheckResult{ErrorMessage: runErr.Error()}, fmt.Errorf("ping %s: %w", target, runErr)
-}
+**Context:** Function receives non-nil error but returns `(result, nil)` instead of propagating.
+**Fix:** Return both result AND wrapped error: `return &Result{Err: e.Error()}, fmt.Errorf("op: %w", e)`.
 
-// Caller: use result if non-nil, log error separately
-result, err := checker.Check(ctx, target)
-if err != nil { log.Debug("check error", zap.Error(err)) }
-if result == nil { return }
-```
+### noctx
+
+**Context:** `db.Exec()`, `db.Query()`, `db.QueryRow()` without context.
+**Fix:** Use `ExecContext`, `QueryContext`, `QueryRowContext`. For init code, use `context.Background()`.
+
+### errcheck (resp.Body.Close)
+
+**Context:** `errcheck` flags both direct and deferred `resp.Body.Close()`.
+**Fix:** Direct: `_ = resp.Body.Close()`. Deferred: `defer func() { _ = resp.Body.Close() }()`.
+
+### gosec G704 (SSRF)
+
+**Context:** `httpClient.Do(req)` flagged as SSRF in trusted-base-URL clients.
+**Fix:** Add `//nolint:gosec // G704: URL is from trusted baseURL config`.
 
 ## 20. staticcheck SA4023: Concrete Type Assigned to Interface Is Never Nil
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** lint-fix
-**Context:** Assigning a concrete (non-nil) pointer to an interface variable, then checking `if iface == nil` is always false. The interface wraps a non-nil type pointer, making the nil check dead code.
-**Fix:** Remove the nil check, or check the concrete type before assignment.
+**Context:** Assigning a concrete pointer to an interface, then checking `if iface == nil` is always false (dead code).
+**Fix:** Remove the nil check, or use compile-time guard: `var _ Checker = (*ICMPChecker)(nil)`.
 
-```go
-// BAD: SA4023 - checker is never nil
-var checker Checker = NewICMPChecker(5*time.Second, 3)
-if checker == nil { ... } // dead code
+## 22. Git Stash and Branch Workflows (Consolidated Reference)
 
-// GOOD: compile-time guard + direct use
-var _ Checker = (*ICMPChecker)(nil)
-checker := NewICMPChecker(5*time.Second, 3)
-```
-
-## 21. Don't Start() Modules in Tests That Only Query the Store
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** testing
-**Context:** Tests for module methods that only query the store (e.g., `Status()`, `GetXxx()`) don't need `Start()`. Calling `Start()` launches background goroutines (scheduler, maintenance, checker workers) that race with the test by executing real checks, creating failure results/alerts, and corrupting expected state. This caused a flaky `TestHandleDeviceStatus_WithData` in the Pulse module.
-**Fix:** Only call `Start()`/`Stop()` when testing behavior that depends on background workers. For query-only methods, `newTestModule(t)` provides a fully functional store without races.
-
-## 22. Git Stash Before Branch Switch During Parallel Feature Work
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+**Added:** 2026-02-17 | **Source:** Multiple | **Status:** active
+**Consolidates:** AP#37, AP#107 (archived)
 
 **Category:** workflow
-**Context:** When using subagents to work on parallel feature branches, uncommitted working tree changes carry across `git checkout`. A subagent modifying `devices/index.tsx` for issue #89 leaked those changes into the #87 branch, causing CI failures (`Cannot find module '@/hooks/use-keyboard-shortcuts'`).
-**Fix:** Always `git stash` (or commit) before switching branches when multiple features are in progress. Especially critical when subagents modify shared files across branches.
+
+### Stash before branch switch
+
+**Context:** Uncommitted working tree changes carry across `git checkout`, leaking changes between feature branches.
+**Fix:** Always `git stash` (or commit) before switching branches during parallel feature work.
+
+### Rebase --onto for stacked PR cleanup
+
+**Context:** After squash-merge, downstream branches contain pre-squash commits. `git rebase origin/main` requires repeated `--skip`.
+**Fix:** `git rebase --onto origin/main <old-base-commit> <branch>` replays only unique commits in one operation.
+
+### Stash untracked files before cross-branch push
+
+**Context:** `go build` in pre-push hook compiles untracked files from other agents, failing with "undefined" errors.
+**Fix:** `git stash push -u -m "other-files" -- path/to/other/*.go` before pushing, then `git stash pop` after.
 
 ## 23. Go Slice Assignment Creates Alias, Not Copy
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** correction
-**Context:** In Go, `oldSlice := someStruct.slice` creates a new slice header pointing to the SAME backing array. If the original is zeroed (e.g., `ZeroBytes(someStruct.slice)`), the "copy" sees zeroed data. Discovered in `KeyManager.RotateKEK` -- a rewrap closure holding `oldKEK` failed with "cipher: message authentication failed" because `ZeroBytes(km.kek)` zeroed the shared backing array.
-**Fix:** Use `make` + `copy` for true deep copies of byte slices:
+**Context:** `oldSlice := someStruct.slice` creates a new header pointing to the SAME backing array. Zeroing the original zeroes the "copy" too.
+**Fix:** Use `make` + `copy` for true deep copies:
 
 ```go
-// BAD: alias -- both point to same backing array
-oldKEK := km.kek
-ZeroBytes(km.kek) // zeroes oldKEK too!
-
-// GOOD: independent copy
 oldKEK := make([]byte, len(km.kek))
 copy(oldKEK, km.kek)
-ZeroBytes(km.kek) // oldKEK is unaffected
 ```
 
 ## 24. Name Parameters You Might Reference Later
@@ -298,35 +234,8 @@ ZeroBytes(km.kek) // oldKEK is unaffected
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** correction
-**Context:** Writing `func handler(w http.ResponseWriter, _ *http.Request)` with blank identifier for an unused parameter, then later adding `r.Context()` in the body, causes an "undefined: r" compile error. Common when expanding stub handlers into full implementations across PRs.
-**Fix:** Always name parameters in handler signatures, even if currently unused. Use `r` not `_` for `*http.Request`. If truly unused, the compiler won't complain about a named-but-unused parameter (unlike variables).
-
-## 25. Consumer-Side Adapter for Cross-Internal Imports
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** architecture-pattern
-**Context:** A plugin in `internal/X` needs functionality from `internal/Y` (e.g., Gateway needs auth.TokenService). Direct import creates coupling between internal packages. Go doesn't allow import cycles, and even one-way coupling makes packages harder to test and reason about.
-**Fix:** Define a consumer-side interface in the consuming package (e.g., `TokenValidator` in gateway). Create a thin adapter struct in `cmd/main.go` (the composition root) that wraps the concrete type. This keeps internal packages decoupled while wiring happens at the top level.
-
-```go
-// internal/gateway/ssh.go -- consumer defines what it needs
-type TokenValidator interface {
-    ValidateAccessToken(token string) (*TokenClaims, error)
-}
-
-// cmd/subnetree/main.go -- composition root adapts
-type tokenAdapter struct{ svc *auth.TokenService }
-func (a *tokenAdapter) ValidateAccessToken(t string) (*gateway.TokenClaims, error) { ... }
-```
-
-## 26. WebSocket Plugin Routes Need SimpleRouteRegistrar
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** architecture-pattern
-**Context:** Plugin `Routes()` mounts under `/api/v1/{plugin}/` with auth middleware. WebSocket endpoints need JWT via query parameter (browser WS API can't send headers) and the auth middleware already skips `/api/v1/ws/`. So WebSocket endpoints can't go through the standard plugin route system.
-**Fix:** Create a separate struct implementing `server.SimpleRouteRegistrar` with `RegisterRoutes(mux *http.ServeMux)`. Pass it as an extra registrar to `server.New()`. Wire the plugin module reference into the registrar in `main.go`. Register the WebSocket route under `/api/v1/ws/{plugin}/...`.
+**Context:** `func handler(w http.ResponseWriter, _ *http.Request)` causes "undefined: r" when you later add `r.Context()`.
+**Fix:** Always name handler parameters, even if currently unused. Compiler allows named-but-unused params.
 
 ## 27. golangci-lint bodyclose with websocket.Dial
 
@@ -339,1478 +248,480 @@ Archived to `claude/rules/archive/autolearn-patterns.md`. See KG#17 for the cons
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** gotcha
-**Context:** Go 1.22+ enhanced `ServeMux` detects structurally ambiguous route patterns at registration time and panics. Two patterns conflict when they can both match the same path and neither is more specific. Example: `GET /credentials/{id}/data` and `GET /credentials/device/{device_id}` both match `/credentials/device/data`.
-**Diagnosis:** Server panics on startup with `pattern "..." conflicts with pattern "...": both match some paths`.
-**Fix:** Restructure one route to avoid sharing the same prefix where a wildcard segment can capture a literal. Options:
-
-1. Move the sub-resource to a different prefix: `/device-credentials/{device_id}` instead of `/credentials/device/{device_id}`
-2. Add a distinguishing literal segment: `/credentials/by-device/{device_id}`
-3. Use query parameters instead of path segments for one of the endpoints
-
-**Prevention:** When designing REST routes with wildcards like `{id}`, check that no sibling literal segments at the same depth could be captured by the wildcard.
+**Context:** Go 1.22+ ServeMux panics at registration when two patterns both match some paths (e.g., `/credentials/{id}/data` and `/credentials/device/{device_id}`).
+**Fix:** Restructure routes: move sub-resource to different prefix, add distinguishing literal, or use query params. When using `{id}` wildcards, ensure no sibling literals at the same depth.
 
 ## 31. ESLint Catches Unused Imports That TypeScript Misses
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** ci-fix
-**Context:** `npx tsc --noEmit` passes locally but CI fails because ESLint's `@typescript-eslint/no-unused-vars` catches unused named imports (e.g., `type ThemeDefinition` imported but not referenced, or `CardHeader`/`CardTitle` imported but not used in JSX). TypeScript itself doesn't flag unused imports unless `noUnusedLocals` is enabled in tsconfig.
-**Fix:** After creating new files or modifying imports, run `pnpm run lint` (or `npx eslint .`) locally before pushing. When adding imports speculatively (e.g., for components you plan to use), verify every named import is actually referenced in the file.
-**Common culprits:** Type-only imports (`type Foo`) copied from other files, UI component imports (`CardHeader`, `CardTitle`) from template code that were trimmed during implementation.
+**Context:** `npx tsc --noEmit` passes but ESLint's `@typescript-eslint/no-unused-vars` catches unused named imports. TypeScript doesn't flag unused imports unless `noUnusedLocals` is enabled.
+**Fix:** Run `pnpm run lint` locally before pushing. Verify every named import is referenced.
 
 ## 32. gosimple S1016: Use Type Conversion for Identical Structs
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** lint-fix
-**Context:** When two Go structs have identical fields (e.g., `ActiveThemeRequest{ThemeID string}` and `ActiveThemeResponse{ThemeID string}`), constructing the target with a struct literal (`ActiveThemeResponse{ThemeID: req.ThemeID}`) triggers gosimple S1016.
-**Fix:** Use type conversion: `ActiveThemeResponse(req)`. This is cleaner and works whenever the source and target types have identical underlying fields.
+**Context:** Constructing target struct with literal when source/target have identical fields triggers S1016.
+**Fix:** Use type conversion: `TargetType(sourceValue)`.
 
-```go
-// BAD: S1016 flagged
-writeJSON(w, http.StatusOK, ActiveThemeResponse{ThemeID: req.ThemeID})
+## 33. Research Methodology (Consolidated Reference)
 
-// GOOD: type conversion
-writeJSON(w, http.StatusOK, ActiveThemeResponse(req))
-```
-
-## 33. Always Search GitHub Before Claiming "No Competitors"
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+**Added:** 2026-02-17 | **Source:** Multiple | **Status:** active
+**Consolidates:** AP#34, AP#42, AP#45, AP#46 (archived)
 
 **Category:** research-methodology
-**Context:** Market research that only analyzes community pain points (Reddit, forums) can miss established competitors on GitHub. Our HomeLab research concluded "zero automated infrastructure discovery tools exist" while Scanopy had 3,000+ stars. The project was also renamed (NetVisor -> Scanopy), creating a search blind spot.
-**Fix:** Before claiming "no competitors" or "first-mover advantage":
 
-1. Search GitHub for `<domain> <function>` keywords (e.g., "homelab network discovery self-hosted")
-2. Check GitHub trending for relevant topics/tags
-3. Search Docker Hub for related images (old names often persist there)
-4. Search Product Hunt and Hacker News
-5. Re-scan monthly -- new competitors emerge constantly
+### Search GitHub before claiming "no competitors"
 
-**Prevention:** Search by function ("network topology visualization"), not just by known product names. Project renames (trademark conflicts) make name-based searches unreliable.
+Search by function ("network topology visualization"), not product names. Check GitHub, Docker Hub, Product Hunt, HN. Re-scan monthly. Project renames create blind spots.
 
-## 34. Deep Competitive Analysis via gh CLI
+### Deep competitive analysis via gh CLI
 
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+Key commands: `gh api repos/{o}/{r}/contents/`, `gh issue list --state open --json title,comments,labels` (sort by comment count = highest friction), `gh release list`, `gh api repos/{o}/{r}/contributors`. Issues sorted by reactions reveal demand; Discussions API reveals UX pain.
 
-**Category:** research-pattern
-**Context:** Comprehensive competitor analysis is achievable entirely through `gh` CLI without needing to clone repos or manually browse GitHub.
-**Approach:**
+### Gap exploitation report structure
 
-1. **Repo structure**: `gh api repos/{owner}/{repo}/contents/ --jq '.[].name'`
-2. **File contents**: `gh api repos/{owner}/{repo}/contents/{path} --jq '.content' | base64 -d`
-3. **Release timeline**: `gh release list -R {owner}/{repo} --limit 50`
-4. **User pain points**: `gh issue list -R {owner}/{repo} --state open --json title,comments,labels` (sort by comment count = highest friction)
-5. **Feature requests**: `gh issue list -R {owner}/{repo} --label "enhancement" --json title`
-6. **Contributor analysis**: `gh api repos/{owner}/{repo}/contributors --jq '.[] | {login, contributions}'` (reveals bus factor)
-7. **Star history**: `gh api repos/{owner}/{repo} --jq '.stargazers_count'` + early commits for timeline
+Structure: Updated Metrics, Exploitable Weaknesses (backed by issue #s), Feature Request Gaps, Discussion Intelligence, Strategic Action Items, Competitive Moat, Risk Analysis. Every claim must link to evidence.
 
-**Key insight:** Open issues sorted by comment count are the single most valuable source -- they reveal architectural limitations and user frustration that competitors can exploit.
+### Blog aggregation for blocked platforms
 
-**Additional signals (confirmed Feb 14):**
+Reddit blocks WebFetch. Search "best X tools reddit 2025" on aggregator sites (elest.io, betterstack, etc.). For specific Reddit threads: `gh api -X GET "https://www.reddit.com/r/{sub}/comments/{id}/.json"`.
 
-- `issues?sort=reactions&direction=desc` -- user demand (thumbs-up = "I want this too")
-- `issues?state=closed&sort=updated&direction=desc` -- recent development focus
-- `repos/{owner}/{repo}/discussions/{number}/comments` -- sentiment and onboarding friction
-- **Discussions API** reveals UX pain that issues don't capture (e.g., "Overall confused with everything")
-- Launch parallel Bash agents for different API endpoints -- if one fails, others still deliver
-- Reddit/web data is supplementary; GitHub data alone is sufficient for a comprehensive gap exploitation report
+### Curated list ecosystem mapping
 
-## 35. Swagger CI Job Needs Explicit go mod download
+Analyze awesome-selfhosted category structure for gaps. Empty categories = underserved segments. Check listing requirements and license classification before submission.
 
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-**See also:** AP#17, KG#12, KG#57, KG#59
+## 36. Merge and PR Ordering (Consolidated Reference)
 
-**Category:** ci-fix
-**Context:** `swag init --parseDependency --parseInternal` resolves Go module dependencies at parse time. The CI swagger drift check relied on `actions/setup-go`'s module cache, but Dependabot dependency bumps change `go.sum` which changes the cache key, causing a miss. With no cached modules and no explicit download step, swag fails with "cannot find all dependencies" and exit code 1.
-**Fix:** Add `go mod download` step before `swag init` in the swagger CI job. This ensures modules are available regardless of cache state.
-
-```yaml
-- name: Download Go modules
-  run: go mod download
-
-- name: Regenerate swagger spec
-  run: swag init -g cmd/subnetree/main.go ...
-```
-
-## 36. Dependabot PR CI Fix Merge Ordering
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+**Added:** 2026-02-17 | **Source:** Multiple | **Status:** active
+**Consolidates:** AP#53, AP#98, AP#99 (archived)
 
 **Category:** process-pattern
-**Context:** When a Dependabot PR fails CI due to a workflow bug (not the dependency itself), you cannot fix CI directly on the Dependabot branch. Dependabot manages those branches and may overwrite your commits.
-**Fix:** Fix the CI on a separate branch, merge to main first, then rebase the Dependabot PR with `gh pr update-branch <number>`. This re-triggers CI with the fix included. Never push directly to a Dependabot branch.
 
-## 37. git rebase --onto for Precise Stacked PR Cleanup
+### Dependabot PR CI fix ordering
 
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+Cannot fix CI on Dependabot branches. Fix CI on separate branch, merge to main, then `gh pr update-branch <number>`.
 
-**Category:** workflow
-**Context:** After squash-merging a base PR, downstream stacked branches contain the original pre-squash commits (different hashes from the squash commit on main). `git rebase origin/main` requires manual `--skip` for each duplicate commit. `git rebase --onto` is more precise.
-**Fix:** Use `git rebase --onto origin/main <old-base-commit> <branch>` where `<old-base-commit>` is the last commit from the merged PR on the stacked branch. This replays only the unique commits onto main, skipping all merged commits in one operation.
-**Example:**
+### Dependency PR merge ordering
 
-```bash
-# PR2 branch was squash-merged to main. PR3 branch is based on PR2.
-# Find the commit hash where PR3 diverges from PR2:
-git log --oneline feature/issue-132-docs-history-polish | head -5
-# Use the PR2 tip commit as the old base:
-git rebase --onto origin/main 6803aca feature/issue-132-docs-history-polish
-# Force push the cleaned branch:
-git push --force-with-lease
-```
+Merge the PR with new `go.mod` dependency FIRST, then rebase stdlib-only PR. Go.mod/go.sum changes don't overlap.
 
-**Advantage:** No repeated `--skip` prompts. One command cleanly replays only the unique downstream commits.
+### Multi-PR contributor config rollout
+
+Dependency chain: (1) Community health files, (2) ESLint/linting (parallel with 1), (3) CI enhancements (needs 2), (4) Repo settings + branch protection (needs 3). Protection API call goes AFTER PR 4 merges.
+
+### Dependabot triage workflow
+
+Check CI on ALL PRs first. Merge green ones sequentially (rebase between each). Close failing ones with comment. Order: Actions bumps first, then build tools, then framework deps.
 
 ## 38. Gitignored Generated Files Break CI Compilation
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** ci-fix
-**Context:** Generated files (e.g., `*.pb.go` from protobuf) that are listed in `.gitignore` won't exist in CI. If CI doesn't regenerate them (no `make proto` step, no protoc installed), any package importing the generated code fails with "no required module provides package". This manifests as a vulnerability check or build failure, not a missing-file error.
-**Fix:** Either commit generated files to git (remove from `.gitignore`) or add a CI step to regenerate them. Committing is simpler when the generation tool (protoc) requires external installation. Add a comment in `.gitignore` to explain:
-
-```gitignore
-# Generated protobuf (committed for CI; regenerate with `make proto`)
-```
-
-**Prevention:** When adding code generation to a project, decide upfront: commit artifacts or regenerate in CI. Don't gitignore files that CI needs to compile.
-
-## 40. Go-Side Time-Bucket Aggregation Over SQL
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** architecture-pattern
-**Context:** Time-series metric aggregation needs adaptive downsampling (1min/5min/1hour buckets based on query range). SQLite's `strftime` fails on RFC3339Nano timestamps (returns NULL), making SQL-side bucketing unreliable. Even databases with robust time functions add complexity for adaptive bucket sizes.
-**Fix:** Query raw points with `WHERE timestamp BETWEEN ? AND ?` (string comparison works for sorted RFC3339 values), then aggregate in Go using `time.Truncate`:
-
-```go
-func aggregatePoints(points []MetricDataPoint, interval time.Duration) []MetricDataPoint {
-    buckets := make(map[string]*bucket)
-    for _, p := range points {
-        ts, _ := time.Parse(time.RFC3339Nano, p.Timestamp)
-        key := ts.Truncate(interval).UTC().Format(time.RFC3339)
-        b, ok := buckets[key]
-        if !ok {
-            b = &bucket{timestamp: key}
-            buckets[key] = b
-        }
-        b.sum += p.Value
-        b.count++
-    }
-    // Sort and return averaged buckets
-}
-```
-
-**Advantages:** Works with any timestamp format, easy to test, adaptive bucket selection is just an `if/else` on range duration, no SQL dialect coupling.
-
-## 41. Subagent Recovery After Rate Limit or Session Break
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** workflow
-**Context:** When a background subagent completes but the main context hits a rate limit or session break, the orchestrator loses track of what was done. Resuming blindly risks re-doing completed work or skipping verification steps.
-**Fix:** On resume, check what the subagent actually accomplished before continuing:
-
-1. `git status` -- see what files were modified/created
-2. `git diff --stat` -- quantify changes
-3. `go build ./...` -- verify compilability
-4. Cross-compile if relevant (`GOOS=linux GOARCH=amd64 go build ...`)
-5. Only then proceed to commit, push, PR
-
-**Key insight:** The subagent's work persists in the working tree even if the main context was interrupted. Don't re-launch the subagent -- just verify and commit its output.
-
-## 42. Gap Exploitation Report Structure for Competitive Research
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** research-methodology
-**Context:** When analyzing a competitor's weaknesses for strategic positioning, structure the report to connect user pain directly to your competitive advantages.
-**Structure:**
-
-1. **Updated Metrics** -- Stars, issues, releases, contributors (delta since last analysis)
-2. **Exploitable Weaknesses** -- Each backed by specific issue numbers, comment counts, and user quotes
-3. **Feature Request Gaps** -- Table mapping unaddressed user requests to your existing capabilities
-4. **Discussion Intelligence** -- Sentiment analysis from GitHub Discussions (onboarding friction, deployment pain, user confusion)
-5. **Strategic Action Items** -- Three timescales (immediate/short-term/medium-term)
-6. **Competitive Moat Assessment** -- Factor-by-factor comparison table
-7. **Risk Analysis** -- What competitor could realistically ship to close gaps (likely/possible/unlikely)
-
-**Key insight:** Every weakness claim must link to evidence (issue #, comment count, user quote). Unsubstantiated claims like "their UX is bad" are worthless; "Issue #477 (10 comments) shows multi-NIC hosts appear as duplicates" is actionable.
-
-## 43. Viper Nested Mapstructure Keys Must Match Struct Hierarchy
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** correction
-**Context:** When a Go config struct uses nested sub-structs with `mapstructure` tags (e.g., `ModuleConfig{Provider string; Ollama OllamaConfig}`), `viper.Set()` calls in tests must use the full dotted path matching the struct hierarchy. Tests using flat keys break silently when the config struct is refactored from flat to nested form.
-**Fix:** Use dotted paths that match the struct nesting: `v.Set("ollama.url", ...)` not `v.Set("url", ...)`. Also set any discriminator field (e.g., `v.Set("provider", "ollama")`).
-**Example:**
-
-```go
-// BAD: flat keys don't match nested ModuleConfig
-v.Set("url", srv.URL)
-v.Set("model", "test-model")
-v.Set("timeout", "30s")
-
-// GOOD: dotted paths matching struct hierarchy
-v.Set("provider", "ollama")
-v.Set("ollama.url", srv.URL)
-v.Set("ollama.model", "test-model")
-v.Set("ollama.timeout", "30s")
-```
-
-## 44. React Nullable Local Override for Server State Sync
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** pattern
-**Context:** React's `react-hooks/set-state-in-effect` lint rule flags `useEffect(() => setState(serverData), [serverData])`. This common pattern for syncing TanStack Query data to form state gets rejected by the React compiler linter.
-**Fix:** Use a nullable local override instead of useEffect sync. The override is `null` when the user hasn't edited yet, falls back to server data:
-
-```tsx
-const { data: serverConfig } = useQuery({ queryKey: ['config'], queryFn: getConfig })
-const [localOverride, setLocalOverride] = useState<string | null>(null)
-const displayValue = localOverride ?? serverConfig?.value ?? defaultValue
-
-// User edits set the override
-<input value={displayValue} onChange={e => setLocalOverride(e.target.value)} />
-
-// On save success, reset override to re-sync from server
-onSuccess: () => { setLocalOverride(null); queryClient.invalidateQueries(['config']) }
-```
-
-**Used in:** SubNetree `llm-config.tsx` and `settings.tsx` NetworkTab.
-
-## 45. Blog Aggregation for Blocked Community Platforms
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** research-methodology
-**Context:** Reddit blocks WebFetch (robots.txt), Discord requires auth, and direct community access is often restricted. Blog aggregation provides equivalent community sentiment data.
-**Approach:**
-
-1. Search `"best <category> tools reddit 2025"` or `"r/<subreddit> <topic>"` to find curated articles
-2. Good aggregator sites: elest.io, xda-developers, betterstack, virtualizationhowto, noted.lol, linuxiac.com
-3. Cross-reference 3+ independent sources before trusting a claim
-4. For specific Reddit threads the user provides, use `gh api -X GET "https://www.reddit.com/r/{sub}/comments/{id}/.json"` -- bypasses robots.txt entirely
-5. Extract with `--jq`: `.[0].data.children[0].data | {title, selftext}` for the post, `.[1].data.children[].data | {author, body, score}` for comments
-
-**Key insight:** Blog articles that synthesize "what Reddit recommends" are often more reliable than reading threads directly -- the authors have already filtered noise and identified patterns. The gh api JSON endpoint works for primary source verification of specific threads.
-
-## 46. Curated List Ecosystem Mapping for Market Positioning
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** research-methodology
-**Context:** Curated "awesome" GitHub lists (awesome-selfhosted 273k stars, awesome-sysadmin) are primary discovery channels for self-hosted software. Analyzing their category structure reveals market taxonomy gaps and listing opportunities.
-**Approach:**
-
-1. Fetch all relevant category sections from the list (Monitoring, Network, CMDB, etc.)
-2. Check for empty/redirected sections -- these indicate category boundaries (awesome-selfhosted Monitoring is empty, redirects to awesome-sysadmin)
-3. Cross-reference competitor presence -- absence of established tools (4-7k stars) means the category is too new for curation
-4. Check listing requirements (CONTRIBUTING.md) and license classification (non-free.md) before planning a submission
-5. Identify integration targets from adjacent categories (dashboards, IoT platforms)
-
-**Key insights:**
-
-- Empty categories = underserved market segment
-- Competitor absence from high-star lists = first-mover listing advantage
-- License classification (e.g., BSL 1.1 = "non-free") constrains listing placement but doesn't prevent discoverability
-- Check both primary list AND redirect targets for complete coverage
+**Context:** Generated files (e.g., `*.pb.go`) in `.gitignore` won't exist in CI, causing build failures.
+**Fix:** Either commit generated files or add CI step to regenerate. Decide upfront: commit artifacts or regenerate in CI.
 
 ## 47. Check Existing Assets Before Scoping "Create X" Issues
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** pattern
-**Context:** Issues titled "Create X" or "Design X" may already have partial or complete deliverables in the codebase. Planning without checking leads to overscoped work and wasted agent context.
-**Fix:** Before planning implementation, always run targeted searches:
+**Context:** "Create X" issues may already have deliverables in the codebase. Planning without checking leads to overscoped work.
+**Fix:** Search codebase first: `grep -r "<keyword>" --include="*.svg" --include="*.md" .` Can reduce scope by 90%.
 
-```bash
-# For logo/brand issues
-ls assets/brand/ docs/images/branding/ 2>/dev/null
+## 48. Parallel Agent Orchestration (Consolidated Reference)
 
-# For any "create" issue
-grep -r "<keyword>" --include="*.svg" --include="*.png" --include="*.md" .
-```
-
-**Example:** Issue #252 "Design project logo" seemed like a large creative task. But `assets/brand/` already had: `logo.svg`, `logo-light.svg`, icon SVGs, PNGs at 5 sizes, `.ico` files, and a generation script. The actual scope dropped from "design logo + create variants" to "integrate existing logo into README/MkDocs/social card" -- ~90% less work.
-
-## 48. Parallel Agents Self-Recover from Shared Working Tree
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+**Added:** 2026-02-17 | **Source:** Multiple | **Status:** active
+**Consolidates:** AP#41, AP#52, AP#67 (archived)
 
 **Category:** workflow-pattern
-**Context:** When parallel background agents share the same git working directory (known gotcha #25), agents can autonomously detect and recover from file/branch interference without main context intervention. Previously required main context to sort files after agents completed.
-**Pattern:** Agents detect leaked files from other agents via `git status` or unexpected file contents, then clean up with `git checkout -- <leaked files>`. Agents on the wrong branch detect it and recover with `git stash && git checkout <correct-branch> && git stash pop`.
-**Key enabler:** Agent prompts must clearly specify: (1) target branch name, (2) exact files to create/modify, (3) `git checkout <branch>` as the first step. With this context, agents self-heal.
-**Example:** v0.6.0 Wave 2: Agent D found Agent E's `internal/insight/*` files and ran `git checkout -- internal/insight/handlers.go internal/insight/store.go`. Agent E found itself on D's branch and ran `git stash && git checkout feature/issue-282-analytics-dashboard && git stash pop`. Both completed successfully.
+
+### Self-recovery from shared working tree
+
+Agents detect leaked files via `git status`, clean with `git checkout -- <leaked>`. Wrong-branch agents recover with `git stash && git checkout <correct> && git stash pop`. Key: prompts must specify target branch, exact files, and `git checkout <branch>` as first step.
+
+### Main.go split for parallel branches
+
+When 2+ agents modify same file: (1) Read combined diff FIRST, (2) stash all, (3) checkout branch-A, pop, remove B's changes, commit, (4) stash remaining, (5) checkout branch-B, pop, re-apply B's changes, commit.
+
+### Autonomous commit disrupts parallel work
+
+Agent running `git checkout <branch>` discards other agents' unstaged tracked-file changes. Untracked files survive. Two approaches: restrict agents from committing (safer) or accept loss and re-apply from output summary (faster).
+
+### Subagent recovery after session break
+
+On resume: `git status`, `git diff --stat`, `go build ./...`, then commit. Subagent work persists in working tree even if main context was interrupted.
 
 ## 50. VS Code Auto-Open File on Workspace Start
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** tooling
-**Context:** Want a specific file (like DASHBOARD.md) to open automatically when VS Code loads a workspace, without requiring an extension.
-**Fix:** Create `.vscode/tasks.json` in the relevant workspace root folder with a task using `runOn: folderOpen`:
-
-```json
-{
-  "version": "2.0.0",
-  "tasks": [{
-    "label": "Open Dashboard",
-    "type": "shell",
-    "command": "code",
-    "args": ["${workspaceFolder}/DASHBOARD.md"],
-    "runOptions": { "runOn": "folderOpen" },
-    "presentation": { "reveal": "silent", "focus": false }
-  }]
-}
-```
-
-**Note:** First time VS Code opens the workspace, it prompts "This folder has tasks that run automatically. Allow?" -- user clicks Allow once, then it's permanent. For multi-root workspaces, place the task in the folder root that contains the target file.
+**Context:** Auto-open a file when VS Code loads a workspace without an extension.
+**Fix:** Create `.vscode/tasks.json` with `runOn: folderOpen` task. First open prompts "Allow?" -- permanent after that.
 
 ## 51. Two-Tier Session Startup: Static File + Interactive Hook
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** workflow-pattern
-**Context:** Want a fully automated session startup experience where both the IDE and Claude Code are oriented on project state. Neither VS Code nor Claude Code can do it alone -- VS Code can auto-open files but not run Claude, Claude can auto-run skills but only after user input.
-**Fix:** Combine two independent mechanisms:
-
-1. **VS Code task** (`runOn: folderOpen`) auto-opens `DASHBOARD.md` -- human-readable quick reference with workflow, commands, backlog
-2. **Claude Code SessionStart hook** (`type: command`, echo instruction) injects `/dashboard` instruction -- live interactive control station with real-time data
-
-The static file orients the human while waiting; the interactive skill provides live routing once the user types anything. Together they create a seamless "open IDE and go" experience.
-
-## 52. Main.go Split for Parallel Agent Branches
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** workflow-pattern
-**Context:** When 2+ parallel agents both modify `cmd/subnetree/main.go` (adding imports, module registration, startup code), the changes land in the same working tree. Each branch needs only its own changes to main.go.
-**Fix:** Read the combined diff FIRST to understand each agent's changes, then:
-
-1. `git stash push -u -m "combined"` on main
-2. `git checkout branch-A && git stash pop`
-3. Edit main.go to **remove** branch-B's changes (keep only A's)
-4. `git add` A's files + main.go, commit
-5. `git stash push -u -m "remaining"` (captures B's untracked dirs)
-6. `git checkout branch-B && git stash pop`
-7. Manually **re-apply** B's changes to clean main.go (from main)
-8. `git add` B's files + main.go, commit
-
-**Key insight:** After step 4, B's main.go changes are lost from the working tree. You must know B's changes before starting the split. Read the combined diff in step 0.
-**Proven:** v0.5.0 Wave 2 -- MQTT (import + `mqtt.New()`) and Tier (import + `DetectTier()` + `ApplyDefaults()` + logging) cleanly split.
-
-## 53. Dependency PR Merge Ordering in Parallel Waves
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** workflow-pattern
-**Context:** When parallel PRs exist and one adds a new `go.mod` dependency while the other uses only stdlib, merging order matters for avoiding go.mod/go.sum conflicts.
-**Fix:** Merge the PR with the new dependency FIRST, then rebase the stdlib-only PR onto updated main. The rebase will be clean because go.mod/go.sum changes don't overlap.
-**Example:** v0.5.0: MQTT (#298, adds `paho.mqtt.golang`) merged before Tier (#303, stdlib only). Tier rebased with zero conflicts.
+**Context:** Need both IDE and Claude Code oriented on project state at startup.
+**Fix:** Combine: (1) VS Code task (`runOn: folderOpen`) auto-opens DASHBOARD.md, (2) Claude Code SessionStart hook injects `/dashboard` instruction. Static file orients human; hook provides live routing.
 
 ## 57. JSX Short-Circuit with `unknown` Type Is Not ReactNode
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** typescript-fix
-**Context:** `{expanded && entry.details && (<div>...</div>)}` in JSX evaluates to `entry.details` (typed as `unknown`) when truthy. TypeScript error: `Type 'unknown' is not assignable to type 'ReactNode'`. The `&&` operator returns the last truthy operand's value, not `true`.
-**Fix:** Use explicit null check `entry.details != null &&` which evaluates to `boolean` (always assignable to ReactNode).
-
-```tsx
-// BAD: TS2322 -- unknown is not ReactNode
-{expanded && entry.details && (<pre>{JSON.stringify(entry.details)}</pre>)}
-
-// GOOD: != null evaluates to boolean
-{expanded && entry.details != null && (<pre>{JSON.stringify(entry.details)}</pre>)}
-```
-
-## 59. gocritic commentedOutCode on Math-Like Comments
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** lint-fix
-**Context:** gocritic's `commentedOutCode` checker flags comments containing expressions that look like code -- especially math with parentheses and operators. Test comments explaining expected confidence scores like `// OUI(15) + Port(15) + BRIDGE-MIB(35) = 65` trigger it because they look like function calls and arithmetic.
-**Fix:** Rephrase math-heavy comments into natural language: `// Expected: OUI weight + Port weight + BRIDGE-MIB weight`. Avoid parenthesized numbers and `=` signs in comments.
-**Example:**
-
-```go
-// BAD: triggers commentedOutCode
-// OUI(15) + Port(15) + BRIDGE-MIB(35) = 65
-// Switch: BRIDGE-MIB(35) + Port(15) = 50
-
-// GOOD: natural language
-// Expected: OUI weight + Port weight + BRIDGE-MIB weight
-// Switch wins: BRIDGE-MIB weight + Port weight > Router OUI weight alone
-```
+**Context:** `{expanded && entry.details && (<div/>)}` evaluates to `entry.details` (typed `unknown`) when truthy. TS error: "unknown not assignable to ReactNode".
+**Fix:** Use `entry.details != null &&` which evaluates to `boolean`.
 
 ## 60. Sequential Agents for Dependent Issues in Same Module
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** workflow-pattern
-**Context:** When two issues modify the same files and one depends on the other's types/functions (e.g., #359 composite classifier defines `DeviceSignals` used by #360 unmanaged switch detection), parallel agents fail because the second can't compile without the first's code.
-**Fix:** Run sequentially: implement #1, commit/push/merge, rebase #2's branch onto updated main, then implement #2. If time is critical, rebase #2's branch onto #1's branch (not main) so the code is available, then rebase onto main after #1 merges. Use `git rebase --skip` when the squash-merged commit conflicts with the pre-merge version.
-**Proven:** v0.6.0 Wave 3: #359 merged as PR #372, #360 rebased onto main (skip squash conflict), implemented, merged as PR #373.
-
-## 61. gocritic unnamedResult: Named Returns Require = Not :=
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** lint-fix
-**Context:** gocritic `unnamedResult` flags functions returning `(float64, string)` without named returns. When fixing by adding names like `(score float64, detail string)`, the variables are now pre-declared. Any internal `score := ...` or `detail := ...` becomes a redeclaration error: "no new variables on left side of :=". Similarly, `var score float64` before a switch statement is redundant.
-**Fix:** After adding named returns: (1) Remove `var` declarations for those names, (2) Change all `:=` to `=` for assignments to those names, (3) Use the named return directly in switch cases.
-**Example:**
-
-```go
-// BAD: named return + := conflict
-func compute(data []float64) (score float64, detail string) {
-    var score float64  // redeclaration of score
-    switch { ... }
-    detail := fmt.Sprintf(...)  // no new variables
-    return score, detail
-}
-
-// GOOD: use named returns directly
-func compute(data []float64) (score float64, detail string) {
-    switch { ... }
-    detail = fmt.Sprintf(...)
-    return score, detail
-}
-```
-
-## 62. gocritic appendCombine: Merge Consecutive Appends
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** lint-fix
-**Context:** Two consecutive `append()` calls to the same slice with no intervening logic (only comments) triggers gocritic `appendCombine`. Common when building a slice of factors/items one at a time.
-**Fix:** Combine into a single `append` with multiple elements.
-**Example:**
-
-```go
-// BAD: two consecutive appends
-factors = append(factors, HealthScoreFactor{Name: "rtt", ...})
-factors = append(factors, HealthScoreFactor{Name: "dns", ...})
-
-// GOOD: single combined append
-factors = append(factors, HealthScoreFactor{Name: "rtt", ...},
-    HealthScoreFactor{Name: "dns", ...})
-```
+**Context:** Two issues modifying same files where one depends on the other's types -- parallel agents fail because second can't compile.
+**Fix:** Run sequentially. If urgent, rebase #2 onto #1's branch (not main), then rebase onto main after #1 merges.
 
 ## 63. Recharts Custom Tooltip Needs Partial Props
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** frontend-pattern
-**Context:** When passing a custom React tooltip component as JSX to recharts `<Tooltip content={<CustomTooltip />} />`, the component initially receives empty props `{}` before recharts injects `active`, `payload`, etc. Using `TooltipContentProps` directly causes TypeScript error: "Type '{}' is missing required properties". This extends gotcha #28.
-**Fix:** Use `Partial<TooltipContentProps<number, string>>` for the function signature.
-**Example:**
-
-```tsx
-// BAD: required props not satisfied by empty initial render
-function CustomTooltip({ active, payload }: TooltipContentProps<number, string>) { ... }
-
-// GOOD: all props optional via Partial
-function CustomTooltip({ active, payload }: Partial<TooltipContentProps<number, string>>) {
-    if (!active || !payload || payload.length === 0) return null
-    // ...
-}
-```
-
-## 64. gocritic paramTypeCombine: Consecutive Same-Type Params
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** lint-fix
-**Context:** When consecutive function parameters have the same type, gocritic `paramTypeCombine` requires them to be combined into a single declaration. Common in utility functions with multiple int/string params.
-**Fix:** Combine consecutive same-type params: `(a int, b int)` -> `(a, b int)`.
-**Example:**
-
-```go
-// BAD: triggers paramTypeCombine
-func probeHop(ctx context.Context, ttl int, id int, seq int) {}
-func RunTraceroute(target string, maxHops int, hopTimeoutMs int) {}
-
-// GOOD: combined same-type params
-func probeHop(ctx context.Context, ttl, id, seq int) {}
-func RunTraceroute(target string, maxHops, hopTimeoutMs int) {}
-```
-
-**Scope:** Only applies to consecutive params. `(a int, b string, c int)` is fine -- `a` and `c` are not adjacent.
-
-## 65. gocritic dupBranchBody: Identical If/Else Branches
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** lint-fix
-**Context:** When both branches of an `if/else` have identical bodies, gocritic `dupBranchBody` flags it. Often happens when copy-pasting conditional logic and forgetting to differentiate branches.
-**Fix:** Remove the conditional entirely and keep just the body, or fix the logic to actually differ.
-**Example:**
-
-```go
-// BAD: identical branches
-if network == "udp4" {
-    proto = 1
-} else {
-    proto = 1
-}
-
-// GOOD: just assign directly
-proto := 1
-```
-
-## 66. gocritic emptyStringTest: Prefer != "" Over len() > 0
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** lint-fix
-**Context:** `len(s) > 0` for string emptiness checks triggers gocritic `emptyStringTest`. The idiomatic Go way is to compare directly with empty string.
-**Fix:** Replace `len(s) > 0` with `s != ""` and `len(s) == 0` with `s == ""`.
-**Example:**
-
-```go
-// BAD: triggers emptyStringTest
-if len(hostname) > 0 { ... }
-
-// GOOD: idiomatic empty check
-if hostname != "" { ... }
-```
-
-## 67. Agent Autonomous Commit Disrupts Parallel Agent Work
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** workflow-pattern
-**Context:** When a background agent is given autonomy to commit, push, and create a PR (rather than just writing files), it runs `git checkout <branch>` which changes HEAD. This discards other parallel agents' unstaged changes to **tracked** files. Untracked files (new directories/files) survive because `git checkout` only restores tracked files.
-**Scenario:** Sprint 2 Wave 1: Agent H committed on `feature/issue-399-snmp-fdb-walks` and pushed. Agent B had unstaged changes to `main.go` (tracked) and new `internal/seed/` directory (untracked). After H's commit, `main.go` changes were lost; `internal/seed/` survived.
-**Fix:** Two approaches:
-
-1. **Restrict agents from committing** (safer): Agent prompt says "do NOT commit or push -- leave all changes unstaged for the main context to handle." Main context sorts changes via stash/pop (pattern #52).
-2. **Accept tracked file loss** (faster): Let agents commit autonomously, manually re-apply lost tracked-file changes from the agent's output summary. Faster overall since one PR is already created.
-**Tradeoff:** Approach 1 is safer but slower (main context does all git). Approach 2 saves ~5min per PR but requires reading the other agent's summary to re-apply changes.
-**Proven:** Sprint 2 used approach 2. Agent H created PR #403 autonomously. Agent B's `main.go` changes were manually re-applied from its completion summary (~3 edits).
+**Context:** Passing `<Tooltip content={<CustomTooltip />} />` -- component initially receives empty `{}` props. Using `TooltipContentProps` directly causes TS error.
+**Fix:** Use `Partial<TooltipContentProps<number, string>>` for the function signature. See also KG#28.
 
 ## 68. E2E Tests: Assert Core Structure, Not Specific Widget Names
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** testing-pattern
-**Context:** E2E tests for data-driven pages (dashboards, analytics) that assert specific widget names ("Scout Agents", "Active Alerts") or exact data values fail when the UI changes widget labels or when seed data differs. These tests are brittle and require constant maintenance.
-**Fix:** Assert core structural elements that are stable across UI iterations:
-
-- Page heading (`getByRole('heading', { name: 'Dashboard' })`)
-- Primary action button (`getByRole('button', { name: /scan network/i })`)
-- Navigation links (`getByRole('link', { name: /devices/i })`)
-- Generic data presence (`getByText('Total Devices')`)
-
-Avoid asserting: specific widget card titles, exact numeric values, auto-refresh interval options, or feature-specific sections that may not exist yet.
-**Example:**
-
-```typescript
-// BAD: brittle, depends on exact widget names
-await expect(page.getByText('Scout Agents')).toBeVisible()
-await expect(page.getByText('Active Alerts')).toBeVisible()
-await expect(page.getByRole('button', { name: '15s' })).toBeVisible()
-
-// GOOD: stable structural assertions
-await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible()
-await expect(page.getByText('Total Devices')).toBeVisible()
-await expect(page.getByRole('button', { name: /scan network/i })).toBeVisible()
-```
-
-**Proven:** Sprint 3 PR #409 -- original 7 dashboard tests reduced to 4 core assertions, all passing reliably across CI runs.
+**Context:** E2E tests asserting specific widget names or exact data values break when UI changes labels or seed data differs.
+**Fix:** Assert stable structural elements: page headings, primary action buttons, navigation links, generic data labels. Avoid exact numeric values or feature-specific section names.
 
 ## 69. GitHub API as CLI Template Fallback
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** tooling-workaround
-**Context:** CLI tools that scaffold/init projects sometimes fail on Windows MSYS (interactive prompts hanging, Unicode crashes, Python Rich library issues). Rather than debugging the CLI, fetch templates directly from the GitHub repo.
-**Fix:** Use `gh api` to fetch file contents from the repo:
-
-```bash
-# List files in a directory
-gh api repos/{owner}/{repo}/contents/{dir} --jq '.[].name'
-
-# Fetch and decode a specific file
-gh api repos/{owner}/{repo}/contents/{path} --jq '.content' | base64 -d
-
-# Example: Spec Kit templates
-gh api repos/github/spec-kit/contents/templates/commands/specify.md \
-  --jq '.content' | base64 -d > speckit-specify.md
-```
-
-**When to use:** Any time a CLI `init`/`scaffold`/`new` command fails or hangs. Works for any public GitHub repo. For private repos, `gh` handles auth automatically via stored credentials.
+**Context:** CLI scaffold/init commands fail on Windows MSYS (hanging prompts, Unicode crashes).
+**Fix:** Fetch templates via `gh api repos/{owner}/{repo}/contents/{path} --jq '.content' | base64 -d`.
 
 ## 70. SDD Tool Abstraction Level Check Before Integration
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** research-methodology
-**Context:** When evaluating whether two SDD (spec-driven development) tools can integrate, the first check should be abstraction level compatibility. BMAD PRD operates at product-level (entire product requirements). Spec Kit `/speckit.specify` operates at feature-level (one feature per spec). Direct piping between different levels fails.
-**Fix:** Before attempting tool integration, map each tool's primary abstraction level:
-
-| Level | Description | Example Tools |
-|-------|-------------|---------------|
-| Product | Entire product requirements, vision, NFRs | BMAD PRD, traditional SRS |
-| Feature | Single feature spec with user stories | Spec Kit specify, BMAD Quick Spec |
-| Task | Implementation tasks with file paths | Spec Kit tasks, BMAD Quick Dev |
-
-If tools are at different levels, identify a **bridge artifact** (e.g., Spec Kit's "constitution" bridges product-level governance to feature-level specs). Direct piping between levels always requires manual decomposition.
-**Proven:** B3 integration test -- BMAD PRD cannot pipe into Spec Kit specify; constitution seeding is the viable bridge.
+**Context:** Two SDD tools at different abstraction levels (product vs feature vs task) can't pipe directly.
+**Fix:** Map each tool's level first. If different, identify a bridge artifact. Direct piping between levels requires manual decomposition.
 
 ## 71. Scope CI Lint to Maintained Files on First Introduction
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** ci-config
-**Context:** Adding CI linting (markdownlint, eslint) to a repo with many pre-existing files produces hundreds of violations (930 errors across 69 files in devkit). Making CI fail on all files means CI is permanently red until a massive cleanup PR is done.
-**Fix:** Scope the CI lint glob to only the files you actively maintain. Fix pre-existing violations incrementally in follow-up PRs.
-**Example:**
-
-```yaml
-# BAD: fails on 930 pre-existing errors
-globs: "**/*.md"
-
-# GOOD: only lint maintained files
-globs: |
-  *.md
-  setup/*.md
-  devspace/*.md
-  git-templates/*.md
-  mcp/*.md
-```
-
-**Note:** Document the scoping in a comment or CHANGELOG so future maintainers know to expand the glob as files are cleaned up.
+**Context:** Adding CI linting to a repo with many pre-existing files produces hundreds of violations.
+**Fix:** Scope the CI lint glob to actively maintained files. Fix pre-existing violations incrementally.
 
 ## 72. Three-Layer Project Initialization Chain
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** workflow-pattern
-**Context:** Ensuring every new project gets a proper CLAUDE.md requires multiple safety nets because no single mechanism covers all cases.
-**Pattern:** Three complementary layers:
-
-1. **git init.templateDir** -- Auto-copies starter `CLAUDE.md` and `.gitignore` on `git init`. Zero effort, always fires. Produces a minimal template with TODO sections.
-2. **Shell helper** (`claude-init-project`) -- Creates dir, runs `git init`, copies full `CLAUDE.md.template`. Intentional workflow for users who know about the helpers.
-3. **SessionStart.sh hook** -- Detects project directories missing `CLAUDE.md` and prompts user once. Catches projects initialized outside the helper workflow.
-
-Each layer catches what the previous missed. Layer 1 is passive, layer 2 is active, layer 3 is interactive.
+**Context:** Ensuring every new project gets CLAUDE.md requires multiple safety nets.
+**Fix:** Three layers: (1) `git init.templateDir` auto-copies starter, (2) shell helper for intentional workflow, (3) SessionStart hook detects missing CLAUDE.md.
 
 ## 73. Three-Stream Redirect for VS Code CLI in PowerShell Scripts
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** platform-workaround
-**Context:** Running `& code --list-extensions` or `& code --install-extension` in a PowerShell script opens `code-stdin-*` editor tabs. Redirecting only stdout and stderr (`-RedirectStandardOutput`, `-RedirectStandardError`) is NOT sufficient -- VS Code still reads from the inherited parent stdin handle and creates the tab.
-**Fix:** Redirect ALL THREE streams. The stdin redirect to an empty temp file feeds EOF immediately, fully decoupling VS Code from the PowerShell pipeline:
-
-```powershell
-$tmpIn  = [IO.Path]::GetTempFileName()
-$tmpOut = [IO.Path]::GetTempFileName()
-$tmpErr = [IO.Path]::GetTempFileName()
-$proc = Start-Process -FilePath 'code' `
-    -ArgumentList '--list-extensions' `
-    -NoNewWindow -PassThru `
-    -RedirectStandardInput  $tmpIn `
-    -RedirectStandardOutput $tmpOut `
-    -RedirectStandardError  $tmpErr
-$proc.WaitForExit(15000) | Out-Null
-# Read output from $tmpOut, then clean up all temp files
-$tmpIn, $tmpOut, $tmpErr | Remove-Item -Force -ErrorAction SilentlyContinue
-```
-
-**Key insight:** `-RedirectStandardInput` is the critical piece. Without it, VS Code's IPC mechanism reads from the parent process's stdin and interprets it as a file to open, creating `code-stdin-*` tabs. Applies to ALL `code` CLI invocations: `--list-extensions`, `--install-extension`, etc.
+**Context:** `code --list-extensions` in PowerShell opens `code-stdin-*` tabs. Redirecting only stdout/stderr is NOT sufficient.
+**Fix:** Redirect ALL THREE streams. `-RedirectStandardInput` to empty temp file feeds EOF immediately, preventing VS Code from reading parent stdin.
 
 ## 74. Iterative Bootstrap Debugging on New Machines
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** workflow-pattern
-**Context:** First-time bootstrap runs on a new machine surface cascading issues that can't all be caught in advance: parameter binding edge cases, false negatives from system queries, stale PATH, tools running via unexpected paths. Each phase may expose issues that are invisible until prior phases complete.
-**Pattern:** Run bootstrap end-to-end, capture full output, fix all failures in a single pass:
-
-1. Run full bootstrap, capture complete stdout
-2. Categorize failures: parameter errors, false negatives, exit code misinterpretation, PATH issues, detection failures
-3. Fix all in one commit — these are cohesive (all "first-run on new machine" bugs)
-4. Re-run to verify, repeat if new issues surface
-
-**Key insight:** Don't fix one issue and re-run — read the full output first. Multiple failures may share a root cause (e.g., PATH staleness affects 5+ tool checks). Fixing them individually wastes cycles.
+**Context:** First-time bootstrap surfaces cascading issues. Each phase may expose issues invisible until prior phases complete.
+**Fix:** Run end-to-end, capture full output, fix ALL failures in single pass. Multiple failures may share root cause (e.g., PATH staleness).
 
 ## 75. Start-Job Timeout for Commands That Might Hang
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** platform-workaround
-**Context:** Some commands hang indefinitely on Windows -- notably Windows Store Python aliases (`py.exe`, `python.exe` in `WindowsApps/`) that prompt for Store installation and block forever. `command -v` and `Get-Command` resolve them as valid, so pre-checks pass but `& py --version` blocks the entire script.
-**Fix:** Wrap potentially hanging commands in `Start-Job` + `Wait-Job -Timeout`:
-
-```powershell
-$job = Start-Job -ScriptBlock {
-    param($p, $a)
-    & $p @a 2>&1 | Out-String
-} -ArgumentList $Path, $versionArgs
-$completed = $job | Wait-Job -Timeout 5
-if (-not $completed) {
-    $job | Stop-Job
-    $job | Remove-Job -Force
-    return $null  # treat as "not installed"
-}
-$output = $job | Receive-Job
-$job | Remove-Job -Force
-```
-
-**Key insight:** The 5-second timeout is generous enough for real tools (even slow ones like `docker --version`) but catches hangs immediately. Use this for any `--version` check where the binary might be a shim or alias.
+**Context:** Windows Store Python aliases hang forever. `command -v` resolves them as valid but `& py --version` blocks.
+**Fix:** Wrap in `Start-Job` + `Wait-Job -Timeout 5`. Stop and remove job if timeout. 5s catches hangs while allowing slow tools.
 
 ## 76. PowerShell Temp File for Complex Commands from MSYS Bash
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** platform-workaround
-**Context:** Running PowerShell commands inline from MSYS bash (`powershell.exe -Command "..."`) breaks when the command contains `$env:PATH`, special characters, or multi-line logic. Bash's `\$` escaping conflicts with PowerShell's `$` syntax. Using `cmd.exe /c` from MSYS swallows output entirely.
-**Fix:** Write to a temp `.ps1` file using a bash heredoc (with single-quoted delimiter to prevent bash interpolation), then execute with `-File`:
+**Context:** Inline PowerShell from MSYS bash breaks with `$env:PATH`, special chars. `cmd.exe /c` swallows output.
+**Fix:** Write temp `.ps1` file using single-quoted heredoc (`'PSEOF'`), execute with `powershell.exe -NoProfile -File /tmp/cmd.ps1 2>&1`.
 
-```bash
-cat > /tmp/my-command.ps1 << 'PSEOF'
-$env:PATH = "C:\Some\Path;" + $env:PATH
-Set-Location "d:\project"
-& some-tool --flag
-PSEOF
-powershell.exe -NoProfile -File /tmp/my-command.ps1 2>&1
-```
-
-**Why this works:**
-
-- Single-quoted heredoc (`'PSEOF'`) prevents bash from interpreting `$env:PATH`
-- `-File` reads the script natively -- no shell escaping layer
-- `-NoProfile` skips profile loading for speed
-- `2>&1` captures both stdout and stderr in MSYS
-
-## 77. Small Wave 3 Without Subagent for Focused Changes
+## 77. Small Wave Without Subagent for Focused Changes
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** workflow-pattern
-**Context:** Wave-based parallel sprint execution normally uses subagents for each wave. But when a wave has a single focused task (one file, well-understood changes), implementing directly in the main context is faster than the subagent overhead (prompt construction, context loading, result verification).
-**Threshold:** If the task modifies 1-2 files with <50 lines of changes and the main context already has the file loaded, skip the subagent.
+**Context:** Subagent overhead exceeds benefit for single-file, well-understood changes.
+**Fix:** If task modifies 1-2 files with <50 lines and main context already has file loaded, skip subagent.
 
 ## 78. golangci-lint exhaustive: List All Enum Cases in Switch
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** lint-fix
-**Context:** The `exhaustive` linter requires every value of a type-defined enum to appear in a `switch` statement, even when the function has a `default` return. Common in helper functions like `isInfrastructureType(dt DeviceType) bool` where only 4 of 15 enum values return `true`.
-**Fix:** Explicitly list all remaining enum values in a second `case` block returning the default value. Group them on 2-3 lines for readability.
-**Example:**
-
-```go
-// BAD: triggers exhaustive -- missing 11 DeviceType cases
-func isInfrastructureType(dt models.DeviceType) bool {
-    switch dt {
-    case models.DeviceTypeRouter, models.DeviceTypeSwitch,
-        models.DeviceTypeFirewall, models.DeviceTypeAccessPoint:
-        return true
-    }
-    return false
-}
-
-// GOOD: all cases listed
-func isInfrastructureType(dt models.DeviceType) bool {
-    switch dt {
-    case models.DeviceTypeRouter, models.DeviceTypeSwitch,
-        models.DeviceTypeFirewall, models.DeviceTypeAccessPoint:
-        return true
-    case models.DeviceTypeServer, models.DeviceTypeDesktop, models.DeviceTypeLaptop,
-        models.DeviceTypeMobile, models.DeviceTypePrinter, models.DeviceTypeIoT,
-        models.DeviceTypeNAS, models.DeviceTypePhone, models.DeviceTypeTablet,
-        models.DeviceTypeCamera, models.DeviceTypeUnknown:
-        return false
-    }
-    return false
-}
-```
-
-**Note:** Keep the final `return false` after the switch as a safety net for future enum additions.
+**Context:** `exhaustive` requires every enum value in a `switch`, even with `default`. Common in helpers where only 4 of 15 values return `true`.
+**Fix:** Explicitly list all remaining values in a second `case` block. Keep final `return` after switch as safety net.
 
 ## 79. Cross-Language Enum Exhaustiveness Audit
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** pattern
-**Context:** Shared enum types (e.g., `DeviceType`) exist in both Go (`pkg/models/`) and TypeScript (`web/src/api/types.ts`). Adding new values requires updates in BOTH languages. Go's `exhaustive` linter catches missing switch cases. TypeScript's compiler catches missing `Record<DeviceType, ...>` keys. But these only fail in CI -- the agent may not check both.
-**Fix:** When adding new enum values to a shared type, audit ALL downstream usage:
+**Context:** Shared enums (e.g., `DeviceType`) in Go and TypeScript need updates in BOTH when adding values.
+**Fix:** Grep for all switch statements (Go) and Record maps (TypeScript). Add new values everywhere.
 
-1. **Go:** `grep -r 'switch.*DeviceType\|case models.DeviceType' internal/` -- find all switch statements
-2. **TypeScript:** `grep -r 'Record<DeviceType' web/src/` -- find all Record maps
-3. **TypeScript:** `grep -r 'deviceTypeIcons\|deviceTypeLabels\|DEVICE_TYPE_LABELS' web/src/` -- find all label/icon maps
-
-Add the new values to every location found.
-**Prevention:** Include "cross-language enum audit" in subagent prompts when the task adds new enum values.
-
-## 80. E2E getByText Regex Matches Multiple UI Elements After Feature Additions
+## 80. E2E getByText Regex Matches Multiple UI Elements
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** gotcha
-**Context:** Playwright's `getByText(/\d+ devices?/)` resolved to 1 element originally but broke after adding per-group counts (e.g., "25 devices" header + "20 devices" and "5 devices" per group). Strict mode violation: "resolved to 3 elements."
-**Fix:** Use `.first()` for aggregate count assertions, or use more specific selectors (`data-testid`, `aria-label`, scoped locators).
-
-```typescript
-// BAD: resolves to multiple elements after grouping
-await expect(page.getByText(/\d+ devices?/)).toBeVisible()
-
-// GOOD: grabs the first (page-level) count
-await expect(page.getByText(/\d+ devices?/).first()).toBeVisible({ timeout: 10_000 })
-```
-
-**General rule:** Any `getByText` with a generic regex pattern is fragile. New UI features can add matching text anywhere. Prefer scoped locators or `.first()` with a comment explaining why.
+**Context:** `getByText(/\d+ devices?/)` breaks after adding per-group counts. Strict mode: "resolved to 3 elements."
+**Fix:** Use `.first()` for aggregate assertions, or use scoped locators / `data-testid`.
 
 ## 81. Union Return Type Requires Type Guard at ALL Call Sites
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** correction
-**Context:** When changing a function's return type to a union (e.g., `loginApi()` from `TokenPair` to `TokenPair | MFAChallengeResponse`), every call site must narrow with a type guard before accessing type-specific properties. TypeScript reports `TS2339: Property 'access_token' does not exist on type 'LoginResponse'`. Easy to miss call sites in: (1) page components that call the function directly, (2) test files that mock the function (must export the type guard in the mock too).
-**Fix:** After changing a return type to a union:
-
-1. Grep for ALL call sites: `grep -rn "functionName(" --include="*.ts" --include="*.tsx"`
-2. Add type guard narrowing at each site
-3. Grep for ALL mocks: `grep -rn "vi.mock.*module" --include="*.test.*"` and add the type guard to each mock
-
-```typescript
-// BAD: TS2339 -- access_token doesn't exist on union type
-const result = await loginApi(username, password)
-setTokens(result.access_token, result.refresh_token)
-
-// GOOD: narrow first
-const result = await loginApi(username, password)
-if (isMFAChallenge(result)) {
-  throw new Error('MFA should not be enabled during initial setup')
-}
-setTokens(result.access_token, result.refresh_token)
-
-// MOCK: must also export the type guard
-vi.mock('@/api/auth', () => ({
-  loginApi: vi.fn(),
-  isMFAChallenge: vi.fn(() => false),  // required!
-}))
-```
+**Context:** Changing return type to a union requires narrowing at every call site and in every mock.
+**Fix:** Grep for ALL call sites and ALL mocks. Add type guard narrowing and export the guard in mocks.
 
 ## 82. Rebase Conflict Resolution: Keep Both Features' Additions
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** workflow-pattern
-**Context:** When two PRs both add content to the same file (e.g., settings.tsx -- new tabs, imports, components) and one merges first, rebasing the second PR produces multiple conflict blocks. Each conflict has feature A's additions (from HEAD/main) on one side and feature B's additions (from the incoming commit) on the other.
-**Fix:** At each conflict block, keep BOTH sides by concatenating. Typical conflict points in a tabbed settings page and their resolution:
-
-1. **Icon imports:** Keep both sets of icons
-2. **API imports:** Keep both API module imports
-3. **Tab type union:** Combine both new tab values into the union
-4. **Tab buttons:** Keep both new tab buttons
-5. **Tab content rendering:** Keep both conditional renders
-6. **Component definitions:** Keep both new component functions
-
-**Key insight:** These conflicts look complex (5-6 blocks in one file) but are mechanically simple -- every resolution is "keep both." Don't overthink it.
+**Context:** Two PRs adding to same file -- rebasing second produces multiple conflict blocks.
+**Fix:** At each block, keep BOTH sides by concatenating. These look complex but are mechanically simple.
 
 ## 83. Sprint Scope Reduction via Codebase Exploration
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** workflow-pattern
-**Context:** When planning a sprint from issue trackers and roadmap checklists, planned items may already be partially or fully implemented in the codebase. Planning without exploring first leads to overscoped sprints, wasted agent context, and unnecessary PRs.
-**Fix:** Before executing a sprint, launch an Explore agent to check each planned deliverable against the actual codebase. Search for existing components, API endpoints, and UI patterns that match planned features.
-**Extends:** Pattern #47 (check existing assets before scoping issues) -- same principle applied at sprint level instead of individual issue level.
+**Context:** Planned items may already be implemented. Planning without exploring leads to overscoped sprints.
+**Fix:** Launch Explore agent to check each deliverable against actual codebase before executing. Extends AP#47.
 
 ## 84. Subagents Skip Lint Despite CI Checklist Warnings
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** correction
-**Context:** Go agent CI checklist says "watch for: gocritic rangeValCopy, prealloc" but agents still produce these violations because they run `go build` and `go test` but not `golangci-lint`. The "watch for" phrasing is advisory, not mandatory.
-**Fix:** Strengthened the Go agent CI checklist to require running `golangci-lint run ./path/to/modified/...` as a mandatory step, not just "watch for" patterns. Also added it as step 4 in the numbered list.
+**Context:** "Watch for" phrasing in CI checklists is advisory. Agents skip `golangci-lint` and ship violations.
+**Fix:** Require running `golangci-lint run ./path/...` as mandatory numbered step, not "watch for" patterns.
 
 ## 85. Roadmap Drift: Verify Claims Against Source Code
 
 **Added:** 2026-02-24 | **Source:** SubNetree | **Status:** active
 
 **Category:** process-pattern
-**Context:** Roadmap checklists drift from reality in both directions: (1) items implemented but never checked off, (2) items listed as "TODO" that are already done. Both cause wasted planning effort. Reading the roadmap alone is insufficient -- the source code is the source of truth.
-**Fix:** When auditing a roadmap for a cleanup sprint, cross-reference each unchecked item against the actual codebase:
-
-1. For each unchecked item, search for the implementation: `grep -r "functionName\|featureName" internal/ cmd/`
-2. For infrastructure items (CI workflows, scaffolding), check if files exist: `ls .github/workflows/ mkdocs.yml`
-3. For agent features, read the actual platform-specific files (e.g., `*_other.go` for Linux stubs)
-
-This can eliminate significant planned work when items are already implemented but unchecked.
+**Context:** Roadmap checklists drift both ways: items done but unchecked, items listed but already complete.
+**Fix:** Cross-reference each unchecked item against codebase. Search for implementations, check if files exist.
 
 ## 86. Two-Layer Permission Strategy for Claude Code Projects
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** workflow-pattern
-**Context:** Claude Code settings do NOT cascade from parent directories (unlike .editorconfig). Each project is independent. The `~/.claude/settings.json` (user-level) provides global defaults that merge into every project's permissions. Over time, interactive approvals accumulate hundreds of specific command entries (e.g., `Bash(gh pr merge 30 --squash --admin)`) instead of broad wildcards.
-**Fix:** Two-layer approach:
-
-1. **User-level** (`~/.claude/settings.json`): Broad wildcards: `"Bash"`, `"Read"`, `"Edit"`, `"Write"`, `"WebFetch"`, `"WebSearch"`, `"Glob"`, `"Grep"`, `"Task"`, `"Skill"`, `"mcp__*"`. These are baseline permissions for the machine owner.
-2. **Project-level** (`<project>/.claude/settings.json`): Tool-specific wildcards (`Bash(git:*)`, `Bash(gh:*)`, `Bash(make:*)`) committed to repo, shareable with collaborators. Project deny rules restrict dangerous operations.
-
-Periodically clean up user-level settings.json to remove accumulated specific approvals -- they are redundant when broad wildcards are present.
-**Proven:** Replaced 157 individual approvals with 11 broad wildcards. All projects immediately inherited tool access without per-command prompts.
+**Context:** Claude Code settings don't cascade from parent directories. Interactive approvals accumulate hundreds of specific entries.
+**Fix:** User-level (`~/.claude/settings.json`): broad wildcards (`"Bash"`, `"Read"`, `"Edit"`, etc.). Project-level: tool-specific wildcards committed to repo. Periodically clean accumulated specific approvals.
 
 ## 87. Linter/Hook Leaks Cross-Branch Changes in Parallel Agent Work
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** workflow-pattern
-**Context:** When parallel agents both modify the same file (e.g., SKILL.md routing table) and a linter or hook runs on the working tree, it can merge both agents' changes into a single file state. If you commit that file on one branch, the other agent's additions leak in. CI then fails because the branch references files that don't exist on it (e.g., `workflows/update.md` referenced in SKILL.md but only created by the other agent).
-**Fix:** After sorting parallel agents' changes into branches via stash/pop, diff the shared file against main to verify only the current branch's additions are present. Remove cross-branch additions before committing.
-**Example:** DevKit v2.0 Wave D: #86 (promote) and #87 (update) both added routes to SKILL.md. The linter updated the working tree copy to include both. Committing on #86's branch included the update route, causing CI "missing workflow" failure. Fixed by removing the update route from #86's branch.
+**Context:** Parallel agents modifying same file + linter/hook can merge both changes. Committing includes other agent's additions.
+**Fix:** After stash/pop sorting, diff shared file against main. Remove cross-branch additions before committing.
 
 ## 88. Agent-Generated Markdown Needs MD038 Check
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** correction
-**Context:** Subagents generating markdown workflow files commonly produce code spans with trailing spaces like `` `## ` `` which triggers markdownlint MD038 (no-space-in-code). This is especially common when the agent writes instructions referencing heading syntax.
-**Fix:** After receiving agent-generated `.md` files, grep for MD038 violations before committing: `grep -n '` [^`]' file.md` or run `npx markdownlint-cli2 file.md`.
+**Context:** Subagents produce code spans with trailing spaces triggering MD038.
+**Fix:** Run `npx markdownlint-cli2 file.md` on agent-generated markdown before committing.
 
-## 89. Parallel Plain-Text Renderer for TUI Transition Animations
+## 90. golangci-lint v2 Migration (Consolidated Reference)
 
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+**Added:** 2026-02-17 | **Source:** Multiple | **Status:** active
+**Consolidates:** AP#115, AP#116 (archived)
 
-**Category:** architecture-pattern
-**Context:** A Bubbletea TUI has a styled `View()` (lipgloss styles, borders, centering via `lipgloss.Place`) and a transition animation that needs to reveal the menu text character-by-character. Stripping ANSI from `View()` output fails due to width calculation mismatches between lipgloss and terminals (emoji, variation selectors, border chars).
-**Fix:** Create a `TransitionText()` method on the model that mirrors `View()` content logic but outputs plain text -- no ANSI, no borders, no lipgloss centering. Share the responsive logic (column count, show/hide flags) between both methods so they stay synchronized.
+**Category:** ci-config
 
-```go
-// View() builds styled content -> wraps in border -> centers with lipgloss.Place
-// TransitionText() builds same content as plain text -> transition system centers
+### version field required
 
-func (m Model) TransitionText() string {
-    // Same responsive flags as View()
-    showTitle, showStats, showTip := m.responsiveFlags()
-    // Same column count as View()
-    cols := m.columnCount()
-    // Build plain text with same layout, no styles
-    // ...
-    return b.String()
-}
-```
+**Context:** v2 requires `version: "2"` as first field. Without it: `unsupported version of the configuration: ""`.
+**Fix:** Add `version: "2"`. Module path changed to `.../golangci-lint/v2/cmd/golangci-lint`.
 
-**Key insight:** Two rendering paths (styled + plain) sharing the same layout decisions is more maintainable and correct than trying to reverse-engineer plain text from styled output via ANSI stripping.
+### Formatters are separate top-level section
 
-## 90. golangci-lint v2 Requires version Field in Config
+**Context:** v2 moved `gofmt`/`goimports` from `linters:` to `formatters:`. "Unknown linters" error.
+**Fix:** Move to `formatters: enable:` top-level key.
 
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+### gosimple absorbed into staticcheck
 
-**Category:** correction
-**Context:** golangci-lint v2 requires `version: "2"` as the first field in `.golangci.yml`. Without it, the linter exits with `Error: can't load config: unsupported version of the configuration: ""`. This error is NOT caught by `go build` or `go test` -- only by running golangci-lint directly. A config that worked with v1 silently breaks when upgrading to v2.
-**Fix:** Add `version: "2"` as the first line of `.golangci.yml`. Also note that v2 changed the module path from `github.com/golangci/golangci-lint/cmd/golangci-lint` to `github.com/golangci/golangci-lint/v2/cmd/golangci-lint`.
-**Example:**
+**Context:** `gosimple` merged into `staticcheck` in v2. Listing separately causes "unknown linter".
+**Fix:** Remove `gosimple`. All S1xxx rules covered by `staticcheck` automatically.
 
-```yaml
-# BAD: v1 config with v2 binary
-run:
-  timeout: 5m
-
-# GOOD: v2 config
-version: "2"
-
-run:
-  timeout: 5m
-```
-
-**Discovered:** Caught by Samverk's pre-push hook on its first real use, proving the hook's value.
+**See also:** KG#65 (silent config failure), KG#66 (v7 action schema enforcement).
 
 ## 91. go run for Pinned Tool Versions
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** workflow-pattern
-**Context:** Installing Go tools locally (`go install ...@latest`) creates version drift between developers, PATH issues on Windows MSYS (gotcha #60), and `@latest` risks surprise breakage in CI.
-**Fix:** Use `go run github.com/.../tool@vX.Y.Z` in Makefiles and hooks instead of relying on a local binary. Benefits: exact version guaranteed, no install step, no PATH issues, works identically in Makefile targets, pre-push hooks, and CI.
-**Example:**
-
-```makefile
-# BAD: depends on local install, version unknown
-lint:
-    golangci-lint run ./...
-
-# GOOD: exact version, no install needed
-lint:
-    go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.1.6 run ./...
-```
+**Context:** `go install ...@latest` creates version drift, PATH issues on Windows MSYS, and risks surprise breakage.
+**Fix:** Use `go run github.com/.../tool@vX.Y.Z` in Makefiles and hooks. Exact version, no install, no PATH issues.
 
 ## 92. DevKit Scaffolding Must Include Executable Templates
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** process-pattern
-**Context:** DevKit v2.0 had comprehensive profiles describing WHAT projects should do (linting, testing, CI) but zero HOW scaffolding (no Makefile templates, no CI workflow templates, no pre-push hooks, no .golangci.yml template). Projects set up from devkit required manual creation of all CI infrastructure, leading to preventable failures (Samverk had 8/10 CI runs failing from pre-existing errors).
-**Fix:** DevKit should include ready-to-copy templates for: (1) pre-push hook (`git-templates/hooks/pre-push`), (2) golangci-lint config (`project-templates/golangci.yml`), (3) Makefile (`project-templates/Makefile.go`), (4) CI workflow (`project-templates/ci.yml`). Added in devkit PR #104.
+**Context:** Profiles describing WHAT but no HOW scaffolding leads to manual CI infrastructure creation and preventable failures.
+**Fix:** Include ready-to-copy templates: pre-push hook, golangci-lint config, Makefile, CI workflow.
 
 ## 93. Advisory Rules Without Enforcement Are Ignored Under Pressure
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** process-pattern
-**Context:** DevKit v2.0 has 88 autolearn patterns and 62 gotchas loaded into every session. They are advisory-only -- no mechanism enforces them. Under time pressure (sprints, parallel agent waves), subagent prompts omit CI checklists, errors get classified as "pre-existing" and left unfixed, and agents repeat known mistakes. On Samverk, errors were dismissed as pre-existing despite DevKit being applied to the workspace.
-**Fix:** Advisory rules need enforcement tiers. DevKit v2.1.0 introduces: (1) Tier 0 immutable core principles that nothing can override, (2) Tier 1 governed rules that autolearn can propose but humans must approve, (3) Tier 2 learned patterns that autolearn can add with periodic review. Pre-commit verification must be mandatory ("must") not advisory ("should"). See DevKit issues #105-#116.
+**Context:** Advisory-only rules are skipped under time pressure. Agents repeat known mistakes.
+**Fix:** Enforcement tiers: Tier 0 immutable, Tier 1 governed, Tier 2 learned with periodic review. Pre-commit verification must be mandatory ("must" not "should").
 
 ## 94. Autolearn Must Validate Before Writing Rules
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** process-pattern
-**Context:** Autolearn writes directly to rules files with minimal validation (deduplication + format only). A bad learning (e.g., "suppress this lint warning" instead of "fix the root cause") becomes a permanent rule cascading to all projects. With autonomous workers, this risk is amplified -- an agent's workaround could weaken the guardrails that keep other agents on track.
-**Fix:** Five-stage validation pipeline before any rule is written: (1) Evidence check -- was the fix verified? (2) Core principle alignment -- does it contradict immutable rules? (3) Best practices review -- root cause fix or workaround? (4) Conflict check -- does it contradict existing rules? (5) Risk classification -- LOW auto-accepts, MEDIUM/HIGH needs human approval, CRITICAL is rejected. Hard-coded dangerous pattern list ("skip", "bypass", "ignore", "suppress", "disable", "--no-verify") always triggers human review. See DevKit issue #116.
+**Context:** Unvalidated learnings become permanent rules cascading to all projects. A workaround could weaken guardrails.
+**Fix:** Five-stage pipeline: evidence check, core principle alignment, best practices review, conflict check, risk classification. Dangerous patterns ("skip", "bypass", "suppress") always trigger human review.
 
 ## 95. Fix-Forward Replaces Pre-Existing Error Classification
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** process-pattern
-**Context:** The quality-control skill classified CI failures as "pre-existing" when they existed in main before the current PR. This classification had no follow-through -- errors were noted and ignored indefinitely. Technical debt accumulated as each new PR inherited the failures.
-**Fix:** Replace "pre-existing" with "fix-forward" workflow: (1) Can fix inline in < 5 min? Fix it, add `chore: fix pre-existing <issue>`. (2) Can't fix inline? File a GitHub issue immediately with priority label. (3) Systemic? Also identify the DevKit gap (missing rule/checklist/template) and update it. Never acceptable: "noted as pre-existing, moving on" without a fix OR tracking issue. See DevKit issue #108.
+**Context:** "Pre-existing" classification had no follow-through. Errors noted and ignored indefinitely.
+**Fix:** Fix-forward: (1) fix inline <5 min, (2) can't fix? file GitHub issue, (3) systemic? update DevKit gap. Never acceptable: "noted as pre-existing, moving on."
 
 ## 96. Interactive Q&A Then Background Agent for Human-Dependent Issues
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** workflow-pattern
-**Context:** Issues tagged `agent:human` require design decisions before implementation. Processing them one at a time wastes user attention. Processing them all at once risks context overload.
-**Fix:** Batch all agent:human issues into a single interactive pass: (1) present each issue with 2-4 focused questions using predefined options (AskUserQuestion), (2) capture all decisions, (3) launch background agents (one per issue) to write design docs incorporating the decisions. User spends ~30 min answering questions, then agents run in parallel.
-**Proven:** Samverk session: 4 agent:human issues (#7, #19, #10, #13) + 1 background research (#12) resolved in one sitting. 5 design docs generated, all passing markdownlint.
+**Context:** `agent:human` issues need design decisions before implementation. One at a time wastes attention.
+**Fix:** Batch into single interactive pass with focused questions, capture decisions, launch background agents in parallel.
 
 ## 97. Combine Complementary Issues Into Single PR
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** workflow-pattern
-**Context:** Two issues may produce complementary outputs where one's research directly feeds the other's requirements (e.g., #12 Ollama orchestration research informs #13 system requirements hardware tiers).
-**Fix:** Combine into a single PR with both deliverables. Close both issues using repeated keyword syntax (`Closes #12, Closes #13`). Reduces: CI runs, review overhead, merge conflict risk. Keep individual issue tracking granular -- the combined PR references both.
-
-## 98. 4-PR Contributor Config Rollout Sequence
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** workflow-pattern
-**Context:** Setting up a repo for external contributors requires ESLint, CI, community health files, branch protection, and repo settings. These have dependency ordering that must be respected.
-**Fix:** Split into 4 PRs with this dependency chain:
-
-1. **Community Health Files** (CONTRIBUTING.md, CODE_OF_CONDUCT.md, SECURITY.md, PR template, CODEOWNERS, README badges) -- independent
-2. **ESLint/Linting Setup** (eslint.config.js, package.json scripts, lint fixes) -- independent, parallel with PR 1
-3. **CI Enhancements** (split workflow into Lint/TypeCheck/Build jobs) -- depends on PR 2 (needs lint config)
-4. **Repo Settings + Branch Protection** (dependabot, issue config, merge policy, branch protection) -- depends on PR 3 (protection needs CI job names to exist)
-
-PRs 1 and 2 have zero file overlap and can merge in parallel. PR 3 must wait for PR 2. PR 4 must wait for PR 3. Branch protection API call goes AFTER PR 4 merges.
-**Proven:** Runbooks PRs #66-#69, all CI-green first pass, zero rework.
-
-## 99. Dependabot Triage: Batch Check, Merge Green, Close Failing
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** workflow-pattern
-**Context:** When Dependabot is first enabled on a repo, it creates multiple PRs at once. Some pass CI, others fail due to ecosystem incompatibilities (e.g., ESLint 10 breaking react-hooks plugin peer dep).
-**Fix:** Check CI status on ALL Dependabot PRs first, then batch process:
-
-1. `gh pr view N --json statusCheckRollup` for each PR
-2. Merge all CI-green PRs sequentially (rebase between each: `gh pr update-branch N`)
-3. Close all CI-failing PRs with explanatory comment and `--delete-branch`
-
-**Merge order:** Actions version bumps first (CI config changes), then build tools, then framework deps. Each merge changes main, so subsequent PRs need rebase before merge.
-**Proven:** Runbooks: 7 Dependabot PRs triaged in ~5 min. 4 merged (checkout v6, setup-node v6, vite 7, react-swc 4), 3 closed (ESLint 10 x2, React bump).
+**Context:** Two issues where one's research feeds the other's requirements.
+**Fix:** Single PR with both deliverables. Use `Closes #X, Closes #Y`. Reduces CI runs and merge conflict risk.
 
 ## 100. Vitest Setup for React + Vite Projects
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** testing-pattern
-**Context:** Setting up unit tests for a React + MUI + Vite project (like a Docker Desktop extension) with TypeScript strict mode.
-**Fix:** Minimal setup that works:
-
-1. Install: `npm install --save-dev vitest @testing-library/react @testing-library/jest-dom jsdom`
-2. `vitest.config.ts`: use `mergeConfig(viteConfig, defineConfig({ test: { environment: 'jsdom', globals: true, setupFiles: './src/test-setup.ts' } }))` -- inherits Vite plugins and defines
-3. `test-setup.ts`: single line `import '@testing-library/jest-dom/vitest'`
-4. Priority targets: pure utility functions first (zero mocking), then localStorage-using functions (jsdom provides it)
-5. Add `"test": "vitest run"` to package.json scripts
-6. Add Test job to CI parallel with Lint/Type Check, make Build depend on all three
-
-**Key insight:** `mergeConfig` from `vitest/config` is required to inherit the Vite config (SWC plugin, define blocks). Using a standalone `defineConfig` misses these.
+**Context:** Setting up unit tests for React + MUI + Vite with TypeScript strict mode.
+**Fix:** Use `mergeConfig(viteConfig, defineConfig({test: {environment: 'jsdom', globals: true, setupFiles: './src/test-setup.ts'}}))`. `mergeConfig` is required to inherit Vite config.
 
 ## 101. Zero-Rework Sprint via Subagent CI Checklists
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** workflow-pattern
-**Context:** Sprint with 5 PRs across 4 waves achieved zero rework (all CI-green first pass). Previous sprints on other projects had 1-3 fix-push cycles per PR.
-**Fix:** Key factors that eliminated rework:
-
-1. **Subagent prompts include specific CI commands** -- not "run tests" but `cd ui && npx tsc --noEmit && npx eslint src/file.tsx && npm run build`
-2. **Wave ordering respects dependencies** -- parallel only when zero file overlap, sequential when output feeds input
-3. **Read-before-write requirement** -- "Read the existing file FIRST before making changes" in every prompt
-4. **Single responsibility per agent** -- one issue per agent, clear file ownership
-
-**Sprint structure:**
-
-- Wave 1 (parallel): Error Boundary + Dockerfile labels (zero overlap)
-- Wave 2: Destructive command confirmation (modifies dialog)
-- Wave 3: Unit tests (depends on Wave 2's utility file)
-- Wave 4: README/CHANGELOG docs update
-
-**Proven:** Runbooks sprint: 5 PRs (#78-#82), 4 waves, ~25 min total including CI waits.
-
-## 102. noctx: Database Operations Must Use Context-Aware Variants
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** lint-fix
-**Context:** golangci-lint `noctx` flags `db.Exec()`, `db.Query()`, and `db.QueryRow()` calls that don't pass a context. Even in init/migration code where `context.Background()` is appropriate, the context-aware variants must be used. Agents miss this because `db.Exec` compiles fine -- it's lint-only.
-**Fix:** Always use `ExecContext`, `QueryContext`, `QueryRowContext` with explicit context. For migration/init code, use `context.Background()`.
-**Example:**
-
-```go
-// BAD: noctx flagged
-db.Exec("PRAGMA journal_mode=WAL")
-rows, err := db.Query("SELECT id FROM sessions WHERE status = ?", status)
-
-// GOOD: context-aware variants
-db.ExecContext(context.Background(), "PRAGMA journal_mode=WAL")
-rows, err := db.QueryContext(ctx, "SELECT id FROM sessions WHERE status = ?", status)
-```
-
-## 103. errcheck: resp.Body.Close Requires Explicit Error Discard
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** lint-fix
-**Context:** `errcheck` flags both `resp.Body.Close()` (direct) and `defer resp.Body.Close()` (deferred). The deferred form requires a closure because `defer` evaluates args immediately -- `defer _ = resp.Body.Close()` doesn't work syntactically.
-**Fix:** Direct: `_ = resp.Body.Close()`. Deferred: `defer func() { _ = resp.Body.Close() }()`.
-**Example:**
-
-```go
-// BAD: errcheck flagged
-resp.Body.Close()
-defer resp.Body.Close()
-
-// GOOD: explicit discard
-_ = resp.Body.Close()
-defer func() { _ = resp.Body.Close() }()
-```
-
-## 104. gosec G704: SSRF Nolint for Trusted Base URL Clients
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** lint-fix
-**Context:** gosec G704 flags `httpClient.Do(req)` as potential SSRF via tainted URL. In provider/adapter clients where the base URL is set once during initialization from trusted configuration, this is a false positive.
-**Fix:** Add `//nolint:gosec // G704: URL is from trusted baseURL config` on the flagged line.
-**Example:**
-
-```go
-// BAD: G704 flagged
-resp, err := c.httpClient.Do(req)
-
-// GOOD: explicit nolint with reason
-resp, err := c.httpClient.Do(req) //nolint:gosec // G704: URL is from trusted baseURL config
-```
-
-## 105. gocritic sloppyReassign: Named Return Shadow in If Statement
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** lint-fix
-**Context:** `if err = f(); err != nil` inside a function with named return `err` triggers gocritic `sloppyReassign`. The `=` silently overwrites the named return, which can mask earlier error values. Common in adapter methods with multiple fallible calls.
-**Fix:** Use `:=` to shadow with a new scope variable, or restructure to avoid reassigning named returns.
-**Example:**
-
-```go
-// BAD: sloppyReassign -- overwrites named return err
-func (c *Client) SetLabels(ctx context.Context, number int, labels []string) (err error) {
-    if err = c.ensureLabelCache(ctx); err != nil { return }
-    // ...
-}
-
-// GOOD: shadow with new scope
-func (c *Client) SetLabels(ctx context.Context, number int, labels []string) (err error) {
-    if err := c.ensureLabelCache(ctx); err != nil { return err }
-    // ...
-}
-```
+**Context:** Sprint achieved zero rework (all CI-green first pass) vs previous 1-3 fix-push cycles per PR.
+**Fix:** Key factors: (1) specific CI commands in prompts, (2) wave ordering respects deps, (3) read-before-write requirement, (4) single responsibility per agent.
 
 ## 106. Mandatory Lint Step Language Eliminates Fix-Push Cycles
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** workflow-pattern
-**Context:** Go agent CI checklist previously said "Self-check your code for these MANDATORY lint patterns" but agents interpreted "self-check" as advisory and skipped running golangci-lint. Result: lint violations shipped, requiring fix-push cycles in CI.
-**Fix:** Promote golangci-lint to a numbered mandatory step with explicit enforcement language: "Step 4: `golangci-lint run ./path/...` -- This is NOT optional. Agents that skip this step cause fix-push cycles in CI. If golangci-lint reports errors, fix ALL of them before finishing."
-**Proven:** Samverk sprint with 3 parallel agents (frontmatter, dispatcher, profile). All 3 ran golangci-lint as step 4 and got 0 issues. Zero fix-push cycles needed.
-**Key insight:** Agent compliance depends on enforcement language, not just presence in rules. "Self-check" = skip under pressure. "Step 4, NOT optional, fix ALL" = comply.
-
-## 107. Stash Untracked Files Before Cross-Branch Push
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** workflow-pattern
-**Context:** After parallel agents complete, all files are in the working tree on main. When sorting into branches via stash/pop, `go build ./...` in the pre-push hook compiles untracked files from other agents. If those files reference symbols only on another branch, the push fails with "undefined" errors.
-**Fix:** Before pushing each branch, stash untracked files that belong to other branches:
-
-```bash
-# Pushing profile branch -- stash dispatcher files first
-git stash push -u -m "dispatcher files" -- internal/dispatcher/*.go
-git push -u origin feature/profile-store
-git stash pop
-```
-
-**Also:** `git restore <file>` to bring back deleted tracked files (doc.go stubs) that belong to other branches' deletions.
-**Proven:** Samverk sprint: profile branch push failed until dispatcher files were stashed. After stash, push succeeded with 0 issues.
+**Context:** "Self-check" phrasing in CI checklist treated as advisory. Agents skip golangci-lint.
+**Fix:** "Step 4, NOT optional, fix ALL" language. Agent compliance depends on enforcement language, not just rule presence.
 
 ## 108. Phased Research-Gate Workflow for New Projects
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** process-pattern
-**Context:** Jumping from a flat issue backlog straight to implementation leads to underresearched designs and no validation checkpoints. Issues get implemented without understanding the ecosystem (SDKs, libraries, communication patterns), causing rework.
-**Fix:** Structure every project phase as: Research issues -> Implementation issues -> Gate issue (checklist).
-
-- **Research issues**: Investigate SDK patterns, library choices, communication mechanisms. Close with findings in comments or linked docs.
-- **Implementation issues**: Code the feature using research findings.
-- **Gate issues**: Checklist of acceptance criteria that must ALL pass before proceeding to the next phase.
-
-```text
-Phase workflow:
-1. Open research issue(s) -> investigate -> close with findings
-2. Review findings, update design docs if needed
-3. Open implementation issue(s) -> code -> PR -> merge
-4. Open gate issue -> verify all checkboxes -> close gate
-5. Proceed to next phase
-```
-
-**Proven:** RunNotes restructured from 10 flat issues to 5 phases with 6 research + 5 gate + existing implementation issues. Forces thinking before coding at every stage.
+**Context:** Flat issue backlogs lead to underresearched designs and no validation checkpoints.
+**Fix:** Structure as: Research issues -> Implementation issues -> Gate issue (checklist). Forces thinking before coding at every stage.
 
 ## 109. Standalone Python File for Regex-Heavy Bash Scripts
 
 **Added:** 2026-03-02 | **Source:** Runbooks | **Status:** active
 
 **Category:** correction
-**Context:** Embedding Python with complex regex inside bash scripts (heredocs, inline `-c` strings) fails repeatedly due to escaping conflicts. Backslashes in regex patterns, escaped quotes in JSON label values, and bash variable interpolation create a three-layer escaping nightmare. Three iterations on Runbooks PR #110 all failed with different escaping bugs.
-**Fix:** Write a standalone `.py` file and call it from a thin bash wrapper. This eliminates all escaping layers:
-
-```bash
-# BAD: inline Python with regex in bash heredoc (3 escaping layers)
-python3 -c "
-import re
-labels = re.findall(r'com\.docker\.extension\.(\w+)=\"([^\"]*?)\"', content)
-"
-
-# GOOD: standalone Python file called from bash
-python3 scripts/extract-labels.py "$dockerfile_path"
-```
-
-The Python file uses raw strings (`r'...'`) for regex with zero escaping issues. The bash wrapper only handles argument passing.
-**Extends:** AP#11 (Python as jq replacement on Windows MSYS). Same principle -- when bash can't handle the complexity, delegate to a real language.
-**Proven:** Runbooks PR #110: 3 failed inline attempts, standalone file worked first try.
+**Context:** Python with complex regex inside bash heredocs fails due to three-layer escaping conflicts.
+**Fix:** Write standalone `.py` file, call from thin bash wrapper. Eliminates all escaping layers. Extends AP#11.
 
 ## 110. Docker Desktop Extension Marketplace Submission Checklist
 
 **Added:** 2026-03-02 | **Source:** Runbooks, RunNotes | **Status:** active
 
 **Category:** process-pattern
-**Context:** Docker Desktop extension marketplace submission has multiple prerequisites that are easy to miss. Missing any one causes rejection or broken marketplace display. Lessons consolidated from Runbooks (#38, #56, #57) and RunNotes (#9, #24, #25).
-**Fix:** Follow this checklist before submitting any extension to the marketplace:
-
-**Pre-build:**
-
-- Dockerfile labels populated (see KG#83 for exact formats):
-  - `com.docker.desktop.extension.api.version` -- API version
-  - `com.docker.desktop.extension.icon` -- local icon file reference
-  - `com.docker.extension.screenshots` -- JSON array, min 3, 2400x1600px recommended
-  - `com.docker.extension.changelog` -- HTML-formatted changelog
-  - `com.docker.extension.additional-urls` -- JSON array with docs/support/bug links
-  - `com.docker.extension.detailed-description` -- extended description (HTML)
-- `.hadolint.yaml` ignores DL3048 and DL3045 (see KG#78)
-- Icon is SVG, copied into image via `COPY docker.svg .`
-
-**Build:**
-
-- Multi-arch image built and pushed (see KG#84): `linux/amd64` + `linux/arm64`
-- Tagged with semantic version AND `latest`
-- Version matches across all files (see KG#82)
-
-**Validate:**
-
-- `docker extension validate IMAGE:TAG` passes locally
-- Extension installs cleanly: `docker extension install IMAGE:TAG`
-- Test in both light and dark mode (Docker Desktop > Settings > Appearance)
-- Test on at least one non-development machine
-
-**Submit:**
-
-- Open issue at `docker/extensions-submissions` using the `automatic_review` template
-- Automated validation runs within minutes
-- If passed, extension appears in marketplace within 12 hours (cache delay)
-- Manual review by Docker team is currently paused -- automated review is sufficient
-
-**Common rejection reasons:** empty screenshot/changelog labels, single-arch image, icon not bundled in image, missing API version label.
-**See also:** KG#77 (Docker Hub display), KG#78 (hadolint), KG#81 (vitest mock), KG#83 (label format), KG#84 (multi-arch)
+**Context:** Marketplace submission has multiple prerequisites. Missing any causes rejection.
+**Fix:** Checklist: (1) Dockerfile labels (screenshots JSON, changelog HTML, additional-urls), (2) .hadolint.yaml ignores DL3048/DL3045, (3) multi-arch (amd64+arm64), (4) `docker extension validate`, (5) submit via docker/extensions-submissions.
+**See also:** KG#77, KG#78, KG#83, KG#84
 
 ## 111. MUI Tooltip Requires Span Wrapper for Disabled Buttons
 
 **Added:** 2026-03-02 | **Source:** RunNotes | **Status:** active
 
 **Category:** frontend-pattern
-**Context:** MUI `<Tooltip>` warns when a disabled `<IconButton>` is a direct child. Disabled elements don't fire mouse events, so the tooltip never appears and MUI logs a console warning.
-**Fix:** Wrap the disabled button in a `<span>`:
-
-```tsx
-// BAD: tooltip never shows, console warning
-<Tooltip title="Refresh">
-  <IconButton disabled={loading}><RefreshIcon /></IconButton>
-</Tooltip>
-
-// GOOD: span receives hover events
-<Tooltip title="Refresh">
-  <span>
-    <IconButton disabled={loading}><RefreshIcon /></IconButton>
-  </span>
-</Tooltip>
-```
-
-**Scope:** Applies to any MUI Tooltip wrapping a potentially disabled interactive element (IconButton, Button, Checkbox).
+**Context:** MUI `<Tooltip>` on disabled `<IconButton>` never shows -- disabled elements don't fire mouse events.
+**Fix:** Wrap disabled button in `<span>`. Applies to any disabled interactive element inside Tooltip.
 
 ## 112. useRef Guard to Prevent useEffect Re-Trigger Loops
 
 **Added:** 2026-03-02 | **Source:** RunNotes | **Status:** active
 
 **Category:** frontend-pattern
-**Context:** When a `useEffect` detects stale data and triggers state updates (e.g., reconciliation calls), those updates change the dependency array, re-triggering the same effect in an infinite loop. Common in data sync patterns where the effect reads query data and writes mutations.
-**Fix:** Use a `useRef(false)` flag to run the effect body only once per data load cycle. Reset the ref when the user explicitly triggers a refresh:
-
-```tsx
-const reconciledRef = useRef(false);
-
-useEffect(() => {
-  if (loading || reconciledRef.current) return;
-  const stale = detectStaleItems(data);
-  if (stale.length > 0) {
-    reconciledRef.current = true;
-    Promise.all(stale.map(item => updateMutation(item)));
-  }
-}, [data, loading, updateMutation]);
-
-// Reset on manual refresh
-const handleRefresh = () => {
-  reconciledRef.current = false;
-  refetchQuery();
-};
-```
-
-**Key insight:** The ref persists across renders without triggering re-renders itself, breaking the loop. Reset it only on intentional user actions.
-
-## 113. gocritic preferFprint: Use fmt.Fprintf Over WriteString+Sprintf
-
-**Added:** 2026-03-02 | **Source:** Samverk | **Status:** active
-
-**Category:** lint-fix
-**Context:** `b.WriteString(fmt.Sprintf(format, args...))` allocates a temporary string, then copies it into the builder. gocritic `preferFprint` flags this because `fmt.Fprintf(&b, format, args...)` writes directly to the builder, avoiding the intermediate allocation. Common in text renderers and format builders -- a single file can have 10+ instances.
-**Fix:** Replace `b.WriteString(fmt.Sprintf(...))` with `fmt.Fprintf(&b, ...)`:
-
-```go
-// BAD: triggers preferFprint -- intermediate string allocation
-b.WriteString(fmt.Sprintf("\n--- STATUS ---\n"))
-b.WriteString(fmt.Sprintf("Active: %d issues\n", count))
-
-// GOOD: direct write to builder
-fmt.Fprintf(&b, "\n--- STATUS ---\n")
-fmt.Fprintf(&b, "Active: %d issues\n", count)
-```
-
-**Note:** For constant strings without formatting (no `%` verbs), `b.WriteString("literal")` is fine -- `preferFprint` only triggers when `fmt.Sprintf` is nested inside `WriteString`.
+**Context:** useEffect detecting stale data triggers state updates, which re-trigger the same effect infinitely.
+**Fix:** Use `useRef(false)` flag. Set `true` after first run. Reset only on intentional user actions (e.g., manual refresh).
 
 ## 114. React Callback Ref for MUI Popper Anchors (React Compiler Compliance)
 
 **Added:** 2026-03-02 | **Source:** Runbooks | **Status:** active
 
 **Category:** frontend-pattern
-**Context:** MUI `Popper` (and `Popover`, `Menu`) requires an `anchorEl` prop that must be a DOM element read during render. Using `useRef` + `ref.current` during render triggers the React Compiler's `react-hooks/refs` rule ("Cannot access ref during render"). KG#6 covers the general case (wrap ref mutations in `useEffect`), but Popper anchors are a special case because the value must be available during render, not in an effect.
-**Fix:** Use a callback ref with `useState` instead of `useRef`. The state setter as a ref callback updates state when the DOM element mounts, triggering a re-render with the anchor available:
-
-```tsx
-// BAD: triggers react-hooks/refs -- ref.current read during render
-const anchorRef = useRef<HTMLButtonElement>(null)
-<Button ref={anchorRef}>Menu</Button>
-<Popper anchorEl={anchorRef.current} open={open}>...</Popper>
-
-// GOOD: callback ref with state -- no ref.current during render
-const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null)
-<Button ref={setAnchorEl}>Menu</Button>
-<Popper anchorEl={anchorEl} open={open}>...</Popper>
-```
-
-**See also:** KG#6 (general refs-during-render gotcha with `useEffect` fix).
-
-## 115. golangci-lint v2 Formatters Are a Separate Top-Level Section
-
-**Added:** 2026-03-02 | **Source:** CLI-Play | **Status:** active
-
-**Category:** ci-config
-**Context:** golangci-lint v2 moved `gofmt` and `goimports` out of the `linters:` section into a new top-level `formatters:` section. Listing them under `linters: enable:` causes "unknown linters: gofmt, goimports" errors. This is a v1-to-v2 migration breaking change that isn't obvious from the error message alone.
-**Fix:** Move formatting tools to the `formatters:` top-level key:
-
-```yaml
-# BAD (v2): gofmt/goimports under linters
-linters:
-  enable:
-    - gofmt
-    - goimports
-
-# GOOD (v2): separate formatters section
-formatters:
-  enable:
-    - gofmt
-    - goimports
-```
-
-**See also:** AP#90 (v2 requires version field), KG#65 (v2 silent config failure), KG#66 (v7 action schema enforcement).
-
-## 116. golangci-lint v2 Absorbs gosimple Into staticcheck
-
-**Added:** 2026-03-02 | **Source:** CLI-Play | **Status:** active
-
-**Category:** ci-config
-**Context:** In golangci-lint v2, the `gosimple` linter was merged into `staticcheck`. Listing `gosimple` as a separate linter in `linters: enable:` causes "unknown linters: gosimple" error. This affects any project migrating a v1 `.golangci.yml` config to v2.
-**Fix:** Remove `gosimple` from the linters list. All gosimple rules (S1xxx) are now covered by `staticcheck` automatically.
-
-```yaml
-# BAD (v2): gosimple listed separately
-linters:
-  enable:
-    - staticcheck
-    - gosimple       # ERROR: unknown linter
-
-# GOOD (v2): staticcheck covers gosimple
-linters:
-  enable:
-    - staticcheck    # includes all S1xxx rules
-```
-
-**See also:** AP#90 (v2 requires version field), AP#115 (v2 formatters section).
+**Context:** MUI Popper needs `anchorEl` during render. `useRef` + `ref.current` triggers React Compiler's refs rule.
+**Fix:** Use callback ref with `useState`: `const [anchorEl, setAnchorEl] = useState(null)` then `<Button ref={setAnchorEl}>`. See also KG#6.
 
 ## 117. Cross-Project Compliance Audit via Parallel Independent-Repo Agents
 
 **Added:** 2026-03-02 | **Source:** DevKit | **Status:** active
 
 **Category:** workflow-pattern
-**Context:** Cross-project compliance enforcement (standardizing CI, hooks, lint config, licenses) can be parallelized across independent git repos with zero conflict. Unlike KG#25 (parallel agents in same repo share working tree), agents in separate repos have fully independent working trees, so each can autonomously create branches, commit, push, and create PRs.
-**Fix:** Launch one agent per repo with full git autonomy. Each agent gets: (1) the DevKit template files to copy, (2) project-specific customization instructions, (3) full CI checklist for verification. Main context handles orchestration only.
-**Example:** 5 parallel agents across Runbooks, DigitalRain, RunNotes, CLI-Play, IPScan deployed pre-push hooks, lint configs, and licenses. All 5 created PRs independently. 2 required follow-up CI fixes (golangci-lint v6->v7, .NET WPF scope) resolved by main context.
-**Proven:** 6 PRs total (5 parallel + 1 direct fix) merged in single session. ~10 min wall time for agent execution.
-**See also:** KG#25 (parallel agents share working tree -- different from this pattern), AP#48 (agents self-recover in shared tree).
+**Context:** Cross-project compliance can be parallelized across independent repos with zero conflict (unlike KG#25 same-repo agents).
+**Fix:** One agent per repo with full git autonomy: DevKit templates, customization instructions, CI checklist. Main context handles orchestration only.
+**See also:** KG#25, AP#48
