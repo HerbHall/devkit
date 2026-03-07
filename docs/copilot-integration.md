@@ -205,6 +205,12 @@ bash scripts/copilot-review-setup.sh audit-all OWNER
 
 ### Manual Steps After Setup
 
+#### Actions PR Permission
+
+Navigate to **Settings > Actions > General > Workflow permissions** and check **"Allow GitHub Actions to create and approve pull requests"**. This setting has no API equivalent and defaults to disabled on new repos. Without it, release-please, retrigger-ci, and release-gate workflows will fail with `Resource not accessible by integration` when they try to create or modify PRs using `GITHUB_TOKEN`.
+
+#### Copilot Review Toggle
+
 The Copilot auto-review UI toggle cannot be set via API:
 
 1. Go to repo Settings > Rules > Rulesets > "Copilot PR Review"

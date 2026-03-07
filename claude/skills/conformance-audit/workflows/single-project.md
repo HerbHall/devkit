@@ -1,6 +1,6 @@
 # Conformance Audit: Single Project
 
-Run the 13-point conformance checklist against one specific project.
+Run the 18-point conformance checklist against one specific project.
 
 ## Steps
 
@@ -54,11 +54,11 @@ If the stack is `unknown`, note that stack-specific checks (5, 12) will be skipp
 
 ### 4. Read Checklist
 
-Load the 13-point checklist from `references/checklist.md` in the conformance-audit skill directory. Use it as the authoritative source for what to check, pass criteria, and fix references.
+Load the 18-point checklist from `references/checklist.md` in the conformance-audit skill directory. Use it as the authoritative source for what to check, pass criteria, and fix references.
 
 ### 5. Run Each Check
 
-Execute all 13 checks. For each one, report the result with detail:
+Execute all 18 checks. For each one, report the result with detail:
 
 **Check 1 -- CLAUDE.md**
 
@@ -219,6 +219,80 @@ else
 fi
 ```
 
+**Check 14 -- Workflow Trigger Patterns** (only if check 8 passed)
+
+```bash
+# FAIL if any non-release-please workflow has 'tags: v*' or "tags: ['v*']"
+TRIGGER_FAIL=""
+for wf in "$PROJECT/.github/workflows/"*.yml; do
+    [ "$(basename "$wf")" = "release-please.yml" ] && continue
+    if grep -q "tags:.*v\*" "$wf" 2>/dev/null; then
+        TRIGGER_FAIL="$TRIGGER_FAIL $(basename "$wf")"
+    fi
+done
+if [ -z "$TRIGGER_FAIL" ]; then
+    echo "PASS: No conflicting tag triggers found"
+else
+    echo "FAIL: Tag trigger v* found in:$TRIGGER_FAIL (won't fire with GITHUB_TOKEN tags)"
+fi
+```
+
+**Check 15 -- Retrigger CI** (only if check 8 passed)
+
+```bash
+if ls "$PROJECT/.github/workflows/"*retrigger* 2>/dev/null | grep -q .; then
+    echo "PASS: Retrigger CI workflow found"
+else
+    echo "FAIL: No retrigger-ci workflow found"
+fi
+```
+
+**Check 16 -- Auto-Merge Enabled** (only if check 13 passed)
+
+```bash
+REPO_SLUG=$(cd "$PROJECT" && gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null)
+if [ -n "$REPO_SLUG" ]; then
+    AUTO_MERGE=$(gh api "repos/$REPO_SLUG" --jq '.allow_auto_merge' 2>/dev/null || echo "false")
+    if [[ "$AUTO_MERGE" == "true" ]]; then
+        echo "PASS: Auto-merge enabled"
+    else
+        echo "FAIL: Auto-merge not enabled"
+    fi
+else
+    echo "SKIP: Could not determine repo slug"
+fi
+```
+
+**Check 17 -- Rules File Size** (DevKit only, skip for other projects)
+
+```bash
+if [ -d "$PROJECT/claude/rules" ]; then
+    OVERSIZED=""
+    for rf in "$PROJECT/claude/rules/"*.md; do
+        SIZE=$(wc -c < "$rf" 2>/dev/null || echo 0)
+        if [ "$SIZE" -gt 40960 ]; then
+            OVERSIZED="$OVERSIZED $(basename "$rf")(${SIZE}b)"
+        fi
+    done
+    if [ -z "$OVERSIZED" ]; then
+        echo "PASS: All rules files under 40k"
+    else
+        echo "FAIL: Oversized rules files:$OVERSIZED -- run /rules-compact"
+    fi
+else
+    echo "SKIP: No claude/rules/ directory"
+fi
+```
+
+**Check 18 -- Actions PR Permission** (only if check 8 passed)
+
+```text
+Manual: Cannot be verified via API.
+  Navigate to: Settings > Actions > General > Workflow permissions
+  Verify: "Allow GitHub Actions to create and approve pull requests" is checked
+  Required for: release-please, retrigger-ci, release-gate workflows
+```
+
 ### 6. Provide Fix Commands for Failures
 
 For each failing check, output the specific fix. Reference the DevKit template path and the command to copy it:
@@ -249,7 +323,8 @@ Score: N/M applicable checks passing (XX%)
 
 Passing: 1, 2, 3, 7, 8, 9, 10, 11
 Failing: 4, 5, 6
-Skipped: 12, 13
+Skipped: 12, 13, 17
+Manual: 18
 
 Run `/conformance-audit fix` to auto-fix applicable gaps.
 ```

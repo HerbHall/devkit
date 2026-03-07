@@ -83,7 +83,19 @@ Verification checks that:
 - Required tools (git, gh, node) are available on PATH
 - Claude Code settings are properly configured
 
-## Step 5: Start a Claude Code Session
+## Step 5: Configure GitHub Repository Settings
+
+Two settings must be enabled manually in each GitHub repository before CI automation works fully:
+
+### Actions PR Permission
+
+Navigate to **Settings > Actions > General > Workflow permissions** and check **"Allow GitHub Actions to create and approve pull requests"**. This is required for release-please, retrigger-ci, and release-gate workflows that create or modify PRs using `GITHUB_TOKEN`. This setting defaults to disabled on new repos and has no API equivalent.
+
+### Copilot Auto-Review (optional)
+
+If using Copilot code review, navigate to **Settings > Rules > Rulesets** and enable the Copilot review toggle. See [Copilot Integration](copilot-integration.md) for full setup instructions.
+
+## Step 6: Start a Claude Code Session
 
 Open your project directory and start Claude Code. The SessionStart hook fires automatically when you send your first message, providing:
 

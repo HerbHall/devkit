@@ -122,7 +122,12 @@ audit_repo() {
     errors=$((errors + 1))
   fi
 
-  # 7. CODEOWNERS file exists
+  # 7. Actions PR Permission (WARN -- cannot be verified via API)
+  warn "Actions PR Permission cannot be verified via API"
+  warn "Verify manually: Settings > Actions > General > Workflow permissions"
+  warn "> 'Allow GitHub Actions to create and approve pull requests' must be checked"
+
+  # 8. CODEOWNERS file exists
   local has_codeowners="false"
   for path in CODEOWNERS .github/CODEOWNERS docs/CODEOWNERS; do
     if gh api "repos/$repo/contents/$path" --jq '.name' >/dev/null 2>&1; then
@@ -174,6 +179,10 @@ setup_repo() {
 
   echo ""
   echo -e "${YELLOW}MANUAL STEPS REQUIRED:${NC}"
+  echo "0. Go to repo Settings > Actions > General > Workflow permissions"
+  echo "   Check 'Allow GitHub Actions to create and approve pull requests'"
+  echo "   (Required for release-please, retrigger-ci, release-gate workflows)"
+  echo ""
   echo "1. Go to repo Settings > Rules > Rulesets > 'Copilot PR Review'"
   echo "2. Click Edit on the 'Require a pull request before merging' rule"
   echo "3. Under 'Additional settings', enable 'Require review from GitHub Copilot'"
