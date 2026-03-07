@@ -34,7 +34,7 @@ Flags differ between CLIs. Wrappers normalize the interface so callers pass a co
 
 ## Wrapper Approach
 
-Add dispatch functions to `claude-functions.sh`. Each function detects the forge, then delegates to the correct CLI:
+Source `scripts/forge-wrappers.sh` to get dispatch functions. Each function detects the forge, then delegates to the correct CLI:
 
 ```bash
 devkit-forge-detect() {
@@ -55,7 +55,7 @@ devkit-issue-create() {
 }
 ```
 
-The full set of wrappers (`devkit-issue-list`, `devkit-pr-create`, `devkit-pr-merge`) follows the same pattern. Each is under 10 lines.
+The full set of wrappers (`devkit-issue-list`, `devkit-pr-create`, `devkit-pr-merge`, `devkit-pr-list`, `devkit-auth-status`) follows the same pattern. Implementation: `scripts/forge-wrappers.sh`.
 
 ## Configuration
 
