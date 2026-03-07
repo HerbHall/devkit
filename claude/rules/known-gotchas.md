@@ -1,7 +1,7 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 80
+entry_count: 81
 last_updated: "2026-03-07"
 ---
 
@@ -710,3 +710,17 @@ All parallel agents write to the same working directory. Changes mix as unstaged
 **Fix:** Kill the session and open a fresh one (`+` in sidebar, `Ctrl+C` then `claude` in terminal). Paste the handoff into the new session. Do NOT attempt to recover a saturated session with multiple `?` prompts -- each attempt consumes more context.
 **Prevention:** Keep handoff prompts under 40 lines. Split multi-part handoffs into separate sessions. Run `/rules-compact` if rules files approach 40k -- oversized rules files accelerate context saturation on load.
 **Recovery escalation:** If `?` fails twice, the session is unrecoverable. Open fresh immediately.
+
+## 101. Claude Code Edit Tool CRLF Matching Failure on Windows
+
+**Added:** 2026-03-07 | **Source:** Samverk | **Status:** active
+
+**Platform:** Windows (MSYS_NT) / Claude Code
+**Issue:** The Edit tool's `old_string` matching fails silently on files with Windows CRLF (`\r\n`) line endings. The `\r` characters are invisible but prevent exact string matching. Affects every Edit call on CRLF files.
+**Workarounds:**
+
+- Use Python binary-mode scripts: `open('file', 'rb')` / `open('file', 'wb')` with explicit `\r\n` in replacement strings
+- Use the Write tool to create new files instead of appending to large existing CRLF files
+- `sed` is also unreliable on MSYS (literal `t` instead of tab with `\t` escapes)
+
+**See also:** KG#62 (CRLF breaks bash grep in CI -- same root cause, different tool)
