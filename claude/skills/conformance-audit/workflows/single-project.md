@@ -236,7 +236,7 @@ fi
 **Check 16 -- Auto-Merge Enabled** (only if check 13 passed)
 
 ```bash
-REPO_SLUG=$(gh repo view "$PROJECT" --json nameWithOwner -q .nameWithOwner 2>/dev/null)
+REPO_SLUG=$(cd "$PROJECT" && gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null)
 AUTO_MERGE=$(gh api "repos/$REPO_SLUG" --jq '.allow_auto_merge' 2>/dev/null || echo "false")
 if [ "$AUTO_MERGE" = "true" ]; then
     echo "PASS: Auto-merge enabled"

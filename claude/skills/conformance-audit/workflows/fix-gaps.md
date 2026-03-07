@@ -287,9 +287,13 @@ fi
 **Check 16 -- Auto-Merge Enabled** (auto-fix via API, only if check 13 passes)
 
 ```bash
-REPO_SLUG=$(gh repo view "$PROJECT" --json nameWithOwner -q .nameWithOwner 2>/dev/null)
-gh api "repos/$REPO_SLUG" -X PATCH -f allow_auto_merge=true --silent
-echo "FIXED: Auto-merge enabled on $REPO_SLUG"
+REPO_SLUG=$(cd "$PROJECT" && gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null)
+if [ -n "$REPO_SLUG" ]; then
+  gh api "repos/$REPO_SLUG" -X PATCH -f allow_auto_merge=true --silent
+  echo "FIXED: Auto-merge enabled on $REPO_SLUG"
+else
+  echo "SKIPPED: Could not determine repo slug for $PROJECT"
+fi
 ```
 
 **Check 17 -- Actions PR Permission** (manual only -- **no API exists**)

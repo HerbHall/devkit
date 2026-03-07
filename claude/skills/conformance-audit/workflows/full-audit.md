@@ -133,7 +133,7 @@ done
 ls "$project/.github/workflows/"*retrigger* 2>/dev/null | grep -q .
 
 # Check 16: Auto-merge enabled (only if check 13 passes)
-gh api "repos/$(gh repo view "$project" --json nameWithOwner -q .nameWithOwner 2>/dev/null)" --jq '.allow_auto_merge' 2>/dev/null | grep -q 'true'
+gh api "repos/$(cd "$project" && gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null)" --jq '.allow_auto_merge' 2>/dev/null | grep -q 'true'
 
 # Check 17: Actions PR permission (MANUAL -- cannot be verified via API)
 # Report as WARN with instructions. This setting cannot be queried programmatically.

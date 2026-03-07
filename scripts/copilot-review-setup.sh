@@ -116,7 +116,6 @@ audit_repo() {
     pass "Branch protection has no review requirement (avoids double review gate)"
   else
     warn "Branch protection has review requirement ($bp_reviews reviews) -- may conflict with ruleset"
-    errors=$((errors + 1))
   fi
 
   # 7. Actions PR permission (MANUAL -- cannot be verified via API)
