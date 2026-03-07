@@ -690,3 +690,11 @@ All parallel agents write to the same working directory. Changes mix as unstaged
 **Symptom:** Agent ignores known patterns documented in rules files. Task transitions (switching between plan/code/verify phases) lose context from rules that should apply. Rules files that were 2.5x over the 40k threshold caused measurable degradation.
 **Fix:** Run `/rules-compact` to archive stale entries, deduplicate same-root-cause patterns, and consolidate related entries below 35k per file.
 **Prevention:** The conformance-audit checklist (check #17) flags any rules file over 40k. Run `/conformance-audit` periodically to catch growth before it hits the limit. Target 35k per file to leave headroom.
+
+## 99. Copilot Cannot Approve PRs -- Review Is Informational Only
+
+**Added:** 2026-03-07 | **Source:** DevKit | **Status:** active
+
+**Platform:** GitHub
+**Issue:** Copilot code review can only COMMENT on PRs, never APPROVE. Setting `required_approving_review_count: 1` in a ruleset creates a gate that can never be satisfied without `--admin` bypass. Previous configurations attempted workarounds (combined rulesets, split rulesets) but none solve the fundamental constraint: Copilot cannot approve.
+**Fix:** Set `required_approving_review_count: 0`. Keep `copilot_code_review` with `review_on_push: true` for informational comments. CI is the only merge gate. Claude Code reads Copilot comments after CI passes, implements valid ones, and merges without waiting for re-review. Use `--admin` only for CI infrastructure failures, never to skip Copilot feedback. Template: `project-templates/copilot-ruleset.json`. Audit: `scripts/copilot-review-setup.sh audit OWNER/REPO`.

@@ -47,45 +47,55 @@ audit_repo() {
     errors=$((errors + 1))
   fi
 
-  # 2. Copilot PR Review ruleset exists and is active
+  # 2. Copilot PR Review ruleset exists and is active (must be the combined standard)
   local ruleset_id=""
   local ruleset_enforcement=""
+  local has_legacy_split="false"
   while IFS=$'\t' read -r rid rname renf; do
-    if [[ "$rname" == "Copilot PR Review" || "$rname" == "Copilot Code Review" ]]; then
+    if [[ "$rname" == "Copilot PR Review" ]]; then
       ruleset_id="$rid"
       ruleset_enforcement="$renf"
-      break
+    elif [[ "$rname" == "Copilot Code Review" || "$rname" == "PR Merge Policy" ]]; then
+      has_legacy_split="true"
     fi
   done < <(gh api "repos/$repo/rulesets" --jq '.[] | [.id, .name, .enforcement] | @tsv' 2>/dev/null || true)
 
+  if [[ "$has_legacy_split" == "true" ]]; then
+    fail "Legacy split rulesets detected (Copilot Code Review / PR Merge Policy) -- replace with combined 'Copilot PR Review'"
+    errors=$((errors + 1))
+  fi
+
   if [[ -z "$ruleset_id" ]]; then
-    fail "No Copilot review ruleset found"
+    fail "No 'Copilot PR Review' combined ruleset found"
     errors=$((errors + 1))
   elif [[ "$ruleset_enforcement" != "active" ]]; then
     fail "Copilot review ruleset exists but enforcement is '$ruleset_enforcement' (expected 'active')"
     errors=$((errors + 1))
   else
-    pass "Copilot review ruleset exists and is active (id: $ruleset_id)"
+    pass "Copilot PR Review ruleset exists and is active (id: $ruleset_id)"
 
     # 3. Check copilot_code_review rule with review_on_push
     local has_copilot_review
     has_copilot_review=$(gh api "repos/$repo/rulesets/$ruleset_id" \
       --jq '.rules[] | select(.type == "copilot_code_review") | .parameters.review_on_push' 2>/dev/null || echo "")
     if [[ "$has_copilot_review" == "true" ]]; then
-      pass "copilot_code_review rule with review_on_push: true"
+      pass "Copilot auto-review enabled (informational, not a merge gate)"
     else
-      fail "Missing or misconfigured copilot_code_review rule"
+      fail "Copilot auto-review not enabled (copilot_code_review rule missing or review_on_push != true)"
       errors=$((errors + 1))
     fi
 
-    # 4. Check pull_request rule with required_approving_review_count: 1
+    # 4. Check pull_request rule -- approval count must be 0 (Copilot cannot approve)
     local review_count
     review_count=$(gh api "repos/$repo/rulesets/$ruleset_id" \
       --jq '.rules[] | select(.type == "pull_request") | .parameters.required_approving_review_count' 2>/dev/null || echo "")
-    if [[ "$review_count" == "1" ]]; then
-      pass "pull_request rule with required_approving_review_count: 1"
+    if [[ "$review_count" == "0" ]]; then
+      pass "pull_request rule with required_approving_review_count: 0 (no approval gate)"
+    elif [[ "$review_count" == "1" ]]; then
+      fail "required_approving_review_count is 1 -- Copilot cannot approve, this blocks merges without --admin"
+      errors=$((errors + 1))
     else
-      fail "pull_request rule missing or review count is '$review_count' (expected 1)"
+      fail "pull_request rule missing or review count is '$review_count' (expected 0)"
       errors=$((errors + 1))
     fi
 

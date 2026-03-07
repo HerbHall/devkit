@@ -170,7 +170,9 @@ This project is NOT worth pursuing if:
      - See `subagent-ci-checklist.md` for stack-specific checks
    - Run `/code-review` before committing (Critical/High findings block the commit)
    - Verify with `/quality-control`
-   - Create PR, merge after CI passes
+   - Create PR; after CI passes, read Copilot review comments,
+       implement valid ones, then merge. Do not wait for Copilot to
+       re-review or approve -- Copilot cannot approve by design.
 4. Use subagent parallel execution for independent features
 5. Route simple issues (test expansion, docs, lint fixes, dep bumps) to Copilot coding
    agent via `agent:copilot` label -- see `docs/copilot-integration.md` for delegation criteria

@@ -162,18 +162,30 @@ Adding a review requirement to branch protection AND the ruleset creates a doubl
 
 ### Layer 3: Copilot Auto-Review (ruleset)
 
-A GitHub ruleset named "Copilot PR Review" handles code review:
+A GitHub ruleset named "Copilot PR Review" enables automated code review
+as an informational signal. Copilot review is **not a merge gate** --
+Copilot cannot approve PRs by design (it can only comment).
 
-- **Owner PRs**: Copilot reviews automatically; auto-merge when CI + Copilot approve (hands-free)
-- **Contributor PRs**: Copilot reviews automatically; owner reviews after Copilot approves; owner merges manually
-- **Admin bypass**: Solo maintainers can merge even if Copilot hasn't reviewed yet
+The merge workflow:
+
+1. CI passes (the only merge gate)
+2. Copilot auto-review fires and leaves comments
+3. Claude Code (or the developer) reads Copilot's comments, implements
+   valid ones, and merges -- no waiting for Copilot to re-review
+
+- **Owner PRs**: Copilot reviews automatically; merge after CI passes and
+  Copilot comments are addressed
+- **Contributor PRs**: Copilot reviews automatically; owner reviews and merges
+- **`--admin` bypass**: NEVER valid to skip reading Copilot feedback. ONLY
+  valid when CI infrastructure itself is broken (flaky runner, GitHub outage,
+  misconfigured status check)
 
 Template: `project-templates/copilot-ruleset.json`
 
 Key settings:
 
-- `required_approving_review_count: 1` -- Copilot satisfies this for owner PRs
-- `dismiss_stale_reviews_on_push: true` -- forces re-review on new pushes
+- `required_approving_review_count: 0` -- no approval required (Copilot cannot approve)
+- `dismiss_stale_reviews_on_push: false` -- not needed when review is informational
 - `copilot_code_review` with `review_on_push: true` -- triggers review on each push
 - Admin role (RepositoryRole id 5) as bypass actor
 - `allowed_merge_methods: ["squash"]` -- squash-only merge
@@ -203,10 +215,28 @@ The Copilot auto-review UI toggle cannot be set via API:
 
 ### Why These Specific Settings
 
-- **`required_approving_review_count: 1`** (not 0 or 2): Copilot's approval counts as the 1 required review for owner PRs. Setting to 0 would skip review entirely. Setting to 2 would block solo maintainers.
-- **Admin bypass**: Required for solo maintainers who need to merge when Copilot is unavailable or reviewing incorrectly.
-- **No review in branch protection**: Branch protection review + ruleset review = double gate. Use rulesets only for reviews, branch protection only for CI checks.
+- **`required_approving_review_count: 0`**: Copilot cannot approve PRs -- it can only
+  leave comments. Setting this to 1 creates a gate that can never be satisfied without
+  `--admin` bypass, which defeats the purpose of automation.
+- **`copilot_code_review` with `review_on_push: true`**: Copilot still reviews every
+  push and leaves valuable comments. The review is informational, not a gate.
+- **Admin bypass**: Reserved for CI infrastructure failures only, not for skipping review.
+- **No review in branch protection**: Branch protection handles CI checks only.
 - **`review_on_push: true`**: Only fires on push events, not open/reopen. Forces re-review when code changes after initial review.
+
+### Protected Configuration
+
+Copilot auto-review must remain enabled on all projects. Agents must never:
+
+- Removing the `copilot_code_review` rule
+- Disabling `review_on_push`
+- Disabling auto-merge on any repository
+- Adding review requirements to branch protection (conflicts with rulesets)
+- Raising `required_approving_review_count` above 0 (creates an unsatisfiable gate)
+
+Merging without reading Copilot comments is never acceptable. The
+protection is behavioral (read and act on feedback), not mechanical
+(block merge until approval).
 
 ## Per-Project Rollout Checklist
 
