@@ -83,6 +83,18 @@ GitHub repos need no configuration. Gitea repos require `giteaUrl` to be set onc
 | `devkit-sync` | `gh pr create` in push workflow | Replace with `devkit-pr-create` wrapper |
 | `quality-control` | `gh pr checks`, `gh pr view` | Replace with wrappers; skip PR checks on Gitea |
 
+## Forge-Specific Settings
+
+Some settings are UI-only and differ between forges:
+
+| Setting | GitHub | Gitea |
+|---------|--------|-------|
+| Actions PR permission | Settings > Actions > General > Workflow permissions > "Allow GitHub Actions to create and approve pull requests" | Not applicable (Gitea Actions uses different permission model) |
+| Copilot auto-review | Settings > Rules > Rulesets > enable Copilot review toggle | Not available (GitHub-only feature) |
+| Auto-merge | `gh api repos/OWNER/REPO -X PATCH -f allow_auto_merge=true` | Repository settings > enable auto-merge (UI) |
+
+These settings cannot be abstracted by the forge wrapper -- they must be configured manually per repository on each forge.
+
 ## Graceful Degradation
 
 When `tea` is not installed and a Gitea repo is detected:

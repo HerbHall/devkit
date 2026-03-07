@@ -265,6 +265,55 @@ if [ ! -f "$PROJECT/.github/workflows/release-gate.yml" ]; then
 fi
 ```
 
+**Check 14 -- Workflow Trigger Patterns** (manual only)
+
+If a non-release-please workflow uses `on: push: tags: v*`, it will never fire because `GITHUB_TOKEN`-created tags don't trigger push events:
+
+```text
+MANUAL: Workflow <name>.yml has a tag trigger that won't fire with release-please.
+  Move publish/deploy jobs into release-please.yml using the release_created output,
+  or use 'on: release: types: [published]' as the trigger.
+```
+
+**Check 15 -- Retrigger CI** (auto-fix, only if check 8 passes)
+
+```bash
+if ! ls "$PROJECT/.github/workflows/"*retrigger* 2>/dev/null | grep -q .; then
+    mkdir -p "$PROJECT/.github/workflows"
+    cp "$DEVKIT_ROOT/project-templates/retrigger-ci.yml" "$PROJECT/.github/workflows/retrigger-ci.yml"
+    echo "FIXED: Created retrigger-ci.yml from template"
+fi
+```
+
+**Check 16 -- Auto-Merge Enabled** (auto-fix, only if check 13 passes)
+
+```bash
+REPO_SLUG=$(cd "$PROJECT" && gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null)
+if [ -n "$REPO_SLUG" ]; then
+    AUTO_MERGE=$(gh api "repos/$REPO_SLUG" --jq '.allow_auto_merge' 2>/dev/null || echo "false")
+    if [[ "$AUTO_MERGE" != "true" ]]; then
+        gh api "repos/$REPO_SLUG" -X PATCH -f allow_auto_merge=true --silent 2>/dev/null
+        echo "FIXED: Enabled auto-merge on $REPO_SLUG"
+    fi
+fi
+```
+
+**Check 17 -- Rules File Size** (manual only, DevKit only)
+
+```text
+MANUAL: Rules file exceeds 40k limit.
+  Run /rules-compact to archive stale entries and consolidate duplicates.
+```
+
+**Check 18 -- Actions PR Permission** (manual only)
+
+```text
+MANUAL: Cannot be set via API.
+  Navigate to: Settings > Actions > General > Workflow permissions
+  Enable: "Allow GitHub Actions to create and approve pull requests"
+  Required for: release-please, retrigger-ci, release-gate workflows
+```
+
 ### 4. Substitute Placeholders
 
 For all files that were copied from templates, substitute common placeholders:
@@ -298,14 +347,17 @@ Summarize what was done:
 ### Needs Manual Attention
 - Check 3 (CI Workflow): Copy and customize template
 - Check 12 (Nightly): Copy and customize template
+- Check 14 (Workflow Triggers): Move tag triggers into release-please.yml
+- Check 17 (Rules File Size): Run /rules-compact (DevKit only)
+- Check 18 (Actions PR Permission): Enable in GitHub Settings UI
 
 ### Already Passing
 - Check 1, 4, 5, 6, 8, 11, 13
 
 ### Updated Score
-Before: 7/13 (54%)
-After:  11/13 (85%)
-Remaining: 2 checks need manual work
+Before: 7/18 (54%)
+After:  11/18 (85%)
+Remaining: 5 checks need manual work
 ```
 
 Remind the user to review auto-created files before committing, especially `CLAUDE.md` and `Makefile` which likely need project-specific edits.

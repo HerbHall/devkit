@@ -1,6 +1,6 @@
 # Conformance Checklist
 
-16-point checklist for DevKit project conformance. Each check includes what to look for, which stacks need it, how to determine pass/fail, and which DevKit template provides the fix.
+18-point checklist for DevKit project conformance. Each check includes what to look for, which stacks need it, how to determine pass/fail, and which DevKit template provides the fix.
 
 ## Stack Detection
 
@@ -163,6 +163,16 @@ A project may match multiple stacks (e.g., Go backend + Node frontend). Apply ch
 - **Pass criteria**: `wc -c claude/rules/*.md` shows all files under 40,960 bytes
 - **Fail indicators**: Any file over 40k. Output: `rules/<filename> is Xk -- exceeds 40k limit, run /rules-compact`
 - **Fix reference**: Run `/rules-compact` skill to archive stale entries and consolidate duplicates
+
+### 18. Actions PR Permission
+
+- **What to check**: Repository has "Allow GitHub Actions to create and approve pull requests" enabled
+- **Stacks**: Only if release-please is configured (check 8 passes)
+- **Pass criteria**: This is a **manual UI-only check** -- it cannot be verified or set via the GitHub API or `gh` CLI
+- **Navigation path**: Repository Settings > Actions > General > Workflow permissions > check "Allow GitHub Actions to create and approve pull requests"
+- **Fail indicators**: Release Please workflow runs succeed but never open a PR. The workflow log shows `Resource not accessible by integration` or `HttpError: GitHub Actions is not permitted to create or approve pull requests`
+- **Fix reference**: Manual -- navigate to the exact path above and enable the checkbox. No API equivalent exists
+- **Note**: This setting is per-repository and defaults to **disabled** on new repos. It must be enabled before any workflow (release-please, retrigger-ci, release-gate) that creates or modifies PRs using `GITHUB_TOKEN`
 
 ## Scoring
 
