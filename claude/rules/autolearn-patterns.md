@@ -137,7 +137,7 @@ go-licenses check ./... 2>&1 | grep -E "GPL|AGPL|LGPL|SSPL" && exit 1 || echo "N
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 **Consolidates:** AP#35 (archived)
-**See also:** KG#12, KG#57, KG#59
+**See also:** KG#12
 
 **Category:** ci-fix
 
@@ -691,7 +691,7 @@ On resume: `git status`, `git diff --stat`, `go build ./...`, then commit. Subag
 **Category:** process-pattern
 **Context:** Marketplace submission has multiple prerequisites. Missing any causes rejection.
 **Fix:** Checklist: (1) Dockerfile labels (screenshots JSON, changelog HTML, additional-urls), (2) .hadolint.yaml ignores DL3048/DL3045, (3) multi-arch (amd64+arm64), (4) `docker extension validate`, (5) submit via docker/extensions-submissions.
-**See also:** KG#77, KG#78, KG#83, KG#84
+**See also:** KG#77
 
 ## 111. MUI Tooltip Requires Span Wrapper for Disabled Buttons
 
