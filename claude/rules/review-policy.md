@@ -14,7 +14,7 @@ enforces:
 - **1 required approving review** (Copilot satisfies this for owner PRs)
 - **Copilot code review on push** with re-review on new pushes
 - **Squash-only merges**
-- **Admin bypass** for the repo owner (RepositoryRole id 5)
+- **Admin bypass** for repository admins (RepositoryRole id 5)
 
 The workflow is fully automated. No human approval is required for PRs
 to merge. The pipeline is:
