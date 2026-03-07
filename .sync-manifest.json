@@ -21,28 +21,7 @@
         "claude/rules/subagent-ci-checklist.md",
         "claude/rules/workflow-preferences.md"
       ],
-      "skills": [
-        "claude/skills/autolearn",
-        "claude/skills/bash-linux",
-        "claude/skills/devkit-sync",
-        "claude/skills/docker-containerization",
-        "claude/skills/go-development",
-        "claude/skills/manage-github-issues",
-        "claude/skills/powershell-windows",
-        "claude/skills/quality-control",
-        "claude/skills/react-frontend-development",
-        "claude/skills/requirements-generator",
-        "claude/skills/security-review",
-        "claude/skills/server-management",
-        "claude/skills/setup-github-actions",
-        "claude/skills/systematic-debugging",
-        "claude/skills/webapp-testing",
-        "claude/skills/windows-development",
-        "claude/skills/code-review",
-        "claude/skills/plan-review",
-        "claude/skills/conformance-audit",
-        "claude/skills/rules-compact"
-      ],
+      "skills": "auto-discover",
       "agents": [
         "claude/agents/go-test-writer.md",
         "claude/agents/plan-reviewer.md",
@@ -61,6 +40,7 @@
         "devspace/",
         "machine/",
         "docs/",
+        "scripts/",
         "METHODOLOGY.md"
       ]
     },

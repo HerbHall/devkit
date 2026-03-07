@@ -250,7 +250,19 @@ function Get-LinkPairs {
     }
 
     # Skill directories (directory symlinks)
-    foreach ($skillPath in $Manifest.shared.skills) {
+    # Support both static array and "auto-discover" mode
+    $skillEntries = $Manifest.shared.skills
+    if ($skillEntries -eq 'auto-discover') {
+        $skillsDir = Join-Path $DevKit 'claude' 'skills'
+        if (Test-Path $skillsDir) {
+            $skillEntries = Get-ChildItem -Path $skillsDir -Directory |
+                ForEach-Object { "claude/skills/$($_.Name)" }
+        }
+        else {
+            $skillEntries = @()
+        }
+    }
+    foreach ($skillPath in $skillEntries) {
         $targetPath = Join-Path $DevKit $skillPath
         $claudeRelative = $skillPath -replace '^claude/', ''
         $linkPath = Join-Path $ClaudeHome $claudeRelative
