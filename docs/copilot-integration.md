@@ -213,7 +213,7 @@ The Copilot auto-review UI toggle cannot be set via API:
 This auto-merge model is the standard for all projects. Agents must
 never weaken it by:
 
-- Lowering `required_approving_review_count` below 1
+- Changing `required_approving_review_count` from 1 to any other value
 - Removing the `copilot_code_review` rule
 - Adding review requirements to branch protection (conflicts with rulesets)
 - Splitting the combined ruleset into separate rulesets

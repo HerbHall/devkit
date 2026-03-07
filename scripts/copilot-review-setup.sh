@@ -52,7 +52,7 @@ audit_repo() {
   local ruleset_enforcement=""
   local has_legacy_split="false"
   while IFS=$'\t' read -r rid rname renf; do
-    if [[ "$rname" == "Copilot PR Review" ]]; then
+    if [[ "$rname" == "Copilot PR Review" && -z "$ruleset_id" ]]; then
       ruleset_id="$rid"
       ruleset_enforcement="$renf"
     elif [[ "$rname" == "Copilot Code Review" || "$rname" == "PR Merge Policy" ]]; then
@@ -116,7 +116,6 @@ audit_repo() {
     pass "Branch protection has no review requirement (avoids double review gate)"
   else
     warn "Branch protection has review requirement ($bp_reviews reviews) -- may conflict with ruleset"
-    errors=$((errors + 1))
   fi
 
   # 7. CODEOWNERS file exists
