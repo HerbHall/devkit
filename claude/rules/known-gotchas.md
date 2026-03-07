@@ -1,7 +1,7 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 79
+entry_count: 80
 last_updated: "2026-03-07"
 ---
 
@@ -698,3 +698,15 @@ All parallel agents write to the same working directory. Changes mix as unstaged
 **Platform:** GitHub
 **Issue:** Copilot code review can only COMMENT on PRs, never APPROVE. Setting `required_approving_review_count: 1` in a ruleset creates a gate that can never be satisfied without `--admin` bypass. Previous configurations attempted workarounds (combined rulesets, split rulesets) but none solve the fundamental constraint: Copilot cannot approve.
 **Fix:** Set `required_approving_review_count: 0`. Keep `copilot_code_review` with `review_on_push: true` for informational comments. CI is the only merge gate. Claude Code reads Copilot comments after CI passes, implements valid ones, and merges without waiting for re-review. Use `--admin` only for CI infrastructure failures, never to skip Copilot feedback. Template: `project-templates/copilot-ruleset.json`. Audit: `scripts/copilot-review-setup.sh audit OWNER/REPO`.
+
+## 100. Large Input Block Ignored at Task Transition (Variant B Stall)
+
+**Added:** 2026-03-07 | **Source:** DevKit | **Status:** active
+
+**Platform:** Claude Code (sidebar extension and terminal)
+**Issue:** After completing a multi-step task, CC displays a newly pasted large input block as text rather than executing it. The session appears frozen. This is distinct from Variant A (skill menu blocking) -- there is no menu, no prompt, CC simply does not act on the input.
+**Root cause:** Context saturation at task boundaries. CC has processed a full implementation session and the accumulated context leaves insufficient headroom to treat the new input as a fresh task instruction.
+**Symptoms:** Large handoff prompt pasted after task completion. CC shows the text in the chat panel. No bash commands run. `?` button appears at bottom. Sending `?` or `continue` may or may not unstick it -- success rate is low on third or subsequent attempts.
+**Fix:** Kill the session and open a fresh one (`+` in sidebar, `Ctrl+C` then `claude` in terminal). Paste the handoff into the new session. Do NOT attempt to recover a saturated session with multiple `?` prompts -- each attempt consumes more context.
+**Prevention:** Keep handoff prompts under 40 lines. Split multi-part handoffs into separate sessions. Run `/rules-compact` if rules files approach 40k -- oversized rules files accelerate context saturation on load.
+**Recovery escalation:** If `?` fails twice, the session is unrecoverable. Open fresh immediately.
