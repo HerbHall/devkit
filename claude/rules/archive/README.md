@@ -25,7 +25,7 @@ An entry should be archived when:
 
 - It is marked `**Status:** deprecated` (no longer applicable)
 - It is marked `**Status:** superseded-by-XX#NN` (replaced by another entry)
-- The `/reflect audit` workflow recommends archival and the user approves
+- The `/autolearn audit` workflow recommends archival and the user approves
 
 ## Reference
 

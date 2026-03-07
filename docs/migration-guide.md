@@ -7,7 +7,7 @@ How to adopt DevKit in an existing project. This guide assumes DevKit is already
 DevKit gives your project access to:
 
 - **Rules** (10 files, 135+ patterns) -- auto-loaded every Claude Code session
-- **Skills** (19 invokable workflows) -- `/plan-review`, `/code-review`, `/reflect`, etc.
+- **Skills** (19 invokable workflows) -- `/plan-review`, `/code-review`, `/autolearn`, etc.
 - **Agent templates** (7 agents) -- plan reviewer, code reviewer, security analyzer, etc.
 - **Hooks** -- SessionStart for automatic session orientation
 - **CI templates** -- GitHub Actions workflows, pre-push hooks, lint configs

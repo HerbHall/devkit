@@ -118,7 +118,7 @@ Once found, always fix, never leave. Every error is an opportunity to improve th
 
 - No "pre-existing" bypass -- all errors get fixed or tracked with an issue immediately
 - Every error triggers a systemic assessment: why didn't our rules prevent this?
-- Learnings feed back to DevKit via `/reflect` for all-project benefit
+- Learnings feed back to DevKit via `/autolearn` for all-project benefit
 - Agents own every error they find, regardless of who introduced it
 
 ## 14. Mandatory Subagent Checklists
@@ -139,7 +139,7 @@ After fixing errors or discovering patterns, assess abstraction level:
 - Stack-specific (Go, React, etc.): promote to DevKit stack rules
 - Universal development principle: promote to DevKit core rules
 - Template-worthy: update project templates so future projects inherit it
-- Run `/reflect` to capture and propose promotion
+- Run `/autolearn` to capture and propose promotion
 
 ## 16. Cross-Project Boundary: Issues Not Edits
 

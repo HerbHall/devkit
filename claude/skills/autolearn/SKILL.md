@@ -1,5 +1,5 @@
 ---
-name: reflect
+name: autolearn
 description: Reflect on the current session to extract learnings, update knowledge, and improve skills.
 user_invocable: true
 ---

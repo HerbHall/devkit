@@ -36,7 +36,7 @@ The existing `SessionStart.sh` hook performs five functions:
 The current `UserPromptSubmit` hook uses the regex
 `^(?!/)(?!\d{1,2}$)` to skip slash commands and bare numeric menu
 selections (KG#10). It fires a `type: "prompt"` hook that passively
-monitors for autolearn opportunities and suggests `/reflect` when
+monitors for autolearn opportunities and suggests `/autolearn` when
 notable patterns are discovered.
 
 ### Known Gotchas
@@ -152,7 +152,7 @@ This includes context window pressure warnings.
 
 - **Context pressure detection** -- when a notification indicates the
   context window is nearing capacity, a hook could inject a reminder
-  to run `/reflect` before compaction erases learnings. This directly
+  to run `/autolearn` before compaction erases learnings. This directly
   addresses the compaction recovery rules.
 
 - **Coordination context surfacing** -- inject relevant coordination
@@ -164,13 +164,13 @@ This includes context window pressure warnings.
 **Analysis:** The value of notification hooks depends heavily on what
 notification content is available. If context window pressure
 notifications include a clear signal (e.g., percentage used), the
-`/reflect` reminder is straightforward and high-value. Coordination
+`/autolearn` reminder is straightforward and high-value. Coordination
 context surfacing is speculative without knowing the notification
 payload format.
 
 **Recommendation:** Investigate what notification events Claude Code
 actually emits. If context pressure notifications exist, implement
-the `/reflect` reminder. Defer coordination surfacing until the
+the `/autolearn` reminder. Defer coordination surfacing until the
 notification payload is better understood.
 
 ### d. SubagentStop Hooks
@@ -221,10 +221,10 @@ the session ends.
 
 **Candidate uses:**
 
-- **Reflect reminder** -- inject a brief reminder to run `/reflect`
+- **Reflect reminder** -- inject a brief reminder to run `/autolearn`
   if the session involved substantial work. This complements the
   autolearn pattern in CLAUDE.md that asks Claude to suggest
-  `/reflect` proactively.
+  `/autolearn` proactively.
 
 - **Uncommitted changes warning** -- run `git status` and warn if
   there are uncommitted changes that might be lost.
@@ -240,7 +240,7 @@ autolearn nudge was missed. The uncommitted changes warning is also
 valuable -- it prevents the user from closing a session with work
 in progress.
 
-**Recommendation:** Implement both the `/reflect` reminder and the
+**Recommendation:** Implement both the `/autolearn` reminder and the
 uncommitted changes check. These are independent, small, and
 immediately useful.
 
@@ -302,7 +302,7 @@ incidents demonstrate that the current controls are insufficient.
    pre-push hook with lightweight per-commit checks. Not a Claude Code
    hook but fills a gap in the git hooks story.
 
-5. **Notification: context pressure /reflect reminder** (Medium, M)
+5. **Notification: context pressure /autolearn reminder** (Medium, M)
    -- valuable but depends on notification payload investigation.
 
 6. **PreToolUse: dangerous operation guard** (Low, L) -- overlaps with
@@ -315,7 +315,7 @@ incidents demonstrate that the current controls are insufficient.
 - **Stop hook** -- add `Stop` entry to `settings.template.json` with
   a `type: "command"` hook that runs a bash script. The script checks
   `git status --porcelain` for uncommitted changes and echoes a
-  `/reflect` reminder. Create the script at
+  `/autolearn` reminder. Create the script at
   `claude/hooks/SessionStop.sh`.
 
 - **Pre-commit hook template** -- add
@@ -342,7 +342,7 @@ incidents demonstrate that the current controls are insufficient.
 
 - **Notification hooks** -- investigate what notification events
   Claude Code emits. If context pressure notifications are available,
-  implement a `/reflect` reminder. Document findings for future
+  implement a `/autolearn` reminder. Document findings for future
   implementation.
 
 ### Phase 4: Deferred (L effort, low priority)

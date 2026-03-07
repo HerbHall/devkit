@@ -86,7 +86,7 @@ User workflow and style preferences. These ensure consistency across sessions.
 
 ## Priority Matrix
 
-| Category | Store in Memory? | Store in Rules? | Auto-detect? | Manual /reflect? |
+| Category | Store in Memory? | Store in Rules? | Auto-detect? | Manual /autolearn? |
 |----------|-----------------|----------------|-------------|-----------------|
 | Correction | Yes | Yes (patterns) | Yes (Stop hook) | Yes |
 | Pattern | Yes | Yes (patterns) | Sometimes | Yes |

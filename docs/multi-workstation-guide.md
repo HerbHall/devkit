@@ -172,9 +172,9 @@ Every time you open a Claude Code session, `SessionStart.sh` runs automatically:
 
 You do not need to do anything -- this happens silently in the background.
 
-### Capture patterns with /reflect
+### Capture patterns with /autolearn
 
-During a session, when you learn something new (a gotcha, a pattern, a fix), run `/reflect`. This appends the learning to the appropriate rules file in `~/.claude/rules/`. Because of symlinks, the edit lands directly in your DevKit clone.
+During a session, when you learn something new (a gotcha, a pattern, a fix), run `/autolearn`. This appends the learning to the appropriate rules file in `~/.claude/rules/`. Because of symlinks, the edit lands directly in your DevKit clone.
 
 ### Push changes with /devkit-sync push
 

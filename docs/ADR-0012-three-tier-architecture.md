@@ -166,10 +166,10 @@ Project Tier                    Machine Tier                    Universal Tier
                            ^                                  ^
                            |                                  |
                       Manual copy                     /devkit-sync promote
-                      or /reflect                     (issue #86)
+                      or /autolearn                     (issue #86)
 ```
 
-- **Project -> Machine**: When `/reflect` captures a pattern during project work, it writes to the machine-tier `.local.md` file (already implemented)
+- **Project -> Machine**: When `/autolearn` captures a pattern during project work, it writes to the machine-tier `.local.md` file (already implemented)
 - **Machine -> Universal**: The `/devkit-sync promote` command (#86) scans `.local.md` files, shows candidates, and appends selected entries to the universal rules file
 
 Demotion (universal -> machine or machine -> project) is not automated. If a universal pattern is wrong, edit or remove it from the universal file directly.

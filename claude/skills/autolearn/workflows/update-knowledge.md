@@ -17,9 +17,9 @@ Check if the current working directory is the DevKit repo:
 This workflow writes directly to rules files and must run in the DevKit repo.
 
 To promote learnings from this project:
-1. Run `/reflect` (quick or session review) -- learnings go to MCP Memory
+1. Run `/autolearn` (quick or session review) -- learnings go to MCP Memory
 2. Universal learnings are filed as DevKit issues automatically
-3. In a DevKit session, run `/reflect` with "update knowledge" to merge them
+3. In a DevKit session, run `/autolearn` with "update knowledge" to merge them
 ```
 
 ### 1. Read Current Rules Files

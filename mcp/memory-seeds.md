@@ -67,7 +67,7 @@ Observations:
 Entity: pattern-autolearn-feedback-loop
 Type: Pattern
 Observations:
-- /reflect skill captures session learnings
+- /autolearn skill captures session learnings
 - Stores in MCP Memory (deep) and rules files (fast)
 - Rules files auto-load every session
 ```
