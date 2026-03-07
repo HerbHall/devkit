@@ -159,7 +159,7 @@ Present results as a table. Use checkmarks and X marks for visual clarity:
 Legend: + = pass, - = fail, ~ = skip (not applicable), ? = manual verification required
 ```
 
-Use `+` for pass, `-` for fail, `~` for skip.
+Use `+` for pass, `-` for fail, `~` for skip, `?` for manual verification required.
 
 ### 6. Calculate Scores
 

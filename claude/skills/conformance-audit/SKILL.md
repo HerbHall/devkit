@@ -23,7 +23,7 @@ Cross-project conformance auditing against DevKit standards. Run a 17-point chec
 <intake>
 What kind of conformance audit do you need?
 
-1. **Full audit** -- Run 16-point conformance check across all projects
+1. **Full audit** -- Run 17-point conformance check across all projects
 2. **Single project** -- Audit one specific project
 3. **Fix gaps** -- Auto-fix common conformance gaps for a project
 

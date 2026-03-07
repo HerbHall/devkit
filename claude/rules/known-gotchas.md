@@ -2,7 +2,7 @@
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
 entry_count: 99
-last_updated: "2026-03-05"
+last_updated: "2026-03-07"
 ---
 
 # Known Gotchas

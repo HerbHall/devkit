@@ -73,7 +73,7 @@ The `forge` field in `~/.devkit-config.json` (machine tier, per [ADR-0012](ADR-0
 - **primary** -- `"github"` or `"gitea"`. Overrides auto-detection when set.
 - **giteaUrl** -- Base URL of the Gitea instance (e.g., `https://git.example.com`). Required for `tea` login.
 
-GitHub repos need no configuration. Gitea repos require `giteaUrl` to be set once per machine.
+GitHub repos need no forge-abstraction configuration. Gitea repos require `giteaUrl` to be set once per machine. Note: some GitHub settings (like Actions PR permissions) must still be configured in the UI -- see Forge-Specific Settings below.
 
 ## Affected Skills
 
