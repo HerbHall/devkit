@@ -83,7 +83,16 @@ Verification checks that:
 - Required tools (git, gh, node) are available on PATH
 - Claude Code settings are properly configured
 
-## Step 5: Start a Claude Code Session
+## Step 5: Configure GitHub Repository Settings
+
+After creating your repo on GitHub, configure these **manual settings** that cannot be set via CLI:
+
+1. **Actions PR Permission**: Settings → Actions → General → Workflow permissions → enable "Allow GitHub Actions to create and approve pull requests". Required for release-please and any workflow that opens PRs
+2. **Copilot Auto-Review** (if using Copilot): Settings → Rules → Rulesets → "Copilot PR Review" → enable "Require review from GitHub Copilot". See [Copilot Integration](copilot-integration.md) for details
+
+These settings default to disabled on new repos and cause silent failures if missed.
+
+## Step 6: Start a Claude Code Session
 
 Open your project directory and start Claude Code. The SessionStart hook fires automatically when you send your first message, providing:
 

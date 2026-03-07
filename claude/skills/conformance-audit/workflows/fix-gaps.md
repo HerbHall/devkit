@@ -265,6 +265,43 @@ if [ ! -f "$PROJECT/.github/workflows/release-gate.yml" ]; then
 fi
 ```
 
+**Check 14 -- Workflow Trigger Patterns** (manual only)
+
+```text
+MANUAL: Review all workflow files for tag-based triggers.
+  Any non-release-please workflow with 'on: push: tags: v*' will never fire
+  (GITHUB_TOKEN-created tags don't trigger push events).
+  Move publish/deploy jobs into release-please.yml or use 'on: release: types: [published]'.
+```
+
+**Check 15 -- Retrigger CI** (auto-fix, only if check 8 passes)
+
+```bash
+if [ ! -f "$PROJECT/.github/workflows/retrigger-ci.yml" ]; then
+    mkdir -p "$PROJECT/.github/workflows"
+    cp "$DEVKIT_ROOT/project-templates/retrigger-ci.yml" "$PROJECT/.github/workflows/retrigger-ci.yml"
+    echo "FIXED: Created retrigger-ci.yml from template"
+fi
+```
+
+**Check 16 -- Auto-Merge Enabled** (auto-fix via API, only if check 13 passes)
+
+```bash
+REPO_SLUG=$(gh repo view "$PROJECT" --json nameWithOwner -q .nameWithOwner 2>/dev/null)
+gh api "repos/$REPO_SLUG" -X PATCH -f allow_auto_merge=true --silent
+echo "FIXED: Auto-merge enabled on $REPO_SLUG"
+```
+
+**Check 17 -- Actions PR Permission** (manual only -- **no API exists**)
+
+```text
+MANUAL: This setting CANNOT be automated.
+  Navigate to: Settings > Actions > General > Workflow permissions
+  Enable: "Allow GitHub Actions to create and approve pull requests"
+  This is REQUIRED for release-please, retrigger-ci, and release-gate workflows.
+  Without it, workflows that create or modify PRs fail with "Resource not accessible by integration".
+```
+
 ### 4. Substitute Placeholders
 
 For all files that were copied from templates, substitute common placeholders:

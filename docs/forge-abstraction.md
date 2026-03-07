@@ -83,6 +83,35 @@ GitHub repos need no configuration. Gitea repos require `giteaUrl` to be set onc
 | `devkit-sync` | `gh pr create` in push workflow | Replace with `devkit-pr-create` wrapper |
 | `quality-control` | `gh pr checks`, `gh pr view` | Replace with wrappers; skip PR checks on Gitea |
 
+## Forge-Specific Settings
+
+Some settings are UI-only and differ between forges. When migrating repos from GitHub to Gitea (or vice versa), configure the equivalent settings on the target forge.
+
+### Actions PR Permission
+
+Workflows that create or modify PRs (release-please, retrigger-ci, release-gate) require explicit permission to do so. Without this, PRs are never opened and workflows fail silently.
+
+**GitHub**:
+
+- **Path**: Repository Settings → Actions → General → Workflow permissions
+- **Setting**: "Allow GitHub Actions to create and approve pull requests" (checkbox)
+- **Default**: Disabled on new repos
+- **API**: Not available -- must be set in the UI
+- **Failure mode**: Workflow log shows `Resource not accessible by integration` or `HttpError: GitHub Actions is not permitted to create or approve pull requests`
+
+**Gitea**:
+
+- **Path (site-wide)**: Site Administration → Settings → Repository (or Admin Panel → Settings depending on version)
+- **Path (per-repo)**: Repository Settings → Actions (if the repo-level toggle exists in your Gitea version)
+- **Setting**: "Allow Actions to create pull requests" -- the exact label varies by Gitea version (1.21+ introduced granular Actions permissions)
+- **Default**: Depends on site-wide configuration; check with your Gitea administrator
+- **Docs**: [Gitea Actions documentation](https://docs.gitea.com/usage/actions/overview) and [Gitea Actions permissions](https://docs.gitea.com/usage/actions/comparison#permissions)
+- **Note**: Gitea 1.22+ aligns more closely with GitHub Actions permissions. Earlier versions may require site-level configuration. If the per-repo toggle is not visible, the site administrator must enable it globally
+
+### Copilot Auto-Review (GitHub only)
+
+GitHub Copilot code review is a GitHub-specific feature with no Gitea equivalent. Repos migrating to Gitea should replace Copilot review with an alternative code review mechanism (e.g., required human review count in branch protection, or a self-hosted review bot).
+
 ## Graceful Degradation
 
 When `tea` is not installed and a Gitea repo is detected:
