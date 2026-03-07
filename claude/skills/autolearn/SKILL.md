@@ -78,7 +78,9 @@ Type a number, keyword, or **skip** to dismiss.
 | 4, "skill improvement", "improve skills", "improve agents" | workflows/skill-improvement.md |
 | 5, "audit rules", "rules health", "stale rules" | workflows/audit-rules.md |
 
-If the input does not clearly match any option above, respond:
+If the user types **skip** or **dismiss**, briefly confirm cancellation (e.g., "reflect cancelled.") and end the skill without running any workflow.
+
+If the input does not clearly match any option above and is not "skip" or "dismiss", respond:
 "reflect was triggered but your input didn't match a workflow. Options: 1-5 (listed above). Type **skip** to dismiss."
 
 **After reading the workflow, follow it exactly.**

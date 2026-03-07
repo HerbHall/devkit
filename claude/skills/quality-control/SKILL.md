@@ -149,7 +149,9 @@ Type a number, keyword, or **skip** to dismiss.
 | 6, "pre-release", "release check", "before tag", "release ready" | workflows/pre-release-check.md |
 | 7, "file QC issues", "QC findings", "bugs found" | workflows/file-qc-issues.md |
 
-If the input does not clearly match any option above, respond:
+If the user types **skip** or **dismiss**, briefly confirm cancellation (e.g., "quality-control cancelled.") and end the skill without running any workflow.
+
+If the input does not clearly match any option above and is not "skip" or "dismiss", respond:
 "quality-control was triggered but your input didn't match a workflow. Options: 1-7 (listed above). Type **skip** to dismiss."
 
 **After reading the workflow, follow it exactly.**

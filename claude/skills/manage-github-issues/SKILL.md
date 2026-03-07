@@ -101,7 +101,9 @@ Type a number, keyword, or **skip** to dismiss.
 | 2, "audit issues", "review issues", "find gaps" | workflows/audit-issues.md |
 | 3, "triage issues", "prioritize issues", "sort backlog" | workflows/triage-and-prioritize.md |
 
-If the input does not clearly match any option above, respond:
+If the user types **skip** or **dismiss**, briefly confirm cancellation (e.g., "manage-github-issues cancelled.") and end the skill without running any workflow.
+
+If the input does not clearly match any option above and is not "skip" or "dismiss", respond:
 "manage-github-issues was triggered but your input didn't match a workflow. Options: 1-3 (listed above). Type **skip** to dismiss."
 
 **After reading the workflow, follow it exactly.**

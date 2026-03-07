@@ -56,7 +56,9 @@ Type a number, keyword, or **skip** to dismiss.
 | 11, "new project", "scaffold project", "create project" | workflows/new-project.md |
 | 12, "audit settings", "settings cleanup", "redundant permissions" | workflows/audit-settings.md |
 
-If the input does not clearly match any option above, respond:
+If the user types **skip** or **dismiss**, briefly confirm cancellation (e.g., "devkit-sync cancelled.") and end the skill without running any workflow.
+
+If the input does not clearly match any option above and is not "skip" or "dismiss", respond:
 "devkit-sync was triggered but your input didn't match a workflow. Options: 1-12 (listed above). Type **skip** to dismiss."
 
 **After reading the workflow, follow it exactly.**

@@ -62,7 +62,9 @@ Type a number, keyword, or **skip** to dismiss.
 | 2, "update requirements", "modify requirements", "change requirements" | workflows/update-requirements.md |
 | 3, "review requirements", "audit requirements", "check requirements" | workflows/review-requirements.md |
 
-If the input does not clearly match any option above, respond:
+If the user types **skip** or **dismiss**, briefly confirm cancellation (e.g., "requirements-generator cancelled.") and end the skill without running any workflow.
+
+If the input does not clearly match any option above and is not "skip" or "dismiss", respond:
 "requirements-generator was triggered but your input didn't match a workflow. Options: 1-3 (listed above). Type **skip** to dismiss."
 
 **After reading the workflow, follow it exactly.**
