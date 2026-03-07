@@ -95,6 +95,40 @@ Some settings are UI-only and differ between forges:
 
 These settings cannot be abstracted by the forge wrapper -- they must be configured manually per repository on each forge.
 
+## Gitea Actions API for CI Status
+
+Gitea provides a REST API for Actions workflow runs at `/api/v1/repos/{owner}/{repo}/actions/runs`. This could substitute for `gh pr checks` on Gitea-hosted repos.
+
+### API Endpoint
+
+```text
+GET /api/v1/repos/{owner}/{repo}/actions/runs
+```
+
+Returns a list of workflow runs with `status` and `conclusion` fields. Filtering by branch or PR is possible via query parameters.
+
+### Feasibility Assessment
+
+**Viable but not yet implemented.** The API exists and returns the needed data, but:
+
+1. `tea` CLI does not expose Actions runs (as of tea v0.9). Raw `curl` calls against the Gitea API would be required.
+2. Mapping PR number to a specific workflow run requires correlating the PR's head branch with the run's branch — `gh pr checks` does this automatically.
+3. Authentication requires a Gitea API token (already configured if `tea login` was run).
+
+### Current Status
+
+The `devkit-pr-checks()` wrapper in `scripts/forge-wrappers.sh` returns exit code 1 with a warning on Gitea repos. A future enhancement could implement the API call:
+
+```bash
+# Potential implementation (not yet active):
+curl -s -H "Authorization: token $GITEA_TOKEN" \
+  "$GITEA_URL/api/v1/repos/$OWNER/$REPO/actions/runs?branch=$HEAD_BRANCH" \
+  | python3 -c "import json,sys; runs=json.load(sys.stdin)['workflow_runs']; \
+    print('pass' if all(r['conclusion']=='success' for r in runs) else 'fail')"
+```
+
+This is deferred until a Gitea-hosted project needs CI status checking in automation.
+
 ## Graceful Degradation
 
 When `tea` is not installed and a Gitea repo is detected:

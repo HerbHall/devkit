@@ -139,6 +139,20 @@ devkit-pr-list() {
 }
 
 # ---------------------------------------------------------------------------
+# devkit-pr-checks -- Check CI status on a pull request
+#   Returns exit code 1 on Gitea (not available via tea CLI).
+# ---------------------------------------------------------------------------
+devkit-pr-checks() {
+  case "$(devkit-forge-detect)" in
+    github) gh pr checks "$@" ;;
+    gitea)
+      echo "[WARN] CI status checking unavailable on Gitea. Verify CI manually before merging." >&2
+      return 1
+      ;;
+  esac
+}
+
+# ---------------------------------------------------------------------------
 # devkit-pr-merge -- Merge a pull request
 #   First positional arg is PR number/URL. Extra flags passed through.
 # ---------------------------------------------------------------------------
