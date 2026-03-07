@@ -136,7 +136,6 @@ go-licenses check ./... 2>&1 | grep -E "GPL|AGPL|LGPL|SSPL" && exit 1 || echo "N
 ## 17. Swagger Platform-Specific Issues (Consolidated Reference)
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-**Consolidates:** AP#35 (archived)
 **See also:** KG#12
 
 **Category:** ci-fix

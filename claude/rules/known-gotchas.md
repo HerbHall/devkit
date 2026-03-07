@@ -110,7 +110,7 @@ Platform-specific issues, tool quirks, and surprising behaviors discovered throu
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 **Consolidates:** KG#57, KG#59 (archived)
-**See also:** AP#17, AP#35
+**See also:** AP#17
 
 **Platform:** Go (swaggo/swag, cross-platform)
 
