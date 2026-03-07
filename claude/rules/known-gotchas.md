@@ -1,7 +1,7 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 77
+entry_count: 78
 last_updated: "2026-03-07"
 ---
 
@@ -680,3 +680,13 @@ All parallel agents write to the same working directory. Changes mix as unstaged
 **Platform:** GitHub
 **Issue:** Copilot code review toggle in rulesets is UI-only. API can create the rule but UI may need manual confirmation.
 **Fix:** After API ruleset creation, manually verify in Settings > Rules > Rulesets. Create a test PR to confirm.
+
+## 98. Rules Files Over 40k Degrade Session Performance
+
+**Added:** 2026-03-07 | **Source:** DevKit | **Status:** active
+
+**Platform:** Claude Code (all)
+**Issue:** Rules files in `claude/rules/` load into every Claude Code session as system context. Files over 40k cause large input blocks to be ignored at task transitions (Variant B stall pattern). The session appears to work normally but silently drops context from oversized rules, leading to repeated mistakes and missed patterns.
+**Symptom:** Agent ignores known patterns documented in rules files. Task transitions (switching between plan/code/verify phases) lose context from rules that should apply. Rules files that were 2.5x over the 40k threshold caused measurable degradation.
+**Fix:** Run `/rules-compact` to archive stale entries, deduplicate same-root-cause patterns, and consolidate related entries below 35k per file.
+**Prevention:** The conformance-audit checklist (check #17) flags any rules file over 40k. Run `/conformance-audit` periodically to catch growth before it hits the limit. Target 35k per file to leave headroom.

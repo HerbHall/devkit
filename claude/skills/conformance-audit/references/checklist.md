@@ -156,6 +156,14 @@ A project may match multiple stacks (e.g., Go backend + Node frontend). Apply ch
 - **Fail indicators**: auto-merge is disabled, causing release-gate's auto-merge step to fail silently
 - **Fix reference**: `gh api repos/OWNER/REPO -X PATCH -f allow_auto_merge=true`
 
+### 17. Rules File Size
+
+- **What to check**: No file in `claude/rules/` exceeds 40k
+- **Stacks**: DevKit only (skip for non-DevKit projects)
+- **Pass criteria**: `wc -c claude/rules/*.md` shows all files under 40,960 bytes
+- **Fail indicators**: Any file over 40k. Output: `rules/<filename> is Xk -- exceeds 40k limit, run /rules-compact`
+- **Fix reference**: Run `/rules-compact` skill to archive stale entries and consolidate duplicates
+
 ## Scoring
 
 - **Pass**: Check criteria met
