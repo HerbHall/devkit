@@ -82,21 +82,29 @@ If no config file exists, the skill will work by discovering project structure d
 </project_config>
 
 <intake>
-What would you like to do?
+**manage-github-issues triggered.** What would you like to do?
 
 1. **Generate issues for a phase/milestone** - Read the roadmap, find incomplete items, create GitHub Issues
 2. **Audit existing issues** - Compare open issues against the roadmap, find gaps and problems
 3. **Triage and prioritize** - Review open issues, suggest priorities, update labels and milestones
 
-**Wait for response before proceeding.**
+Type a number, keyword, or **skip** to dismiss.
+
+> Note: This skill blocks on user input. If triggered unintentionally,
+> type **skip** or **dismiss** to cancel.
 </intake>
 
 <routing>
 | Response | Workflow |
 |----------|----------|
-| 1, "generate", "create", "phase", "milestone" | workflows/generate-phase-issues.md |
-| 2, "audit", "review", "check", "gaps" | workflows/audit-issues.md |
-| 3, "triage", "prioritize", "sort" | workflows/triage-and-prioritize.md |
+| 1, "generate issues", "create issues", "phase issues", "milestone issues" | workflows/generate-phase-issues.md |
+| 2, "audit issues", "review issues", "find gaps" | workflows/audit-issues.md |
+| 3, "triage issues", "prioritize issues", "sort backlog" | workflows/triage-and-prioritize.md |
+
+If the user types **skip** or **dismiss**, briefly confirm cancellation (e.g., "manage-github-issues cancelled.") and end the skill without running any workflow.
+
+If the input does not clearly match any option above and is not "skip" or "dismiss", respond:
+"manage-github-issues was triggered but your input didn't match a workflow. Options: 1-3 (listed above). Type **skip** to dismiss."
 
 **After reading the workflow, follow it exactly.**
 </routing>

@@ -122,7 +122,7 @@ For each failing check, follow this diagnostic flow:
 </diagnostics>
 
 <intake>
-What would you like to do?
+**quality-control triggered.** What would you like to do?
 
 1. **Check a specific PR** - Diagnose and fix CI failures on a specific pull request
 2. **Audit all open PRs** - Review all open PRs for CI failures, merge conflicts, and staleness
@@ -132,19 +132,27 @@ What would you like to do?
 6. **Pre-release check** - Validate release readiness (git state, .gitignore, GoReleaser, ldflags, Dockerfile)
 7. **File QC issues** - Create GitHub issues for findings from a QC testing session
 
-**Wait for response before proceeding.**
+Type a number, keyword, or **skip** to dismiss.
+
+> Note: This skill blocks on user input. If triggered unintentionally,
+> type **skip** or **dismiss** to cancel.
 </intake>
 
 <routing>
 | Response | Workflow |
 |----------|----------|
-| 1, "check", "specific", "PR", number | workflows/check-pr.md |
-| 2, "audit", "all", "open", "review" | workflows/audit-prs.md |
-| 3, "post-push", "verify", "monitor" | workflows/post-push-verify.md |
-| 4, "fix", "CI", "failures", "auto" | workflows/fix-ci-failures.md |
-| 5, "root cause", "recurring", "pattern", "why", "keeps happening" | workflows/root-cause-analysis.md |
+| 1, "check PR", "specific PR", a PR number | workflows/check-pr.md |
+| 2, "audit PRs", "audit open", "review PRs" | workflows/audit-prs.md |
+| 3, "post-push", "verify push", "monitor CI" | workflows/post-push-verify.md |
+| 4, "fix CI", "fix failures", "auto-fix" | workflows/fix-ci-failures.md |
+| 5, "root cause", "recurring", "keeps failing", "why failing" | workflows/root-cause-analysis.md |
 | 6, "pre-release", "release check", "before tag", "release ready" | workflows/pre-release-check.md |
-| 7, "file", "QC", "issues", "findings", "bugs found" | workflows/file-qc-issues.md |
+| 7, "file QC issues", "QC findings", "bugs found" | workflows/file-qc-issues.md |
+
+If the user types **skip** or **dismiss**, briefly confirm cancellation (e.g., "quality-control cancelled.") and end the skill without running any workflow.
+
+If the input does not clearly match any option above and is not "skip" or "dismiss", respond:
+"quality-control was triggered but your input didn't match a workflow. Options: 1-7 (listed above). Type **skip** to dismiss."
 
 **After reading the workflow, follow it exactly.**
 </routing>

@@ -19,7 +19,7 @@ Manual control for DevKit multi-machine synchronization. While auto-pull (Sessio
 </essential_principles>
 
 <intake>
-What sync operation do you need?
+**devkit-sync triggered.** What sync operation do you need?
 
 1. **Status** -- Show symlink health, git status, drift report
 2. **Push** -- Commit and push local DevKit changes, create/update PR
@@ -34,24 +34,32 @@ What sync operation do you need?
 11. **New project** -- Scaffold a new project with DevKit templates and profile
 12. **Audit settings** -- Check for redundant permissions in settings.json
 
-Or just type your question about DevKit sync.
+Type a number, keyword, or **skip** to dismiss.
+
+> Note: This skill blocks on user input. If triggered unintentionally,
+> type **skip** or **dismiss** to cancel.
 </intake>
 
 <routing>
 | Response | Workflow |
 |----------|----------|
-| 1, "status", "state", "health", "check" | workflows/status.md |
-| 2, "push", "commit", "upload", "share" | workflows/push.md |
-| 3, "pull", "fetch", "download" | workflows/pull.md |
-| 4, "init", "setup", "install", "link" | workflows/init.md |
-| 5, "diff", "changes", "what changed" | workflows/diff.md |
-| 6, "unlink", "copy", "snapshot", "portable" | workflows/unlink.md |
-| 7, "resolve", "conflicts", "conflict", "merge conflict", "rebase conflict" | workflows/resolve-conflicts.md |
-| 8, "promote", "graduate", "elevate", "local to universal" | workflows/promote.md |
-| 9, "update", "upgrade", "version", "release" | workflows/update.md |
-| 10, "verify", "propagation", "check projects", "reach" | workflows/verify.md |
-| 11, "new-project", "scaffold", "create project", "new" | workflows/new-project.md |
-| 12, "audit", "cleanup", "settings audit", "redundant", "permissions" | workflows/audit-settings.md |
+| 1, "sync status", "symlink health", "drift report" | workflows/status.md |
+| 2, "sync push", "push changes", "commit and push" | workflows/push.md |
+| 3, "sync pull", "pull latest", "fetch devkit" | workflows/pull.md |
+| 4, "sync init", "setup symlinks", "first-time setup" | workflows/init.md |
+| 5, "sync diff", "show diff", "what changed" | workflows/diff.md |
+| 6, "unlink", "portable snapshot", "replace symlinks" | workflows/unlink.md |
+| 7, "resolve conflicts", "merge conflict", "rebase conflict" | workflows/resolve-conflicts.md |
+| 8, "promote rules", "graduate", "local to universal" | workflows/promote.md |
+| 9, "devkit update", "devkit upgrade", "check version" | workflows/update.md |
+| 10, "verify propagation", "check projects", "verify reach" | workflows/verify.md |
+| 11, "new project", "scaffold project", "create project" | workflows/new-project.md |
+| 12, "audit settings", "settings cleanup", "redundant permissions" | workflows/audit-settings.md |
+
+If the user types **skip** or **dismiss**, briefly confirm cancellation (e.g., "devkit-sync cancelled.") and end the skill without running any workflow.
+
+If the input does not clearly match any option above and is not "skip" or "dismiss", respond:
+"devkit-sync was triggered but your input didn't match a workflow. Options: 1-12 (listed above). Type **skip** to dismiss."
 
 **After reading the workflow, follow it exactly.**
 </routing>

@@ -55,7 +55,7 @@ This prevents projects from modifying symlinked rules files directly. Symlinks p
 </references>
 
 <intake>
-What would you like to reflect on?
+**reflect triggered.** What would you like to reflect on?
 
 1. **Quick reflect** -- Fast end-of-task assessment (what worked, what didn't, store key learnings)
 2. **Session review** -- Comprehensive session retrospective with full MCP Memory sync
@@ -63,17 +63,25 @@ What would you like to reflect on?
 4. **Skill improvement** -- Analyze past mistakes and improve existing skills/agents
 5. **Audit rules** -- Health check: stale entries, missing metadata, duplicates, cross-references
 
-**Wait for response before proceeding.**
+Type a number, keyword, or **skip** to dismiss.
+
+> Note: This skill blocks on user input. If triggered unintentionally,
+> type **skip** or **dismiss** to cancel.
 </intake>
 
 <routing>
 | Response | Workflow |
 |----------|----------|
-| 1, "quick", "fast", "brief" | workflows/quick-reflect.md |
-| 2, "session", "review", "comprehensive", "full" | workflows/session-review.md |
-| 3, "update", "knowledge", "rules", "merge" | workflows/update-knowledge.md |
-| 4, "skill", "improve", "agent", "fix" | workflows/skill-improvement.md |
-| 5, "audit", "rules", "health", "stale" | workflows/audit-rules.md |
+| 1, "quick reflect", "fast reflect", "brief reflect" | workflows/quick-reflect.md |
+| 2, "session review", "comprehensive review", "full review" | workflows/session-review.md |
+| 3, "update knowledge", "merge rules", "update rules" | workflows/update-knowledge.md |
+| 4, "skill improvement", "improve skills", "improve agents" | workflows/skill-improvement.md |
+| 5, "audit rules", "rules health", "stale rules" | workflows/audit-rules.md |
+
+If the user types **skip** or **dismiss**, briefly confirm cancellation (e.g., "reflect cancelled.") and end the skill without running any workflow.
+
+If the input does not clearly match any option above and is not "skip" or "dismiss", respond:
+"reflect was triggered but your input didn't match a workflow. Options: 1-5 (listed above). Type **skip** to dismiss."
 
 **After reading the workflow, follow it exactly.**
 </routing>

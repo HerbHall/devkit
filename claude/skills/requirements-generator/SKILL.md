@@ -43,21 +43,29 @@ All requirements.md files follow this structure:
 </essential_principles>
 
 <intake>
-What would you like to do?
+**requirements-generator triggered.** What would you like to do?
 
 1. **Create new requirements** - Start a new requirements.md from scratch
 2. **Update requirements** - Modify existing requirements as scope changes
 3. **Review requirements** - Audit requirements for completeness and quality
 
-**Wait for response before proceeding.**
+Type a number, keyword, or **skip** to dismiss.
+
+> Note: This skill blocks on user input. If triggered unintentionally,
+> type **skip** or **dismiss** to cancel.
 </intake>
 
 <routing>
 | Response | Workflow |
 |----------|----------|
-| 1, "create", "new", "start" | workflows/create-requirements.md |
-| 2, "update", "modify", "change" | workflows/update-requirements.md |
-| 3, "review", "audit", "check" | workflows/review-requirements.md |
+| 1, "create requirements", "new requirements", "start requirements" | workflows/create-requirements.md |
+| 2, "update requirements", "modify requirements", "change requirements" | workflows/update-requirements.md |
+| 3, "review requirements", "audit requirements", "check requirements" | workflows/review-requirements.md |
+
+If the user types **skip** or **dismiss**, briefly confirm cancellation (e.g., "requirements-generator cancelled.") and end the skill without running any workflow.
+
+If the input does not clearly match any option above and is not "skip" or "dismiss", respond:
+"requirements-generator was triggered but your input didn't match a workflow. Options: 1-3 (listed above). Type **skip** to dismiss."
 
 **After reading the workflow, follow it exactly.**
 </routing>
