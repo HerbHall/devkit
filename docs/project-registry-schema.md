@@ -26,7 +26,11 @@ The project registry tracks which projects on a machine consume DevKit configura
       "registered": "string (ISO 8601 date, YYYY-MM-DD)",
       "lastSync": "string (ISO 8601 datetime with timezone)",
       "hasLocalRules": "boolean (project has .claude/rules/*.md)",
-      "hasLocalSkills": "boolean (project has .claude/skills/*/)"
+      "hasLocalSkills": "boolean (project has .claude/skills/*/)",
+      "samverk": {
+        "managed": "boolean",
+        "phase": "string (current lifecycle phase)"
+      }
     }
   ]
 }
@@ -46,6 +50,9 @@ The project registry tracks which projects on a machine consume DevKit configura
 | `lastSync` | string | Timestamp of last DevKit sync check (ISO 8601 datetime) |
 | `hasLocalRules` | boolean | Whether the project has project-scoped rules in `.claude/rules/` |
 | `hasLocalSkills` | boolean | Whether the project has project-scoped skills in `.claude/skills/` |
+| `samverk` | object? | Optional Samverk overlay status (present only for Samverk-managed projects) |
+| `samverk.managed` | boolean | Whether the Samverk overlay is applied |
+| `samverk.phase` | string | Current lifecycle phase (read from `.samverk/project.yaml`) |
 
 ## Example
 
@@ -61,7 +68,11 @@ The project registry tracks which projects on a machine consume DevKit configura
       "registered": "2026-02-25",
       "lastSync": "2026-02-25T10:00:00Z",
       "hasLocalRules": true,
-      "hasLocalSkills": true
+      "hasLocalSkills": true,
+      "samverk": {
+        "managed": true,
+        "phase": "execution"
+      }
     },
     {
       "path": "D:\\DevSpace\\Runbooks",

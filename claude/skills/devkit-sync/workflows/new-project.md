@@ -11,6 +11,8 @@ Scaffold a new project directory with DevKit templates and an optional stack pro
    - **Project name** (kebab-case, e.g., `my-tool`)
    - **One-line description** (what does this project do?)
    - **Profile** -- one of: `go-cli`, `go-web`, `node-extension`, `go-extension`, `rust-cli`, `dotnet-desktop`, `react-frontend`, `iot-embedded`, or `none`
+   - **Samverk managed?** [y/N] -- Add Samverk lifecycle overlay (phase tracking, agent labels,
+     coordination). Can also be added later via `devkit-sync` -> Apply Samverk.
 
    Validate the project name: letters, numbers, and hyphens only, must start with a letter or number.
 
@@ -212,22 +214,32 @@ Scaffold a new project directory with DevKit templates and an optional stack pro
 
    For each unreplaced placeholder, tell the user: "Replace `{{PLACEHOLDER}}` with the actual value in `<file>`"
 
-9. **Optionally create a GitHub repo:**
+9. **Optionally apply Samverk overlay (if requested in step 1):**
 
-   Ask the user: "Create a GitHub repo for this project? [y/N]"
+   If the user answered yes to "Samverk managed?", follow the same steps as
+   `workflows/apply-samverk.md` but skip the confirmation prompt for existing overlays
+   (this is a fresh project, so no overlay can exist yet).
 
-   If yes:
+   Edge case: if the Samverk overlay spec cannot be located (step 2 of apply-samverk.md
+   fails), skip the overlay, note: "Samverk overlay requested but Samverk repo not found.
+   Apply later with: devkit-sync -> Apply Samverk."
 
-   ```bash
-   cd <devspace>/<project-name>
-   git add -A
-   git commit -m "chore: initial project scaffolding"
-   gh repo create <owner>/<project-name> --private --source=. --remote origin --push
-   ```
+10. **Optionally create a GitHub repo:**
 
-   Determine `<owner>` from `gh api user --jq '.login'` or `git config --global user.name`.
+    Ask the user: "Create a GitHub repo for this project? [y/N]"
 
-10. **Report summary:**
+    If yes:
+
+    ```bash
+    cd <devspace>/<project-name>
+    git add -A
+    git commit -m "chore: initial project scaffolding"
+    gh repo create <owner>/<project-name> --private --source=. --remote origin --push
+    ```
+
+    Determine `<owner>` from `gh api user --jq '.login'` or `git config --global user.name`.
+
+11. **Report summary:**
 
     Display what was created:
 
@@ -235,6 +247,7 @@ Scaffold a new project directory with DevKit templates and an optional stack pro
     - Files created (list each one)
     - Git initialized (with or without template)
     - GitHub repo URL (if created)
+    - Samverk overlay applied (if requested)
 
     Suggest next steps:
 
@@ -242,6 +255,7 @@ Scaffold a new project directory with DevKit templates and an optional stack pro
     - Edit `AGENTS.md` to add project-specific tech stack and structure
     - Edit `.github/copilot-instructions.md` to fill in tech stack details
     - Review `.claude/settings.json` and adjust permissions
+    - If Samverk overlay applied: review `.samverk/status.md` and update with current state
     - Add source code and start building
     - Run `claude` in the project directory to begin development
 
@@ -252,3 +266,4 @@ Scaffold a new project directory with DevKit templates and an optional stack pro
 - `git-templates/` not found in DevKit: fall back to plain `git init`
 - `gh` not authenticated: skip GitHub repo creation, tell user the manual command
 - Profile `iot-embedded` or `none`: no extra templates are copied (only always-included files)
+- Samverk overlay requested but Samverk repo not found: skip overlay, note the manual command
