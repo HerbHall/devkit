@@ -1,6 +1,6 @@
 # Conformance Audit: Full Audit
 
-Run the 18-point conformance checklist across all projects in the DevSpace workspace.
+Run the 19-point conformance checklist across all projects in the DevSpace workspace.
 
 ## Steps
 

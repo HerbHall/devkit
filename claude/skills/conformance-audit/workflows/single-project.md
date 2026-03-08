@@ -1,6 +1,6 @@
 # Conformance Audit: Single Project
 
-Run the 18-point conformance checklist against one specific project.
+Run the 19-point conformance checklist against one specific project.
 
 ## Steps
 
@@ -54,11 +54,11 @@ If the stack is `unknown`, note that stack-specific checks (5, 12) will be skipp
 
 ### 4. Read Checklist
 
-Load the 18-point checklist from `references/checklist.md` in the conformance-audit skill directory. Use it as the authoritative source for what to check, pass criteria, and fix references.
+Load the 19-point checklist from `references/checklist.md` in the conformance-audit skill directory. Use it as the authoritative source for what to check, pass criteria, and fix references.
 
 ### 5. Run Each Check
 
-Execute all 18 checks. For each one, report the result with detail:
+Execute all 19 checks. For each one, report the result with detail:
 
 **Check 1 -- CLAUDE.md**
 
