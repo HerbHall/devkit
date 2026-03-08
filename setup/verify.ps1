@@ -37,6 +37,7 @@ Write-Section 'Verification: Core Tools'
 $tools = @(
     @{ Name = 'git';     Check = 'git' },
     @{ Name = 'gh';      Check = 'gh' },
+    @{ Name = 'node';    Check = 'node' },
     @{ Name = 'go';      Check = 'go' },
     @{ Name = 'docker';  Check = 'docker' },
     @{ Name = 'code';    Check = 'code' },

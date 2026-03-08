@@ -230,15 +230,15 @@ With symlinks active, changes flow automatically:
 | File | Entries | Purpose |
 |------|---------|---------|
 | `agent-team-coordination.md` | - | Multi-agent team coordination rules and anti-patterns |
-| `autolearn-patterns.md` | 76 | Learned patterns: lint fixes, CI config, architecture, testing |
+| `autolearn-patterns.md` | 71 | Learned patterns: lint fixes, CI config, architecture, testing |
 | `compaction-recovery.md` | - | Context compaction recovery rules and loop detection |
 | `core-principles.md` | 10 | Immutable core principles (Tier 0) |
 | `error-policy.md` | - | Zero-tolerance error policy and fix-forward workflow (Tier 1) |
-| `known-gotchas.md` | 60 | Platform issues: Windows, GitHub, Go, React, Docker |
+| `known-gotchas.md` | 82 | Platform issues: Windows, GitHub, Go, React, Docker |
 | `markdown-style.md` | - | Markdownlint conventions |
 | `review-policy.md` | - | Independent review policy: mandatory triggers and scope |
 | `subagent-ci-checklist.md` | - | Pre-commit CI validation checklists |
-| `workflow-preferences.md` | 11 | Established conventions: git, commits, testing |
+| `workflow-preferences.md` | 16 | Established conventions: git, commits, testing |
 
 ### Skills (invoke with /skill-name)
 
