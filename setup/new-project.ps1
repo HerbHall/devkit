@@ -859,7 +859,7 @@ logger:
             }
         }
 
-        if ($rpt) {
+        if (-not [string]::IsNullOrWhiteSpace($rpt)) {
             try {
                 $rptResult = ($rpt | & gh secret set RELEASE_PLEASE_TOKEN --repo "$githubUser/$projectName" 2>&1)
                 if ($LASTEXITCODE -eq 0) {
