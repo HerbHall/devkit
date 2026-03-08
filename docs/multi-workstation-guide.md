@@ -87,6 +87,46 @@ Adjust the values for your machine:
 | `claudeHome` | `C:\\Users\\you\\.claude` | `$HOME/.config/claude` (XDG) or `$HOME/.claude` | `$HOME/.claude` |
 | `os` | `windows` | `linux` | `darwin` |
 
+### Optional: Add shared secrets
+
+The `Secrets` block in `~/.devkit-config.json` stores long-lived PATs and shared
+tokens that `new-project.ps1` distributes automatically to new repos. This file
+is local-only and must never be committed.
+
+```json
+{
+  "version": 2,
+  "machineId": "desktop-main",
+  "devspacePath": "D:\\DevSpace",
+  "Secrets": {
+    "RELEASE_PLEASE_TOKEN": "github_pat_..."
+  }
+}
+```
+
+**`RELEASE_PLEASE_TOKEN`** is the most important secret here. GitHub blocks
+`GITHUB_TOKEN` from triggering new workflow runs (anti-recursion safeguard), so
+release-please needs a PAT with `repo` and `workflow` scopes. When this token is
+present, `new-project.ps1` sets it automatically on every new repo.
+
+To generate the token: GitHub > Settings > Developer settings > Personal access
+tokens > Fine-grained > New token. Scopes needed: `Contents: Write`,
+`Pull requests: Write`, `Actions: Write` (for setting secrets).
+
+To distribute the token to existing repos (one-off or bulk):
+
+```powershell
+# Single repo
+pwsh -File devkit/scripts/Set-DevkitSecrets.ps1 -Repo HerbHall/myproject
+
+# All repos under your GitHub user
+pwsh -File devkit/scripts/Set-DevkitSecrets.ps1
+```
+
+> **Note**: `~/.devkit-config.json` is listed in `.sync-manifest.json`
+> under `local_only_patterns` -- it is never synced between machines.
+> Each machine has its own copy with its own paths and secrets.
+
 ### Step 4: Verify
 
 Run the full verification check:
