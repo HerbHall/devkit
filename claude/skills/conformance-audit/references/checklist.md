@@ -164,15 +164,14 @@ A project may match multiple stacks (e.g., Go backend + Node frontend). Apply ch
 - **Fail indicators**: Any file over 40k. Output: `rules/<filename> is Xk -- exceeds 40k limit, run /rules-compact`
 - **Fix reference**: Run `/rules-compact` skill to archive stale entries and consolidate duplicates
 
-### 18. Actions PR Permission
+### 18. Release PAT Configured
 
-- **What to check**: Repository has "Allow GitHub Actions to create and approve pull requests" enabled
+- **What to check**: `RELEASE_PLEASE_TOKEN` secret is set on the repository
 - **Stacks**: Only if release-please is configured (check 8 passes)
-- **Pass criteria**: This is a **manual UI-only check** -- it cannot be verified or set via the GitHub API or `gh` CLI
-- **Navigation path**: Repository Settings > Actions > General > Workflow permissions > check "Allow GitHub Actions to create and approve pull requests"
-- **Fail indicators**: Release Please workflow runs succeed but never open a PR. The workflow log shows `Resource not accessible by integration` or `HttpError: GitHub Actions is not permitted to create or approve pull requests`
-- **Fix reference**: Manual -- navigate to the exact path above and enable the checkbox. No API equivalent exists
-- **Note**: This setting is per-repository and defaults to **disabled** on new repos. It must be enabled before any workflow (release-please, retrigger-ci, release-gate) that creates or modifies PRs using `GITHUB_TOKEN`
+- **Pass criteria**: `gh secret list --repo OWNER/REPO` includes `RELEASE_PLEASE_TOKEN`
+- **Fail indicators**: Secret missing; release-please workflow fails with `HttpError: Resource not accessible by integration`
+- **Fix reference**: `scripts/Set-DevkitSecrets.ps1 -Repo OWNER/REPO` (reads from `~/.devkit-config.json` `.Secrets` block); or `new-project.ps1` section 2.7 sets it automatically on new projects
+- **Note**: The "Allow GitHub Actions to create and approve pull requests" UI setting is NOT required when using `RELEASE_PLEASE_TOKEN` (a PAT). That restriction only applies to `GITHUB_TOKEN`. `release-gate.yml` and `retrigger-ci.yml` use `GITHUB_TOKEN` only for editing existing PRs (labels, comments, close/reopen) -- not creating new ones. The UI setting is therefore irrelevant for this setup.
 
 ### 19. Periodic Documentation Audit
 

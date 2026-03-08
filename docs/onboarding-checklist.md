@@ -116,62 +116,41 @@ git push -u origin chore/initial-ci
 
 Merge this PR after CI passes.
 
-## Phase 3: Manual GitHub UI Settings
+## Phase 3: Automated Repository Configuration
 
-These settings **cannot** be configured via API or CLI. Each must be set manually in the GitHub web UI.
+All repository configuration is applied via API or CLI — no browser steps required.
 
-### 3.1 Actions PR Permission (REQUIRED)
+### 3.1 Release PAT Secret (AUTOMATED by new-project.ps1)
 
-**Path**: Repository Settings > Actions > General > Workflow permissions
+`new-project.ps1` section 2.7 reads `RELEASE_PLEASE_TOKEN` from `~/.devkit-config.json` and sets it automatically. For existing repos, run:
 
-1. Select **"Read and write permissions"**
-2. Check **"Allow GitHub Actions to create and approve pull requests"**
-3. Click **Save**
-
-**Why**: Without this, `release-please`, `retrigger-ci`, and `release-gate` workflows fail with `Resource not accessible by integration` when they try to create or modify PRs using `GITHUB_TOKEN`. This setting defaults to **disabled** on new repositories.
-
-**Failure symptom**: Release Please workflow runs succeed but never open a PR. Workflow log shows `HttpError: GitHub Actions is not permitted to create or approve pull requests`.
-
-### 3.2 Copilot PR Review Ruleset (RECOMMENDED)
-
-**Path**: Repository Settings > Rules > Rulesets > New ruleset > New branch ruleset
-
-1. Name the ruleset **"Copilot PR Review"**
-2. Set enforcement status to **Active**
-3. Under "Target branches", add **Default branch**
-4. Under "Branch rules", enable **"Require a pull request before merging"**
-   - Set "Required approvals" to **0** (Copilot cannot approve, only comment)
-   - Check **"Require review from GitHub Copilot"**
-   - Check **"Review new pushes"**
-5. Under "Branch rules", enable **"Restrict merge methods"**
-   - Check **"Squash"** only
-6. Under "Bypass list", add your admin account
-7. Click **Create**
-
-Alternatively, create the ruleset via API then enable Copilot manually:
-
-```bash
-bash scripts/copilot-review-setup.sh setup OWNER/REPO
-# Then go to Settings > Rules > Rulesets > Copilot PR Review
-# and manually enable the Copilot review toggle (API cannot set this)
+```powershell
+pwsh scripts/Set-DevkitSecrets.ps1 -Repo OWNER/REPO
 ```
 
-**Why**: Copilot auto-review provides informational code review on every push. It is not a merge gate — CI is the only merge gate. See `docs/copilot-integration.md` for the full three-layer protection model.
+**Why**: `release-please.yml` uses this PAT (not `GITHUB_TOKEN`) to create release PRs. A PAT acts as a user token and is not subject to the "Allow GitHub Actions to create PRs" repository permission, which only restricts the built-in `GITHUB_TOKEN`. See KG#94.
 
-### 3.3 Auto-Merge (REQUIRED if using release-gate)
+### 3.2 Auto-Merge (AUTOMATED by new-project.ps1)
 
-**Path**: Repository Settings > General (scroll to "Pull Requests" section)
-
-1. Check **"Allow auto-merge"**
-2. Click **Save** (or update)
-
-Can also be set via API:
+`new-project.ps1` enables auto-merge via API during scaffolding. For existing repos:
 
 ```bash
 gh api repos/OWNER/REPO -X PATCH -f allow_auto_merge=true
 ```
 
-**Why**: The `release-gate.yml` workflow uses `gh pr merge --auto` to auto-merge release PRs after CI passes.
+**Gitea**: Set via API: `PATCH /api/v1/repos/{owner}/{repo}` with `allow_auto_merge: true`.
+
+**Why**: `release-gate.yml` uses `gh pr merge --auto` to merge release PRs after CI passes.
+
+### 3.3 Copilot PR Review Ruleset (OPTIONAL, GitHub-only, partially automated)
+
+Creates the ruleset via API. The Copilot review toggle within the ruleset requires a one-time UI action and cannot be set via API:
+
+```bash
+bash scripts/copilot-review-setup.sh setup OWNER/REPO
+```
+
+**Note**: This is informational only — Copilot cannot approve PRs (KG#99). CI is the merge gate. Skip this step on Gitea-hosted projects (no Copilot equivalent exists).
 
 ## Phase 4: Gitea Equivalents
 
@@ -195,7 +174,7 @@ After completing all steps, run the conformance audit:
 /conformance-audit
 ```
 
-Select the single-project check and provide the project path. All 18 checks should pass (or show as "skip" for non-applicable stack checks).
+Select the single-project check and provide the project path. All 19 checks should pass (or show as "skip" for non-applicable stack checks).
 
 ### Expected results for a fully onboarded project
 
@@ -218,7 +197,8 @@ Select the single-project check and provide the project path. All 18 checks shou
 | 15. Retrigger CI | Pass |
 | 16. Auto-Merge | Pass |
 | 17. Rules File Size | Skip (DevKit only) |
-| 18. Actions PR Permission | Pass (manual verification) |
+| 18. Release PAT Configured | Pass |
+| 19. Periodic Documentation Audit | Skip (DevKit only) |
 
 If any check fails, the audit output includes the fix reference (template path or command).
 
@@ -234,11 +214,8 @@ If any check fails, the audit output includes the fix reference (template path o
 
 ### Manual (human in browser)
 
-- Actions PR Permission (Settings > Actions > General)
-- Copilot review toggle in ruleset (Settings > Rules > Rulesets)
-- Auto-merge checkbox (Settings > General) — also settable via API
+- Copilot review toggle in ruleset (Settings > Rules > Rulesets) — optional, GitHub-only, informational only
 
 ### Cannot be automated
 
-- Actions PR Permission — no API exists
-- Copilot review toggle within rulesets — API creates the ruleset but cannot enable the Copilot toggle
+- Copilot review toggle within rulesets — API creates the ruleset but cannot enable the Copilot toggle (GitHub-only feature; not applicable on Gitea)
