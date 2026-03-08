@@ -1,8 +1,8 @@
 ---
 description: Learned patterns from past sessions. Read when encountering similar situations.
 tier: 2
-entry_count: 70
-last_updated: "2026-03-07"
+entry_count: 71
+last_updated: "2026-03-08"
 ---
 
 # Learned Patterns
@@ -740,3 +740,11 @@ On resume: `git status`, `git diff --stat`, `go build ./...`, then commit. Subag
 **Category:** process-pattern
 **Context:** Adding a KG entry without updating `entry_count` and `last_updated` in the YAML frontmatter causes drift between metadata and actual content.
 **Fix:** Always update `entry_count` and `last_updated` in the same commit that adds or removes entries. Applies to both `known-gotchas.md` and `autolearn-patterns.md`.
+
+## 120. Secrets Block in ~/.devkit-config.json for PAT Distribution
+
+**Added:** 2026-03-08 | **Source:** DevKit | **Status:** active
+
+**Category:** scaffolding-pattern
+**Context:** New repos need long-lived PATs (e.g., `RELEASE_PLEASE_TOKEN`) set as GitHub Actions secrets. Prompting users each time is fragile; env vars don't survive across sessions.
+**Fix:** Store PATs in `~/.devkit-config.json` under `.Secrets`. New-project.ps1 reads and sets them automatically (section 2.7). Use `scripts/Set-DevkitSecrets.ps1` to backfill existing repos (`-Repo HerbHall/foo` for one, no args for all). File is local-only, never committed. See KG#94 for why `GITHUB_TOKEN` is insufficient for release-please.
