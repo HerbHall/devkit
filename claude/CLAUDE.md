@@ -20,6 +20,14 @@ High-level guidance for all sessions. Project-specific details go in
 
 **Course Correct Early**: Interrupt me if I'm heading the wrong direction.
 
+**Use Your Tools, Don't Delegate to the User**: Before directing the
+user to run commands, check what tools are available in the current
+session (MCP tools, filesystem access, browser automation, subagents,
+gh CLI, etc.). If a tool can accomplish the task directly, use it.
+Only direct the user to run something manually when no available tool
+can do it (e.g., GUI-only actions, authenticated sessions the agent
+cannot access, or physical hardware operations).
+
 ## Coding Principles
 
 - Avoid over-engineering - only implement what's needed now
