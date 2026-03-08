@@ -838,6 +838,48 @@ logger:
     }
 
     # ------------------------------------------------------------------
+    # 2.7 Set repo secrets
+    # ------------------------------------------------------------------
+
+    if ($githubCreated) {
+        Write-Step 'Setting repo secrets...'
+
+        $configFile = Join-Path $HOME '.devkit-config.json'
+        $rpt = $null
+
+        if (Test-Path $configFile) {
+            try {
+                $config = Get-Content $configFile -Raw | ConvertFrom-Json
+                if ($config.PSObject.Properties['Secrets'] -and
+                    $config.Secrets.PSObject.Properties['RELEASE_PLEASE_TOKEN']) {
+                    $rpt = $config.Secrets.RELEASE_PLEASE_TOKEN
+                }
+            } catch {
+                # Ignore parse errors
+            }
+        }
+
+        if ($rpt) {
+            try {
+                $rptResult = ($rpt | & gh secret set RELEASE_PLEASE_TOKEN --repo "$githubUser/$projectName" 2>&1)
+                if ($LASTEXITCODE -eq 0) {
+                    Write-OK 'Set RELEASE_PLEASE_TOKEN'
+                } else {
+                    Write-Warn "Could not set RELEASE_PLEASE_TOKEN: $rptResult"
+                    Write-Warn "Run manually: gh secret set RELEASE_PLEASE_TOKEN --repo $githubUser/$projectName"
+                }
+            } catch {
+                Write-Warn "Exception setting RELEASE_PLEASE_TOKEN: $_"
+                Write-Warn "Run manually: gh secret set RELEASE_PLEASE_TOKEN --repo $githubUser/$projectName"
+            }
+        } else {
+            Write-Warn 'RELEASE_PLEASE_TOKEN not found in ~/.devkit-config.json -- skipping'
+            Write-Warn "Run manually: gh secret set RELEASE_PLEASE_TOKEN --repo $githubUser/$projectName"
+            Write-Warn 'To automate: add .Secrets.RELEASE_PLEASE_TOKEN to ~/.devkit-config.json'
+        }
+    }
+
+    # ------------------------------------------------------------------
     # Return scaffold result summary
     # ------------------------------------------------------------------
 
