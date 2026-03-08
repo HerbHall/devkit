@@ -2,7 +2,7 @@
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
 entry_count: 82
-last_updated: "2026-03-07"
+last_updated: "2026-03-08"
 ---
 
 # Known Gotchas
@@ -652,10 +652,11 @@ All parallel agents write to the same working directory. Changes mix as unstaged
 ## 94. GITHUB_TOKEN-Created Tags Don't Trigger Push Events
 
 **Added:** 2026-03-05 | **Source:** Runbooks | **Status:** active
+**Last relevant:** 2026-03-08
 
 **Platform:** GitHub Actions
 **Issue:** Tags created by `GITHUB_TOKEN` don't trigger `on: push: tags:` in other workflows (anti-recursion safeguard).
-**Fix:** Chain publish job in same workflow using `release_created` output. Or use `on: release: types: [published]` in separate workflow.
+**Fix:** Chain publish job in same workflow using `release_created` output. Or use `on: release: types: [published]` in separate workflow. For release-please specifically, use `RELEASE_PLEASE_TOKEN` (a PAT) instead of `GITHUB_TOKEN` -- see AP#120.
 
 ## 95. Release-Please Branch Updates Don't Always Trigger CI
 
