@@ -651,7 +651,8 @@ All parallel agents write to the same working directory. Changes mix as unstaged
 
 ## 94. GITHUB_TOKEN-Created Tags Don't Trigger Push Events
 
-**Added:** 2026-03-05 | **Source:** Runbooks | **Status:** active | **Last relevant:** 2026-03-08
+**Added:** 2026-03-05 | **Source:** Runbooks | **Status:** active
+**Last relevant:** 2026-03-08
 
 **Platform:** GitHub Actions
 **Issue:** Tags created by `GITHUB_TOKEN` don't trigger `on: push: tags:` in other workflows (anti-recursion safeguard).
