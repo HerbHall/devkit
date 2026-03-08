@@ -34,8 +34,8 @@ bash setup/legacy/verify.sh
 devkit/
 ├── claude/              - Claude Code config (rules, skills, agents, hooks)
 │   ├── CLAUDE.md        - Global instructions (installed to ~/.claude/)
-│   ├── rules/           - Auto-loaded pattern files (8 files, 135+ patterns)
-│   ├── skills/          - Invokable skills (18 skills with workflow files)
+│   ├── rules/           - Auto-loaded pattern files (10 files, 153+ patterns)
+│   ├── skills/          - Invokable skills (21 skills with workflow files)
 │   ├── agents/          - Agent templates (7 agents)
 │   └── hooks/           - SessionStart hook
 ├── devspace/            - Workspace shared configs (.editorconfig, VS Code)
@@ -46,6 +46,7 @@ devkit/
 ├── mcp/                 - MCP server inventory and config templates
 ├── profiles/            - Kit 2 stack profiles (project type definitions)
 ├── project-templates/   - Kit 3 scaffolding templates
+├── scripts/             - Utility scripts (secret distribution, Copilot setup, forge wrappers)
 ├── setup/               - PowerShell stubs (*.ps1, lib/*.ps1)
 │   ├── lib/             - Shared PowerShell libraries
 │   └── legacy/          - Deprecated bash scripts

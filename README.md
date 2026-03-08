@@ -61,13 +61,14 @@ See [Settings Strategy](docs/settings-strategy.md) for the two-layer permission 
 
 | Directory | Purpose |
 |-----------|---------|
-| `claude/` | Global Claude Code config — CLAUDE.md, 10 rules files (135+ patterns), 21 skills, 7 agent templates, hooks |
+| `claude/` | Global Claude Code config — CLAUDE.md, 10 rules files (153+ patterns), 21 skills, 7 agent templates, hooks |
 | `devspace/` | Workspace shared configs — .editorconfig, .markdownlint.json, VS Code fragments |
 | `docs/` | Human-readable guides — architecture decisions, profile format spec |
 | `machine/` | Machine state snapshots — VS Code extensions, tool versions |
 | `mcp/` | MCP server inventory, config templates (no secrets), Memory bootstrap guide |
 | `profiles/` | Kit 2 stack profiles — project type definitions (Go, React, IoT, etc.) |
 | `project-templates/` | Kit 3 scaffolding — workspace CLAUDE.md template, project starter files |
+| `scripts/` | Utility scripts — secret distribution (`Set-DevkitSecrets.ps1`), Copilot review setup, forge wrappers |
 | `setup/` | Setup scripts — PowerShell stubs (`*.ps1`, `lib/*.ps1`) and `legacy/` bash scripts |
 | `METHODOLOGY.md` | Development process — phases, gates, decision framework |
 
