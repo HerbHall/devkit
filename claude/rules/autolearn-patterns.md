@@ -1,7 +1,7 @@
 ---
 description: Learned patterns from past sessions. Read when encountering similar situations.
 tier: 2
-entry_count: 71
+entry_count: 72
 last_updated: "2026-03-08"
 ---
 
@@ -748,3 +748,12 @@ On resume: `git status`, `git diff --stat`, `go build ./...`, then commit. Subag
 **Category:** scaffolding-pattern
 **Context:** New repos need long-lived PATs (e.g., `RELEASE_PLEASE_TOKEN`) set as GitHub Actions secrets. Prompting users each time is fragile; env vars don't survive across sessions.
 **Fix:** Store PATs in `~/.devkit-config.json` under `.Secrets`. New-project.ps1 reads and sets them automatically (section 2.7). Use `scripts/Set-DevkitSecrets.ps1` to backfill existing repos (`-Repo HerbHall/foo` for one, no args for all). File is local-only, never committed. See KG#94 for why `GITHUB_TOKEN` is insufficient for release-please.
+
+## 121. Periodic Project Audit via Explore Subagent
+
+**Added:** 2026-03-08 | **Source:** DevKit | **Status:** active
+
+**Category:** process-pattern
+**Context:** Documentation, skill lists, CI coverage, and setup scripts drift from reality over time without automated validation. Stale counts, missing checklist blocks, and undocumented CI gaps accumulate invisibly.
+**Fix:** Run a structured Explore subagent audit periodically. The prompt should cover 10 dimensions: (1) docs-vs-reality count claims, (2) skill routing table completeness, (3) agent template coverage, (4) rules file metadata accuracy, (5) CI job gap analysis, (6) setup script completeness, (7) project template freshness, (8) hook coverage, (9) sync manifest integrity, (10) cross-reference completeness. Results from one DevKit audit: found stale README counts, 3 missing skills in verify.sh, absent `node` check, missing RUST-CI/DOTNET-CI checklists, no PSScriptAnalyzer in CI -- all actionable in the same session.
+**See also:** AP#47 (check existing assets before scoping issues), AP#83 (sprint scope reduction via exploration), AP#85 (roadmap drift)

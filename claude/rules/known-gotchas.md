@@ -1,7 +1,7 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 82
+entry_count: 85
 last_updated: "2026-03-08"
 ---
 
@@ -736,3 +736,45 @@ All parallel agents write to the same working directory. Changes mix as unstaged
 **Workaround:** Remove the `status:needs-human` label manually. The issue is valid; proceed normally.
 **Fix needed:** Dispatcher should treat `invalid_frontmatter` as a soft warning, not a hard escalation. Options: (1) skip frontmatter requirement for issues created by Copilot or external agents, (2) route to a fallback classify path using title/label heuristics, (3) only escalate if frontmatter is present but malformed. See Samverk issue #180.
 **See also:** KG#99 (Copilot review is informational -- same "Copilot-as-actor" surface area)
+
+## 103. Copilot Sub-PRs Target Feature Branch, Not Main
+
+**Added:** 2026-03-08 | **Source:** DevKit | **Status:** active
+
+**Platform:** GitHub (Copilot coding agent)
+**Issue:** Copilot's auto-generated sub-PRs (follow-up fix suggestions) target the feature branch that triggered the review, not `main`. When that feature branch is squash-merged and closed, the Copilot sub-PRs still point to the now-dead branch. Merging them (even with `--admin`) lands commits on the dead branch, not `main`. Changes are silently lost.
+**Symptom:** `gh pr merge <copilot-pr> --admin` succeeds but the fixes never appear on `main`.
+**Fix:** Before merging any Copilot sub-PR, check its target: `gh pr view <number> --json baseRefName,state`. If `baseRefName` is not `main` and the original PR is already merged, apply the fixes manually on a new branch from `main`.
+**See also:** KG#99 (Copilot review is informational -- same Copilot-as-actor surface area)
+
+## 104. PowerShell Unused Variable Triggers PSScriptAnalyzer Warning
+
+**Added:** 2026-03-08 | **Source:** DevKit | **Status:** active
+
+**Platform:** PowerShell (PSScriptAnalyzer)
+**Issue:** `PSUseDeclaredVarsMoreThanAssignments` fires when command output is captured into a variable that is never read: `$output = & command 2>&1 | Out-String`. If `$output` is only assigned and never referenced, the analyser warns. Caught by local PostToolUse hook; NOT caught by DevKit CI (issue #243 tracks adding PS lint to CI).
+**Fix:** Use `$null = & command 2>&1` to explicitly discard output. Drop `Out-String` — allocation is wasted if the result isn't used.
+
+## 105. PowerShell 2>&1 Mixes Stderr Into Parsed Output
+
+**Added:** 2026-03-08 | **Source:** DevKit | **Status:** active
+
+**Platform:** PowerShell (all)
+**Issue:** `& command 2>&1 | Out-String` merges stderr into the stdout string. When the output is parsed line-by-line for data (e.g. repo names from `gh api`), any error message from the command appears as a fake data record. Splitting on newlines produces garbage entries.
+**Fix:** Redirect stderr to a temp file to isolate it:
+
+```powershell
+$tmpErr = [System.IO.Path]::GetTempFileName()
+try {
+    $out = & command 2>$tmpErr | Out-String
+    if ($LASTEXITCODE -ne 0) {
+        $err = Get-Content $tmpErr -Raw -ErrorAction SilentlyContinue
+        Write-Error "command failed: $err"
+        exit 1
+    }
+} finally {
+    Remove-Item $tmpErr -ErrorAction SilentlyContinue
+}
+```
+
+**See also:** AP#76 (temp-file pattern for MSYS→PowerShell), KG#104 (unused var warning from the same code path)
