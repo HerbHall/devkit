@@ -1,6 +1,6 @@
 # Conformance Checklist
 
-18-point checklist for DevKit project conformance. Each check includes what to look for, which stacks need it, how to determine pass/fail, and which DevKit template provides the fix.
+19-point checklist for DevKit project conformance. Each check includes what to look for, which stacks need it, how to determine pass/fail, and which DevKit template provides the fix.
 
 ## Stack Detection
 
@@ -173,6 +173,15 @@ A project may match multiple stacks (e.g., Go backend + Node frontend). Apply ch
 - **Fail indicators**: Release Please workflow runs succeed but never open a PR. The workflow log shows `Resource not accessible by integration` or `HttpError: GitHub Actions is not permitted to create or approve pull requests`
 - **Fix reference**: Manual -- navigate to the exact path above and enable the checkbox. No API equivalent exists
 - **Note**: This setting is per-repository and defaults to **disabled** on new repos. It must be enabled before any workflow (release-please, retrigger-ci, release-gate) that creates or modifies PRs using `GITHUB_TOKEN`
+
+### 19. Periodic Documentation Audit
+
+- **What to check**: Documentation claims (skill counts, entry counts, feature lists) match actual on-disk state
+- **Stacks**: DevKit only (skip for non-DevKit projects)
+- **Pass criteria**: This is a **manual periodic check** — run an Explore subagent audit covering: (1) README count claims vs frontmatter, (2) skill names in verify.sh vs actual skills, (3) verify.ps1 tool list vs documented dependencies, (4) CI coverage gaps (missing lint jobs for active stacks)
+- **Frequency**: Run after any sprint that adds skills, rules entries, or CI changes
+- **Fail indicators**: README entry counts diverge from frontmatter `entry_count`; verify.sh lists fewer skills than `claude/skills/` contains; verify.ps1 missing tools referenced in CLAUDE.md
+- **Fix reference**: AP#121 (structured 10-dimension audit prompt); run from main context with Explore subagent
 
 ## Scoring
 

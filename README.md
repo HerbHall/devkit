@@ -265,7 +265,7 @@ Claude.ai Chat uses a separate skill store - install via Settings > Skills in th
 | code-review | Independent code review gate before commits | Code |
 | plan-review | Independent plan review gate before implementation | Code |
 | devkit-sync | Multi-machine DevKit sync: status, push, pull, init, diff, verify, promote, update | Code |
-| conformance-audit | 18-point project conformance checklist against DevKit standards | Code |
+| conformance-audit | 19-point project conformance checklist against DevKit standards | Code |
 | rules-compact | Compact oversized rules files: archive stale, deduplicate, consolidate | Code |
 | skill-audit | Audit skill quality: wait states, routing, references, frontmatter, rules metadata | Code |
 
