@@ -1,7 +1,7 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 86
+entry_count: 88
 last_updated: "2026-03-08"
 ---
 
@@ -724,7 +724,11 @@ All parallel agents write to the same working directory. Changes mix as unstaged
 - Use the Write tool to create new files instead of appending to large existing CRLF files
 - `sed` is also unreliable on MSYS (literal `t` instead of tab with `\t` escapes)
 
-**See also:** KG#62 (CRLF breaks bash grep in CI -- same root cause, different tool)
+- When parsing GitHub API issue bodies in Python, always normalize first:
+  `body = body.replace("\r\n", "\n")` before any regex matching
+
+**See also:** KG#62 (CRLF breaks bash grep in CI -- same root cause, different tool);
+KG#107 (GitHub API response CRLF -- same root cause, third surface)
 
 ## 102. Samverk Dispatcher False-Positive on Issues Without Frontmatter
 
@@ -786,3 +790,39 @@ try {
 **Platform:** All (markdownlint MD029)
 **Issue:** When inserting a new item mid-way into a numbered markdown list, every subsequent item must be renumbered in the same edit. Forgetting to renumber creates duplicate numbers and triggers MD029: "Expected: N; Actual: M; Style: 1/2/3".
 **Fix:** Before inserting, count the total items. After inserting, update every item number from the insertion point to the end. When in doubt, read the list with line numbers first (`Read` tool with limit), then make all numbering changes in a single Edit call.
+
+## 107. gh api -f Flags Default to POST — Use URL Query Params for GET
+
+**Added:** 2026-03-08 | **Source:** Samverk | **Status:** active
+
+**Platform:** GitHub CLI (all)
+**Issue:** Using `-f field=value` with `gh api` automatically sets the HTTP method
+to POST. For GET requests (listing issues, milestones, etc.) passing `-f milestone=5`
+causes HTTP 422 "title wasn't supplied" because GitHub interprets it as a create call.
+**Fix:** Embed params as URL query string instead:
+
+```bash
+gh api "repos/{owner}/{repo}/issues?milestone=5&state=open&per_page=100" --paginate
+```
+
+**See also:** KG#108 (gh issue create --milestone takes title, not number)
+
+## 108. gh issue create --milestone Takes Title, Not Number
+
+**Added:** 2026-03-08 | **Source:** Samverk | **Status:** active
+
+**Platform:** GitHub CLI (all)
+**Issue:** `gh issue create --milestone` accepts the milestone TITLE as a string.
+If you resolve a title to its number (e.g., 5) and pass `--milestone 5`, gh CLI
+searches for a milestone titled "5" and fails with "could not add to milestone
+'5': '5' not found".
+**Fix:** Pass the title directly:
+
+```bash
+gh issue create --milestone "Gitea Migration"   # correct
+gh issue create --milestone "$MILESTONE_NUM"    # wrong -- number is not a title
+```
+
+Note: `gh api PATCH /repos/{owner}/{repo}/issues/{n}` with `-F milestone=5` does
+accept the number (REST API level). The discrepancy is in the `gh` CLI layer.
+**See also:** KG#107 (gh api -f flag POST/GET issue)

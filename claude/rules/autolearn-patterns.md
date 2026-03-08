@@ -123,7 +123,18 @@ go-licenses check ./... 2>&1 | grep -E "GPL|AGPL|LGPL|SSPL" && exit 1 || echo "N
 
 **Category:** platform-workaround
 **Context:** `jq` unavailable on Windows MSYS. Python's `json` + `urllib.request` modules provide equivalent functionality.
-**Fix:** Use inline Python for JSON operations. Combine with Windows Python path detection (KG#8).
+**Fix:** Use inline Python for JSON operations. Combine with Windows Python path
+detection (KG#8). Always set UTF-8 I/O to prevent cp1252 crashes on Unicode content
+(issue bodies with →, em-dashes, etc.):
+
+1. In the calling bash script: `export PYTHONIOENCODING=utf-8`
+2. At the top of the Python script:
+   `if hasattr(sys.stdout, "reconfigure"): sys.stdout.reconfigure(encoding="utf-8")`
+3. In all `subprocess.run` calls: pass `encoding="utf-8"` explicitly
+
+Without this, any Unicode character in output causes `UnicodeEncodeError: 'charmap'
+codec can't encode character`. The two-layer fix (env var + reconfigure) is needed
+because the env var only covers the outer process; subprocess.run needs its own arg.
 
 ## 16. Remove Heavy Dependencies for Unfixable Vulnerabilities
 
