@@ -108,10 +108,18 @@ if ($PSCmdlet.ParameterSetName -eq 'Single') {
 
     # Use gh api with pagination to fetch all repositories for the user.
     # full_name has the "owner/name" format equivalent to nameWithOwner.
-    $repoOutput = & gh api "users/$githubUser/repos" --paginate --jq '.[].full_name' 2>&1 | Out-String
-    if ($LASTEXITCODE -ne 0) {
-        Write-Error "gh api failed while fetching repos: $repoOutput"
-        exit 1
+    # Stderr is redirected to a temp file so it cannot corrupt the stdout output;
+    # it is only included in the error message when the command fails.
+    $tmpErr = [System.IO.Path]::GetTempFileName()
+    try {
+        $repoOutput = & gh api "users/$githubUser/repos" --paginate --jq '.[].full_name' 2>$tmpErr | Out-String
+        if ($LASTEXITCODE -ne 0) {
+            $stderrMsg = Get-Content $tmpErr -Raw -ErrorAction SilentlyContinue
+            Write-Error "gh api failed while fetching repos: $stderrMsg"
+            exit 1
+        }
+    } finally {
+        Remove-Item $tmpErr -ErrorAction SilentlyContinue
     }
 
     # Split the output into individual repo names, trimming empty lines.
