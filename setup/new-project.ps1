@@ -736,11 +736,11 @@ logger:
             $null = & git add -A 2>&1
             $null = & git commit -m "chore: initial project scaffolding" 2>&1
 
-            $ghOutput = & gh repo create "$githubUser/$projectName" `
+            $null = & gh repo create "$githubUser/$projectName" `
                 --private `
                 --source . `
                 --remote origin `
-                --push 2>&1 | Out-String
+                --push 2>&1
             $ghExit = $LASTEXITCODE
 
             Pop-Location
@@ -859,7 +859,7 @@ logger:
             }
         }
 
-        if ($rpt) {
+        if (-not [string]::IsNullOrWhiteSpace($rpt)) {
             try {
                 $rptResult = ($rpt | & gh secret set RELEASE_PLEASE_TOKEN --repo "$githubUser/$projectName" 2>&1)
                 if ($LASTEXITCODE -eq 0) {
