@@ -1,7 +1,7 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 85
+entry_count: 86
 last_updated: "2026-03-08"
 ---
 
@@ -778,3 +778,11 @@ try {
 ```
 
 **See also:** AP#76 (temp-file pattern for MSYS→PowerShell), KG#104 (unused var warning from the same code path)
+
+## 106. Inserting into Numbered Markdown List Requires Full Renumbering
+
+**Added:** 2026-03-08 | **Source:** DevKit | **Status:** active
+
+**Platform:** All (markdownlint MD029)
+**Issue:** When inserting a new item mid-way into a numbered markdown list, every subsequent item must be renumbered in the same edit. Forgetting to renumber creates duplicate numbers and triggers MD029: "Expected: N; Actual: M; Style: 1/2/3".
+**Fix:** Before inserting, count the total items. After inserting, update every item number from the insertion point to the end. When in doubt, read the list with line numbers first (`Read` tool with limit), then make all numbering changes in a single Edit call.

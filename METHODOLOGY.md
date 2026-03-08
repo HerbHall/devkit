@@ -2,6 +2,13 @@
 
 A standardized process for taking ideas from concept to release. Designed for a solo developer working with Claude Code across multiple concurrent projects.
 
+> **Samverk-managed projects**: If this project uses Samverk lifecycle management
+> (indicated by a `.samverk/` directory), the Samverk 7-phase lifecycle supersedes
+> Phases 0--2 of this methodology for project-level lifecycle decisions. The
+> execution workflow (Phases 3--5 below) still applies within Samverk's Phase 6
+> (Execution). See the [Samverk project lifecycle documentation](https://github.com/HerbHall/samverk/blob/main/docs/project-lifecycle.md)
+> for the full lifecycle process.
+
 ## Principles
 
 1. **Gate before you invest** — Each phase ends with a go/kill/pivot decision. Killing early saves weeks.

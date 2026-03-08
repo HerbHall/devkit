@@ -25,24 +25,49 @@
     "description": "Tests and test infrastructure"
   },
   {
-    "name": "phase-1",
-    "color": "a2eeef",
-    "description": "Phase 1 work"
+    "name": "research",
+    "color": "7d5c2f",
+    "description": "Research and investigation"
   },
   {
-    "name": "phase-2",
-    "color": "a2eeef",
-    "description": "Phase 2 work"
+    "name": "priority:critical",
+    "color": "B60205",
+    "description": "Blocks work streams, address immediately"
   },
   {
-    "name": "phase-3",
-    "color": "a2eeef",
-    "description": "Phase 3 work"
+    "name": "priority:high",
+    "color": "D93F0B",
+    "description": "Important, schedule next"
   },
   {
-    "name": "phase-4",
+    "name": "priority:normal",
+    "color": "0075ca",
+    "description": "Standard priority"
+  },
+  {
+    "name": "priority:low",
+    "color": "c2e0c6",
+    "description": "Nice to have, schedule when convenient"
+  },
+  {
+    "name": "milestone:1",
     "color": "a2eeef",
-    "description": "Phase 4 work"
+    "description": "Milestone 1 work"
+  },
+  {
+    "name": "milestone:2",
+    "color": "a2eeef",
+    "description": "Milestone 2 work"
+  },
+  {
+    "name": "milestone:3",
+    "color": "a2eeef",
+    "description": "Milestone 3 work"
+  },
+  {
+    "name": "milestone:4",
+    "color": "a2eeef",
+    "description": "Milestone 4 work"
   },
   {
     "name": "blocked",

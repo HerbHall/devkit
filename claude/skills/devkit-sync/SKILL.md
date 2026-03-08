@@ -33,6 +33,7 @@ Manual control for DevKit multi-machine synchronization. While auto-pull (Sessio
 10. **Verify** -- Check if DevKit updates reached all active projects
 11. **New project** -- Scaffold a new project with DevKit templates and profile
 12. **Audit settings** -- Check for redundant permissions in settings.json
+13. **Apply Samverk** -- Add Samverk lifecycle overlay to an existing project
 
 Type a number, keyword, or **skip** to dismiss.
 
@@ -55,11 +56,12 @@ Type a number, keyword, or **skip** to dismiss.
 | 10, "verify propagation", "check projects", "verify reach" | workflows/verify.md |
 | 11, "new project", "scaffold project", "create project" | workflows/new-project.md |
 | 12, "audit settings", "settings cleanup", "redundant permissions" | workflows/audit-settings.md |
+| 13, "apply samverk", "samverk overlay", "enable samverk" | workflows/apply-samverk.md |
 
 If the user types **skip** or **dismiss**, briefly confirm cancellation (e.g., "devkit-sync cancelled.") and end the skill without running any workflow.
 
 If the input does not clearly match any option above and is not "skip" or "dismiss", respond:
-"devkit-sync was triggered but your input didn't match a workflow. Options: 1-12 (listed above). Type **skip** to dismiss."
+"devkit-sync was triggered but your input didn't match a workflow. Options: 1-13 (listed above). Type **skip** to dismiss."
 
 **After reading the workflow, follow it exactly.**
 </routing>
