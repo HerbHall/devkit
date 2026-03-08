@@ -10,6 +10,8 @@
 #   .\setup\new-project.ps1 -Profile go-cli                  # Pre-fill profile
 #   .\setup\new-project.ps1 -ConceptFile path\to\brief.md   # Load concept from file
 #   .\setup\new-project.ps1 -NoGitHub                        # Skip GitHub repo creation
+#   .\setup\new-project.ps1 -Samverk                         # Apply Samverk overlay
+#   .\setup\new-project.ps1 -Profile go-cli -Samverk         # Profile + Samverk
 
 Set-StrictMode -Version Latest
 
@@ -17,7 +19,8 @@ param(
     [string]$Name,         # Pre-fill project name (skip prompt)
     [string]$Profile,      # Pre-fill profile selection (comma-separated names)
     [string]$ConceptFile,  # Path to filled concept-brief.md
-    [switch]$NoGitHub      # Skip GitHub repo creation
+    [switch]$NoGitHub,     # Skip GitHub repo creation
+    [switch]$Samverk       # Apply Samverk lifecycle overlay
 )
 
 # ---------------------------------------------------------------------------
@@ -375,13 +378,31 @@ function Invoke-ConceptCollection {
         }
     }
 
+    # ------------------------------------------------------------------
+    # 1g. Samverk lifecycle management
+    # ------------------------------------------------------------------
+
+    $samverkManaged = $false
+    if ($Samverk) {
+        $samverkManaged = $true
+        Write-Step 'Samverk overlay: enabled (-Samverk flag)'
+    } else {
+        Write-Host ''
+        $samverkPrompt = Read-Host '  Register with Samverk lifecycle management? [y/N]'
+        if ($samverkPrompt -eq 'y' -or $samverkPrompt -eq 'Y') {
+            $samverkManaged = $true
+            Write-Step 'Samverk overlay: enabled'
+        }
+    }
+
     # Return the collected data
     return @{
-        Name       = $projectName
-        DevSpace   = $devspacePath
-        GitHubUser = $githubUser
-        Profiles   = $selectedProfileNames
-        Concept    = $concept
+        Name           = $projectName
+        DevSpace       = $devspacePath
+        GitHubUser     = $githubUser
+        Profiles       = $selectedProfileNames
+        Concept        = $concept
+        SamverkManaged = $samverkManaged
     }
 }
 
@@ -838,6 +859,121 @@ logger:
     }
 
     # ------------------------------------------------------------------
+    # 2.6b Apply Samverk overlay (if requested)
+    # ------------------------------------------------------------------
+
+    if ($Data.SamverkManaged) {
+        Write-Step 'Applying Samverk lifecycle overlay...'
+
+        # Locate overlay spec
+        $samverkOverlayDir = $null
+        $samverkRepoPath   = Join-Path $Data.DevSpace 'samverk'
+
+        if (Test-Path (Join-Path $samverkRepoPath 'overlay' 'labels.json')) {
+            $samverkOverlayDir = Join-Path $samverkRepoPath 'overlay'
+        } elseif (Test-Path (Join-Path $Data.DevSpace 'Samverk' 'overlay' 'labels.json')) {
+            $samverkOverlayDir = Join-Path $Data.DevSpace 'Samverk' 'overlay'
+        }
+
+        if (-not $samverkOverlayDir) {
+            Write-Warn 'Samverk repo not found in DevSpace -- skipping overlay'
+            Write-Warn "Expected: $samverkRepoPath\overlay\labels.json"
+            Write-Warn 'Apply later via: /devkit-sync -> Apply Samverk'
+        } else {
+            # Create .samverk/ directory
+            $samverkDir = Join-Path $targetDir '.samverk'
+            New-Item -ItemType Directory -Force -Path $samverkDir | Out-Null
+
+            # Generate project.yaml from template
+            $projectYamlTemplate = Join-Path $samverkOverlayDir 'templates' 'project.yaml.template'
+            if (Test-Path $projectYamlTemplate) {
+                $yamlContent = Get-Content $projectYamlTemplate -Raw
+                $forgeUrl    = "https://github.com/$githubUser/$projectName"
+                $today       = Get-Date -Format 'yyyy-MM-dd'
+
+                $yamlContent = $yamlContent -replace '\{\{PROJECT_NAME\}\}', $projectName
+                $yamlContent = $yamlContent -replace '\{\{FORGE\}\}', 'github'
+                $yamlContent = $yamlContent -replace '\{\{FORGE_URL\}\}', $forgeUrl
+                $yamlContent = $yamlContent -replace '\{\{DATE\}\}', $today
+
+                $yamlContent | Out-File (Join-Path $samverkDir 'project.yaml') -Encoding UTF8 -NoNewline
+                Write-OK 'Created .samverk/project.yaml'
+            } else {
+                Write-Warn "Template not found: $projectYamlTemplate"
+            }
+
+            # Generate status.md from template
+            $statusTemplate = Join-Path $samverkOverlayDir 'templates' 'status.md.template'
+            if (Test-Path $statusTemplate) {
+                $statusContent = Get-Content $statusTemplate -Raw
+                $now           = Get-Date -Format 'yyyy-MM-ddTHH:mm:ssZ'
+
+                $statusContent = $statusContent -replace '\{\{PROJECT_NAME\}\}', $projectName
+                $statusContent = $statusContent -replace '\{\{DATETIME\}\}', $now
+
+                $statusContent | Out-File (Join-Path $samverkDir 'status.md') -Encoding UTF8 -NoNewline
+                Write-OK 'Created .samverk/status.md'
+            } else {
+                Write-Warn "Template not found: $statusTemplate"
+            }
+
+            # Apply overlay labels (if GitHub repo was created)
+            if ($githubCreated) {
+                $overlayLabelsFile = Join-Path $samverkOverlayDir 'labels.json'
+                if (Test-Path $overlayLabelsFile) {
+                    try {
+                        $overlayLabels = Get-Content $overlayLabelsFile -Raw | ConvertFrom-Json
+                        $olOk   = 0
+                        $olFail = 0
+
+                        foreach ($label in $overlayLabels) {
+                            try {
+                                $null = & gh label create $label.name `
+                                    --color $label.color `
+                                    --description $label.description `
+                                    --repo "$githubUser/$projectName" `
+                                    --force 2>&1 | Out-String
+                                if ($LASTEXITCODE -eq 0) {
+                                    $olOk++
+                                } else {
+                                    $olFail++
+                                }
+                            } catch {
+                                $olFail++
+                            }
+                        }
+
+                        if ($olFail -eq 0) {
+                            Write-OK "Applied $olOk Samverk overlay labels"
+                        } else {
+                            Write-Warn "Applied $olOk overlay labels, $olFail failed"
+                        }
+                    } catch {
+                        Write-Warn "Could not parse overlay labels: $_"
+                    }
+                }
+            } else {
+                Write-Warn 'GitHub repo not created -- overlay labels skipped (apply manually later)'
+            }
+
+            # Commit overlay files
+            try {
+                Push-Location $targetDir
+                & git add .samverk/ 2>&1 | Out-Null
+                & git commit -m 'chore: apply Samverk lifecycle overlay' 2>&1 | Out-Null
+                if ($githubCreated) {
+                    & git push origin main 2>&1 | Out-Null
+                }
+                Write-OK 'Committed Samverk overlay files'
+            } catch {
+                Write-Warn "Could not commit overlay files: $_"
+            } finally {
+                Pop-Location
+            }
+        }
+    }
+
+    # ------------------------------------------------------------------
     # 2.7 Set repo secrets
     # ------------------------------------------------------------------
 
@@ -884,9 +1020,10 @@ logger:
     # ------------------------------------------------------------------
 
     return @{
-        TargetDir      = $targetDir
-        GitHubCreated  = $githubCreated
-        RepoUrl        = if ($githubCreated) { "https://github.com/$githubUser/$projectName" } else { '' }
+        TargetDir       = $targetDir
+        GitHubCreated   = $githubCreated
+        RepoUrl         = if ($githubCreated) { "https://github.com/$githubUser/$projectName" } else { '' }
+        SamverkApplied  = $Data.SamverkManaged
     }
 }
 
@@ -1203,6 +1340,9 @@ function Invoke-WorkspaceOpen {
     if ($ClaudeMdResult.IssueCreated) {
         Write-Host "  Issue #1: $($ClaudeMdResult.IssueUrl)"
     }
+    if ($ScaffoldResult.SamverkApplied) {
+        Write-Host '  Samverk:  overlay applied (lifecycle management active)'
+    }
     Write-Host ''
 
     # Open VS Code workspace
@@ -1232,6 +1372,9 @@ function Invoke-WorkspaceOpen {
         Write-Host "  2. Open GitHub issue #1 to review the concept: $($ClaudeMdResult.IssueUrl)"
     }
     Write-Host "  3. Run \`claude\` in the project directory to begin planning"
+    if ($ScaffoldResult.SamverkApplied) {
+        Write-Host "  4. Review .samverk/status.md and update with current project state"
+    }
     Write-Host ''
 }
 
