@@ -64,6 +64,12 @@ if (-not $config.PSObject.Properties['Secrets']) {
 }
 
 $secrets = $config.Secrets
+
+# Validate that .Secrets is a non-null object with at least one property
+if ($null -eq $secrets -or $secrets.PSObject.Properties.Count -eq 0) {
+    Write-Error "The .Secrets block in $configFile must be a non-null object with at least one property"
+    exit 1
+}
 $secretNames = @($secrets.PSObject.Properties.Name)
 
 if ($secretNames.Count -eq 0) {
