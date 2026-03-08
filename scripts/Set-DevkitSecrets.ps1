@@ -106,19 +106,20 @@ if ($PSCmdlet.ParameterSetName -eq 'Single') {
     Write-Host "GitHub user: $githubUser"
     Write-Host 'Fetching repo list...'
 
-    $repoJson = & gh repo list $githubUser --limit 200 --json nameWithOwner 2>&1 | Out-String
+    # Use gh api with pagination to fetch all repositories for the user.
+    # full_name has the "owner/name" format equivalent to nameWithOwner.
+    $repoOutput = & gh api "users/$githubUser/repos" --paginate --jq '.[].full_name' 2>&1 | Out-String
     if ($LASTEXITCODE -ne 0) {
-        Write-Error "gh repo list failed: $repoJson"
+        Write-Error "gh api failed while fetching repos: $repoOutput"
         exit 1
     }
 
-    try {
-        $repoList = $repoJson | ConvertFrom-Json
-        $repos = @($repoList | ForEach-Object { $_.nameWithOwner })
-    } catch {
-        Write-Error "Failed to parse repo list: $_"
-        exit 1
-    }
+    # Split the output into individual repo names, trimming empty lines.
+    $repos = @(
+        $repoOutput -split "(`r`n|`n|`r)" |
+            ForEach-Object { $_.Trim() } |
+            Where-Object { $_ -ne '' }
+    )
 
     if ($repos.Count -eq 0) {
         Write-Warning 'No repos found'
