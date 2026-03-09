@@ -122,12 +122,20 @@ Determine where this session is running to decide how to handle rules:
 
 **If in DevKit repo:**
 
+**Branch first.** Create a feature branch before editing any files:
+
+```bash
+git checkout main
+git pull --ff-only
+git checkout -b autolearn/$(date +%Y%m%d)-session-review
+```
+
 Check tier boundaries before editing:
 
 - **Tier 0** (`core-principles.md`, `error-policy.md`): NEVER modify. Immutable.
 - **Tier 1** (`workflow-preferences.md`, `review-policy.md`): Do NOT edit directly.
   Create a DevKit issue instead.
-- **Tier 2** (`autolearn-patterns.md`, `known-gotchas.md`): Safe to add entries directly.
+- **Tier 2** (`autolearn-patterns.md`, `known-gotchas.md`): Safe to add entries on the feature branch.
 
 **Update "last relevant" timestamps:**
 
@@ -202,3 +210,16 @@ Present a comprehensive summary:
 ### Recommendations
 - [Suggested follow-up actions]
 ```
+
+### 9. Commit and PR (DevKit context only)
+
+If rules files were modified in step 7, commit and open a PR:
+
+```bash
+git add ~/.claude/rules/autolearn-patterns.md ~/.claude/rules/known-gotchas.md
+git commit -m "chore(rules): session review -- <N> patterns, <M> gotchas added"
+git push origin HEAD
+gh pr create --title "chore(rules): session review learnings" --body "<session summary from step 8>"
+```
+
+**Never commit directly to main.** The PR ensures changes are reviewable and CI passes before merge.

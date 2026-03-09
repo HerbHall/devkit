@@ -2,11 +2,11 @@
 
 Merge accumulated learnings from MCP Memory into rules files. Ensures rules files stay current and useful.
 
-**This workflow modifies rules files directly.** It must only run in the DevKit repo.
+**This workflow modifies rules files.** It must only run in the DevKit repo, on a feature branch.
 
 ## Steps
 
-### 0. Context Guard
+### 0. Context Guard and Branch
 
 Check if the current working directory is the DevKit repo:
 
@@ -20,6 +20,14 @@ To promote learnings from this project:
 1. Run `/autolearn` (quick or session review) -- learnings go to MCP Memory
 2. Universal learnings are filed as DevKit issues automatically
 3. In a DevKit session, run `/autolearn` with "update knowledge" to merge them
+```
+
+If in DevKit, create a feature branch before any edits:
+
+```bash
+git checkout main
+git pull --ff-only origin main
+git checkout -b autolearn/knowledge-update-$(date +%Y%m%d)
 ```
 
 ### 1. Read Current Rules Files
@@ -97,6 +105,19 @@ New entries added:
 
 Files are up to date as of [current date].
 ```
+
+### 5. Commit and PR
+
+Commit all changes and open a PR:
+
+```bash
+git add ~/.claude/rules/autolearn-patterns.md ~/.claude/rules/known-gotchas.md
+git commit -m "chore(rules): knowledge update -- <N> patterns, <M> gotchas added"
+git push origin HEAD
+gh pr create --title "chore(rules): knowledge update" --body "<summary table from step 4>"
+```
+
+**Never commit directly to main.** The PR ensures changes are reviewable and CI passes before merge.
 
 ## Maintenance Notes
 

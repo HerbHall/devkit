@@ -29,10 +29,12 @@ Deliberate retrospective analysis for continuous improvement. Extracts learnings
 
 Storage depends on WHERE the session is running:
 
-- **In DevKit repo** (`.sync-manifest.json` present): Write Tier 2 rules directly. DevKit is the source of truth.
+- **In DevKit repo** (`.sync-manifest.json` present): Create a feature branch, write Tier 2 rules, commit, push, and open a PR. DevKit is the source of truth but all changes still go through branch/PR — never commit directly to main.
 - **In any other project**: Write to MCP Memory only. For stack-specific or universal learnings, create a DevKit issue (`gh issue create -R HerbHall/devkit`) so the learning can be reviewed and promoted to rules files through a PR.
 
 This prevents projects from modifying symlinked rules files directly. Symlinks provide READ access to DevKit rules; writing flows through issues.
+
+**CRITICAL: Never commit to main.** Even Tier 2 autolearn entries must go through a branch and PR. This applies in DevKit itself and in every other project.
 
 **Deduplication is Critical**
 
