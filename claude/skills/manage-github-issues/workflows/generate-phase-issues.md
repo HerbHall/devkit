@@ -57,13 +57,15 @@ If the project has no separate requirements docs, use the roadmap content from S
 Run this command to get current issues for the phase:
 
 ```bash
-gh issue list --label "{PHASE_LABEL}" --state all --limit 200 --json number,title,state,labels
+source scripts/forge-wrappers.sh
+devkit-issue-list --label "{PHASE_LABEL}" --state all --limit 200 --json number,title,state,labels
 ```
 
 If the project doesn't use phase labels, fetch all open issues:
 
 ```bash
-gh issue list --state open --limit 200 --json number,title,state,labels
+source scripts/forge-wrappers.sh
+devkit-issue-list --state open --limit 200 --json number,title,state,labels
 ```
 
 Parse the output to build a list of existing issue titles and their states (open/closed).
@@ -124,7 +126,8 @@ Wait for approval before proceeding.
 For each approved issue, run:
 
 ```bash
-gh issue create \
+source scripts/forge-wrappers.sh
+devkit-issue-create \
   --title "Issue title here" \
   --body "$(cat <<'EOF'
 Issue body here...

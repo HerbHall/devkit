@@ -9,7 +9,8 @@ Automatically diagnose and fix CI failures across all open PRs. Prioritizes shar
 ### 1. Gather All Open PRs with Failures
 
 ```bash
-gh pr list --state open --json number,title,headRefName,statusCheckRollup --limit 50
+source scripts/forge-wrappers.sh
+devkit-pr-list --state open --json number,title,headRefName,statusCheckRollup --limit 50
 ```
 
 Filter to only PRs with failing or cancelled checks.
@@ -19,7 +20,8 @@ Filter to only PRs with failing or cancelled checks.
 For each failing PR, get the specific errors:
 
 ```bash
-gh pr checks <number>
+source scripts/forge-wrappers.sh
+devkit-pr-checks <number>
 ```
 
 For each failing check, get error details:
@@ -85,7 +87,8 @@ git push --force-with-lease
 After all fixes are applied:
 
 ```bash
-gh pr list --state open --json number,title,statusCheckRollup --limit 50
+source scripts/forge-wrappers.sh
+devkit-pr-list --state open --json number,title,statusCheckRollup --limit 50
 ```
 
 Report final status of all PRs.

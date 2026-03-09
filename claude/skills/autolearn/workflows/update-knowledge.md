@@ -114,7 +114,8 @@ Commit all changes and open a PR:
 git add ~/.claude/rules/autolearn-patterns.md ~/.claude/rules/known-gotchas.md
 git commit -m "chore(rules): knowledge update -- <N> patterns, <M> gotchas added"
 git push origin HEAD
-gh pr create --title "chore(rules): knowledge update" --body "<summary table from step 4>"
+source scripts/forge-wrappers.sh
+devkit-pr-create --title "chore(rules): knowledge update" --body "<summary table from step 4>"
 ```
 
 **Never commit directly to main.** The PR ensures changes are reviewable and CI passes before merge.

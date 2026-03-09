@@ -11,8 +11,9 @@ Ask the user for the PR number if not already provided.
 Run these commands in parallel:
 
 ```bash
-gh pr view <number> --json title,headRefName,state,mergeable,mergeStateStatus,reviewDecision,statusCheckRollup,body
-gh pr checks <number>
+source scripts/forge-wrappers.sh
+devkit-pr-view <number> --json title,headRefName,state,mergeable,mergeStateStatus,reviewDecision,statusCheckRollup,body
+devkit-pr-checks <number>
 ```
 
 ### 2. Classify Each Check
