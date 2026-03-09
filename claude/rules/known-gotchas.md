@@ -1,7 +1,7 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 92
+entry_count: 94
 last_updated: "2026-03-09"
 ---
 
@@ -694,7 +694,7 @@ All parallel agents write to the same working directory. Changes mix as unstaged
 
 ## 99. Copilot Cannot Approve PRs -- Review Is Informational Only
 
-**Added:** 2026-03-07 | **Source:** DevKit | **Status:** active
+**Added:** 2026-03-07 | **Source:** DevKit | **Status:** active | **Last relevant:** 2026-03-09
 
 **Platform:** GitHub
 **Issue:** Copilot code review can only COMMENT on PRs, never APPROVE. Setting `required_approving_review_count: 1` in a ruleset creates a gate that can never be satisfied without `--admin` bypass. Previous configurations attempted workarounds (combined rulesets, split rulesets) but none solve the fundamental constraint: Copilot cannot approve.
@@ -889,3 +889,20 @@ $results = $files | ForEach-Object {
 ```
 
 To scan only specific subdirectories, scope `Get-ChildItem -Path setup,scripts`.
+
+## 113. PowerShell $args Is an Automatic Variable
+
+**Added:** 2026-03-09 | **Source:** DevKit | **Status:** active
+
+**Platform:** PowerShell (all)
+**Issue:** `$args` is a PowerShell automatic variable containing the unbound parameters for the current function or script. Using it as a local variable name (e.g., `$args = @('label', 'create', ...)`) triggers `PSAvoidAssignmentToAutomaticVariable`. PSScriptAnalyzer flags it as an error.
+**Fix:** Rename to `$cmdArgs`, `$labelArgs`, `$cliArgs`, or any non-reserved name. Full list of automatic variables: `$args`, `$error`, `$input`, `$matches`, `$myinvocation`, `$ofs`, `$profile`, `$psboundparameters`, `$pscmdlet`, `$psscriptroot`, etc.
+**See also:** KG#104 (PSUseDeclaredVarsMoreThanAssignments -- related PSScriptAnalyzer surface)
+
+## 114. Set-StrictMode in Dot-Sourced PS Lib Pollutes Caller Scope
+
+**Added:** 2026-03-09 | **Source:** DevKit | **Status:** active
+
+**Platform:** PowerShell (all)
+**Issue:** `Set-StrictMode -Version Latest` at the top level of a dot-sourced `.ps1` lib file (`. "$PSScriptRoot\lib\foo.ps1"`) propagates to the calling script's scope and all subsequently dot-sourced files. This silently tightens rules in callers that didn't opt in and can cause unexpected runtime errors.
+**Fix:** Do NOT put `Set-StrictMode` in dot-sourced library files. Set it only in the entry-point script (`setup.ps1`, `new-project.ps1`, etc.) that owns its own execution context.
