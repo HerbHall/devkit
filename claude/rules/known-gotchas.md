@@ -694,7 +694,8 @@ All parallel agents write to the same working directory. Changes mix as unstaged
 
 ## 99. Copilot Cannot Approve PRs -- Review Is Informational Only
 
-**Added:** 2026-03-07 | **Source:** DevKit | **Status:** active | **Last relevant:** 2026-03-09
+**Added:** 2026-03-07 | **Source:** DevKit | **Status:** active
+**Last relevant:** 2026-03-09
 
 **Platform:** GitHub
 **Issue:** Copilot code review can only COMMENT on PRs, never APPROVE. Setting `required_approving_review_count: 1` in a ruleset creates a gate that can never be satisfied without `--admin` bypass. Previous configurations attempted workarounds (combined rulesets, split rulesets) but none solve the fundamental constraint: Copilot cannot approve.
