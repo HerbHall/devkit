@@ -42,6 +42,11 @@
 
         # credentials.ps1 uses [object[]]$Credentials (not [string]) to accept
         # PSCredential objects. The rule fires on parameter name alone regardless of type.
-        'PSAvoidUsingPlainTextForPassword'
+        'PSAvoidUsingPlainTextForPassword',
+
+        # DevKit scripts are authored cross-platform (Windows/MSYS git). Git's
+        # autocrlf handling and cross-platform editors strip BOM headers. Requiring
+        # BOM is impractical and does not affect script functionality.
+        'PSUseBOMForUnicodeEncodedFile'
     )
 }
