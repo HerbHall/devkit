@@ -289,9 +289,9 @@ function Read-Menu {
     }
 
     while ($true) {
-        $input = Read-Host -Prompt "  Choice [1-$($Options.Count)]"
+        $rawInput = Read-Host -Prompt "  Choice [1-$($Options.Count)]"
         $num = $null
-        if ([int]::TryParse($input, [ref]$num) -and $num -ge 1 -and $num -le $Options.Count) {
+        if ([int]::TryParse($rawInput, [ref]$num) -and $num -ge 1 -and $num -le $Options.Count) {
             return $Options[$num - 1]
         }
         Write-Host "  ${script:Yellow}Invalid selection. Enter a number between 1 and $($Options.Count).${script:Reset}"
