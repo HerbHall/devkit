@@ -1,0 +1,28 @@
+# Samverk Project Configuration — DevKit
+schema_version: "1.0.0"
+project:
+  name: devkit
+  description: "AI development methodology and Claude Code configuration toolkit"
+  forge: github
+  repo: HerbHall/devkit
+  url: https://github.com/HerbHall/devkit
+  license: MIT
+  stack: powershell
+  phase: execution
+  created: "2025-12-01"
+
+lifecycle:
+  current_phase: execution
+  phases_completed:
+    - intake
+    - research
+    - requirements
+    - scaffold
+  notes: "DevKit predates Samverk and was formalized retroactively. Phases 1-5 were completed organically before Samverk lifecycle management existed."
+
+autonomy:
+  tier_overrides:
+    # DevKit rules files are auto-loaded by all sessions —
+    # changes have broad impact, so raise the tier.
+    rules_file_edit: 3
+    skill_modification: 2
