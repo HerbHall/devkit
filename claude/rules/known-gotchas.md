@@ -816,6 +816,13 @@ gh api "repos/{owner}/{repo}/issues?milestone=5&state=open&per_page=100" --pagin
 If you resolve a title to its number (e.g., 5) and pass `--milestone 5`, gh CLI
 searches for a milestone titled "5" and fails with "could not add to milestone
 '5': '5' not found".
+**Symptom:**
+
+```bash
+MILESTONE_NUM=$(resolve_milestone "$MILESTONE_TITLE")  # returns 5
+gh issue create --milestone "$MILESTONE_NUM"            # fails: '5' not found
+```
+
 **Fix:** Pass the title directly:
 
 ```bash
