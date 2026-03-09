@@ -1,7 +1,7 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 89
+entry_count: 92
 last_updated: "2026-03-09"
 ---
 
@@ -847,3 +847,45 @@ body = body.replace("\r\n", "\n")
 ```
 
 **See also:** KG#62 (CRLF breaks bash grep in CI); KG#101 (Edit tool CRLF matching failure -- same root cause, different surface)
+
+## 110. GitHub Actions New CI Job Uses Base Branch Workflow, Not PR Branch
+
+**Added:** 2026-03-09 | **Source:** DevKit | **Status:** active
+
+**Platform:** GitHub Actions
+**Issue:** When a PR introduces a new CI job for the first time, GitHub Actions runs the workflow from the BASE branch (usually `main`), not the PR branch. The new job doesn't exist on `main` yet, so it is silently absent from the CI run. The PR passes CI (the new job never runs), then ALL subsequent PRs fail because the job now exists on `main` and is broken.
+**Fix:** Before merging a PR that adds a new CI job, verify the job ran in the CI check list. If the new job name is absent from the check list, the workflow was evaluated from `main`. To test the new job, merge a trivially correct version first, then fix issues in follow-up PRs.
+**See also:** KG#66 (golangci-lint-action v7 schema enforcement -- same CI surprise pattern)
+
+## 111. markdownlint 3-Backtick Outer Fence Broken by Inner Backtick Blocks
+
+**Added:** 2026-03-09 | **Source:** DevKit | **Status:** active
+
+**Platform:** All (markdownlint-cli2)
+**Issue:** A fenced code block using ` ```language ` as the outer fence is terminated by the first inner ` ``` ` block it contains. Everything after the inner block is treated as regular markdown, triggering MD029, MD031, MD033, MD040, and other rules on content that was supposed to be inside the fence.
+**Fix:** When a code block's content contains triple-backtick fences (e.g., a markdown template or documentation showing code examples), use a 4-backtick outer fence:
+
+`````markdown
+````markdown
+...content with inner ```bash blocks...
+````
+`````
+
+Verify locally with `npx markdownlint-cli2 "path/to/file.md"` before pushing.
+
+## 112. Invoke-ScriptAnalyzer Has No -Include Parameter
+
+**Added:** 2026-03-09 | **Source:** DevKit | **Status:** active
+
+**Platform:** PowerShell / PSScriptAnalyzer
+**Issue:** `Invoke-ScriptAnalyzer -Path . -Include '*.ps1'` throws "A parameter cannot be found that matches parameter name 'Include'". The `-Include` parameter does not exist on `Invoke-ScriptAnalyzer`. Copilot and LLMs commonly generate this invalid syntax.
+**Fix:** Use `Get-ChildItem` to collect files, then pipe each to `Invoke-ScriptAnalyzer`:
+
+```powershell
+$files = Get-ChildItem -Path . -Recurse -Filter '*.ps1'
+$results = $files | ForEach-Object {
+    Invoke-ScriptAnalyzer -Path $_.FullName -Severity Warning,Error
+}
+```
+
+To scan only specific subdirectories, scope `Get-ChildItem -Path setup,scripts`.
