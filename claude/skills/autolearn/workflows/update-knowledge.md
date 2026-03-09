@@ -25,6 +25,8 @@ To promote learnings from this project:
 If in DevKit, create a feature branch before any edits:
 
 ```bash
+git checkout main
+git pull --ff-only origin main
 git checkout -b autolearn/knowledge-update-$(date +%Y%m%d)
 ```
 
