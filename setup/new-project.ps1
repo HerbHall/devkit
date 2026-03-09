@@ -958,13 +958,22 @@ logger:
         if (Test-Path $configFile) {
             try {
                 $config = Get-Content $configFile -Raw | ConvertFrom-Json
-                if ($config.PSObject.Properties['Secrets'] -and
-                    $config.Secrets.PSObject.Properties['RELEASE_PLEASE_TOKEN']) {
-                    $rpt = $config.Secrets.RELEASE_PLEASE_TOKEN
+                if ($config.PSObject.Properties['Secrets']) {
+                    if ($config.Secrets.PSObject.Properties['_note']) {
+                        # Vault migration: read from env var instead
+                        $rpt = [System.Environment]::GetEnvironmentVariable('GITHUB_TOKEN', 'User')
+                    } elseif ($config.Secrets.PSObject.Properties['RELEASE_PLEASE_TOKEN']) {
+                        $rpt = $config.Secrets.RELEASE_PLEASE_TOKEN
+                    }
                 }
             } catch {
                 # Ignore parse errors
             }
+        }
+
+        # Final fallback: try env var directly (covers machines without config file)
+        if ([string]::IsNullOrWhiteSpace($rpt)) {
+            $rpt = [System.Environment]::GetEnvironmentVariable('GITHUB_TOKEN', 'User')
         }
 
         if (-not [string]::IsNullOrWhiteSpace($rpt)) {
@@ -981,9 +990,9 @@ logger:
                 Write-Warn "Run manually: gh secret set RELEASE_PLEASE_TOKEN --repo $githubUser/$projectName"
             }
         } else {
-            Write-Warn 'RELEASE_PLEASE_TOKEN not found in ~/.devkit-config.json -- skipping'
+            Write-Warn 'RELEASE_PLEASE_TOKEN not found -- skipping'
             Write-Warn "Run manually: gh secret set RELEASE_PLEASE_TOKEN --repo $githubUser/$projectName"
-            Write-Warn 'To automate: add .Secrets.RELEASE_PLEASE_TOKEN to ~/.devkit-config.json'
+            Write-Warn 'To automate: run sync-secrets in PS7 to push vault secrets to env vars'
         }
     }
 

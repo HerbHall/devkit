@@ -5,11 +5,13 @@
     Distributes secrets from ~/.devkit-config.json to GitHub repos.
 
 .DESCRIPTION
-    Reads the .Secrets block from ~/.devkit-config.json and pushes each
-    key/value pair as a GitHub Actions secret to one or all repos owned
-    by the configured GitHub user.
+    Distributes secrets to GitHub/Gitea repos as Actions secrets.
 
-    Replaces the one-off D:\DevSpace\scripts\Set-ReleasePleaseToken.ps1.
+    Secret sources (checked in order):
+    1. If ~/.devkit-config.json .Secrets block contains a _note field
+       (vault migration marker), reads from user-level environment
+       variables populated by the HomeLabVault via sync-secrets.
+    2. Otherwise reads directly from the .Secrets block (legacy path).
 
 .PARAMETER Repo
     Push secrets to a single repo (e.g. HerbHall/myproject).
@@ -67,19 +69,58 @@ if (-not $config.PSObject.Properties['Secrets']) {
 
 $secrets = $config.Secrets
 
-# Validate that .Secrets is a non-null object with at least one property
-if ($null -eq $secrets -or $secrets.PSObject.Properties.Count -eq 0) {
-    Write-Error "The .Secrets block in $configFile must be a non-null object with at least one property"
-    exit 1
-}
-$secretNames = @($secrets.PSObject.Properties.Name)
+# ---------------------------------------------------------------------------
+# If the Secrets block has been migrated to the vault (contains _note field),
+# fall back to reading secrets from environment variables instead.
+# ---------------------------------------------------------------------------
+$useEnvVars = $false
+if ($null -ne $secrets -and $secrets.PSObject.Properties['_note']) {
+    Write-Host 'Secrets block migrated to vault -- reading from environment variables'
+    $useEnvVars = $true
 
-if ($secretNames.Count -eq 0) {
-    Write-Warning 'No secrets defined in .Secrets block -- nothing to do'
-    exit 0
-}
+    # Map: GitHub Actions secret name -> environment variable name
+    $envMapping = @{
+        'RELEASE_PLEASE_TOKEN'   = 'GITHUB_TOKEN'
+        'GITHUB_MCP_TOKEN'       = 'GITHUB_MCP_TOKEN'
+        'HOME_ASSISTANT_TOKEN'   = 'HOME_ASSISTANT_TOKEN'
+        'CLOUDFLARE_API_TOKEN'   = 'CLOUDFLARE_API_TOKEN'
+        'GITEA_ACCESS_TOKEN'     = 'GITEA_TOKEN'
+        'SAMVERK_AUTH_TOKEN'     = 'SAMVERK_AUTH_TOKEN'
+        'ANTHROPIC_API_KEY'      = 'ANTHROPIC_API_KEY'
+        'GITEA_DISPATCHER_TOKEN' = 'GITEA_DISPATCHER_TOKEN'
+    }
 
-Write-Host "Secrets to distribute: $($secretNames -join ', ')"
+    # Build a secrets hashtable from env vars
+    $resolvedSecrets = @{}
+    foreach ($pair in $envMapping.GetEnumerator()) {
+        $val = [System.Environment]::GetEnvironmentVariable($pair.Value, 'User')
+        if (-not [string]::IsNullOrWhiteSpace($val)) {
+            $resolvedSecrets[$pair.Key] = $val
+        }
+    }
+
+    if ($resolvedSecrets.Count -eq 0) {
+        Write-Error "No secrets found in environment variables. Run sync-secrets in PowerShell 7 to push vault to env vars."
+        exit 1
+    }
+
+    $secretNames = @($resolvedSecrets.Keys)
+    Write-Host "Secrets to distribute (from env): $($secretNames -join ', ')"
+} else {
+    # Legacy path: read directly from .Secrets block in config file
+    if ($null -eq $secrets -or $secrets.PSObject.Properties.Count -eq 0) {
+        Write-Error "The .Secrets block in $configFile must be a non-null object with at least one property"
+        exit 1
+    }
+    $secretNames = @($secrets.PSObject.Properties.Name)
+
+    if ($secretNames.Count -eq 0) {
+        Write-Warning 'No secrets defined in .Secrets block -- nothing to do'
+        exit 0
+    }
+
+    Write-Host "Secrets to distribute: $($secretNames -join ', ')"
+}
 
 # ---------------------------------------------------------------------------
 # Resolve target repos
@@ -150,7 +191,7 @@ foreach ($targetRepo in $repos) {
     Write-Host "`n  $targetRepo"
 
     foreach ($secretName in $secretNames) {
-        $secretValue = $secrets.$secretName
+        $secretValue = if ($useEnvVars) { $resolvedSecrets[$secretName] } else { $secrets.$secretName }
 
         if ([string]::IsNullOrWhiteSpace($secretValue)) {
             Write-Warning "    $secretName -- empty value, skipping"
