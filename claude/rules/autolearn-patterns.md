@@ -1,7 +1,7 @@
 ---
 description: Learned patterns from past sessions. Read when encountering similar situations.
 tier: 2
-entry_count: 74
+entry_count: 75
 last_updated: "2026-03-09"
 ---
 
