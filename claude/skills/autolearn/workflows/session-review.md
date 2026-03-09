@@ -216,7 +216,7 @@ Present a comprehensive summary:
 If rules files were modified in step 7, commit and open a PR:
 
 ```bash
-git add ~/.claude/rules/autolearn-patterns.md ~/.claude/rules/known-gotchas.md
+git add claude/rules/autolearn-patterns.md claude/rules/known-gotchas.md
 git commit -m "chore(rules): session review -- <N> patterns, <M> gotchas added"
 git push origin HEAD
 gh pr create --title "chore(rules): session review learnings" --body "<session summary from step 8>"

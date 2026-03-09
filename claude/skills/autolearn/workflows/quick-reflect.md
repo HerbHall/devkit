@@ -165,7 +165,7 @@ Present a brief summary to the user:
 If rules files were modified in step 6, commit and open a PR:
 
 ```bash
-git add ~/.claude/rules/autolearn-patterns.md ~/.claude/rules/known-gotchas.md
+git add claude/rules/autolearn-patterns.md claude/rules/known-gotchas.md
 git commit -m "chore(rules): autolearn session -- <brief summary of learnings>"
 git push origin HEAD
 gh pr create --title "chore(rules): autolearn session learnings" --body "<list of entries added>"
