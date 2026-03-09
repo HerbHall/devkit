@@ -69,7 +69,6 @@ even for documentation-only changes, autolearn entries, or config files.
 ```
 <type>: <description>
 ```
-```
 
 ## Template Usage Notes
 
