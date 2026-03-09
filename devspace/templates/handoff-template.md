@@ -5,7 +5,7 @@ Handoffs transfer work from Claude Chat (planning/design) to Claude Code (execut
 
 ## Required Sections
 
-```markdown
+````markdown
 # Handoff: <Title>
 
 **Date:** YYYY-MM-DD
@@ -69,6 +69,7 @@ even for documentation-only changes, autolearn entries, or config files.
 ```
 <type>: <description>
 ```
+````
 
 ## Template Usage Notes
 
