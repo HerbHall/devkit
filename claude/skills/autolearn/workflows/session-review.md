@@ -125,6 +125,8 @@ Determine where this session is running to decide how to handle rules:
 **Branch first.** Create a feature branch before editing any files:
 
 ```bash
+git checkout main
+git pull --ff-only
 git checkout -b autolearn/$(date +%Y%m%d)-session-review
 ```
 
