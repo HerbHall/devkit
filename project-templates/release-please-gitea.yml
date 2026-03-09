@@ -1,0 +1,55 @@
+# Release Please workflow for Gitea act_runner
+#
+# Gitea does not support the googleapis/release-please-action GitHub Action
+# (no marketplace access on act_runner). This workflow uses the release-please
+# CLI directly via npx instead.
+#
+# Prerequisites:
+#   - Set RELEASE_PLEASE_TOKEN secret on the repo (a PAT with repo scope)
+#     See: scripts/Set-DevkitSecrets.ps1
+#   - Set forge.giteaUrl in ~/.devkit-config.json
+#
+# Usage: Copy to .gitea/workflows/release-please.yml in your project.
+# Replace RELEASE_TYPE with your project type (simple, node, go, rust, etc.)
+# See: https://github.com/googleapis/release-please#release-types-supported
+
+name: Release Please
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    name: Release Please
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Run release-please
+        env:
+          RELEASE_PLEASE_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+        run: |
+          npx release-please release-pr \
+            --token="$RELEASE_PLEASE_TOKEN" \
+            --repo-url="${{ gitea.server_url }}/${{ gitea.repository }}" \
+            --release-type=simple \
+            --target-branch=main
+
+      - name: Tag release
+        env:
+          RELEASE_PLEASE_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+        run: |
+          npx release-please github-release \
+            --token="$RELEASE_PLEASE_TOKEN" \
+            --repo-url="${{ gitea.server_url }}/${{ gitea.repository }}" \
+            --release-type=simple \
+            --target-branch=main

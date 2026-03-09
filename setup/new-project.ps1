@@ -31,6 +31,7 @@ param(
 
 . "$PSScriptRoot\lib\install.ps1"
 . "$PSScriptRoot\lib\profiles.ps1"
+. "$PSScriptRoot\lib\forge-wrappers.ps1"
 
 # ---------------------------------------------------------------------------
 # Helper: parse a concept-brief.md file into a concept hashtable
@@ -748,38 +749,21 @@ logger:
     if ($NoGitHub) {
         Write-Warn 'Skipping GitHub repo creation (-NoGitHub flag set)'
     } else {
-        Write-Step "Creating GitHub repo: $githubUser/$projectName ..."
+        Write-Step "Creating forge repo: $githubUser/$projectName ..."
         try {
             Push-Location $targetDir
 
-            # We need at least one commit before gh repo create --push can work.
-            # Stage all created files for the initial commit.
+            # Stage all created files for the initial commit before pushing.
             $null = & git add -A 2>&1
             $null = & git commit -m "chore: initial project scaffolding" 2>&1
 
-            $null = & gh repo create "$githubUser/$projectName" `
-                --private `
-                --source . `
-                --remote origin `
-                --push 2>&1
-            $ghExit = $LASTEXITCODE
-
+            New-ForgeRepo -Owner $githubUser -Name $projectName -Private -SourceDir '.'
             Pop-Location
-
-            if ($ghExit -ne 0) {
-                Write-Warn "gh repo create failed (exit $ghExit). Manual command:"
-                Write-Host "  gh repo create $githubUser/$projectName --private --source . --remote origin --push"
-                Write-Host "  (run from $targetDir)"
-            } else {
-                Write-OK "GitHub repo created: https://github.com/$githubUser/$projectName"
-                $githubCreated = $true
-            }
+            $githubCreated = $true
         } catch {
             Pop-Location -ErrorAction SilentlyContinue
-            Write-Warn "gh repo create threw an exception: $_"
-            Write-Warn "Manual command:"
-            Write-Host "  cd `"$targetDir`""
-            Write-Host "  gh repo create $githubUser/$projectName --private --source . --remote origin --push"
+            Write-Warn "Forge repo creation failed: $_"
+            Write-Warn "Create the repo manually and push with: git push -u origin HEAD"
         }
     }
 
@@ -829,21 +813,14 @@ logger:
 
                 foreach ($label in $labels) {
                     try {
-                        $ghLabelOutput = & gh label create $label.name `
-                            --color $label.color `
-                            --description $label.description `
-                            --repo "$githubUser/$projectName" `
-                            --force 2>&1 | Out-String
-                        $ghLabelExit = $LASTEXITCODE
-                        if ($ghLabelExit -eq 0) {
-                            $labelOk++
-                        } else {
-                            $labelFail++
-                            Write-Warn "Label '$($label.name)' failed: $ghLabelOutput"
-                        }
+                        New-ForgeLabel -Repo "$githubUser/$projectName" `
+                            -LabelName $label.name `
+                            -Color $label.color `
+                            -Description $label.description
+                        $labelOk++
                     } catch {
                         $labelFail++
-                        Write-Warn "Label '$($label.name)' threw exception: $_"
+                        Write-Warn "Label '$($label.name)' failed: $_"
                     }
                 }
 
@@ -928,16 +905,11 @@ logger:
 
                         foreach ($label in $overlayLabels) {
                             try {
-                                $null = & gh label create $label.name `
-                                    --color $label.color `
-                                    --description $label.description `
-                                    --repo "$githubUser/$projectName" `
-                                    --force 2>&1 | Out-String
-                                if ($LASTEXITCODE -eq 0) {
-                                    $olOk++
-                                } else {
-                                    $olFail++
-                                }
+                                New-ForgeLabel -Repo "$githubUser/$projectName" `
+                                    -LabelName $label.name `
+                                    -Color $label.color `
+                                    -Description $label.description
+                                $olOk++
                             } catch {
                                 $olFail++
                             }
