@@ -1,0 +1,92 @@
+[
+  {
+    "name": "feat",
+    "color": "0075ca",
+    "description": "New feature or enhancement"
+  },
+  {
+    "name": "fix",
+    "color": "d73a4a",
+    "description": "Bug fix"
+  },
+  {
+    "name": "chore",
+    "color": "e4e669",
+    "description": "Maintenance, refactor, tooling, dependencies"
+  },
+  {
+    "name": "docs",
+    "color": "0075ca",
+    "description": "Documentation"
+  },
+  {
+    "name": "test",
+    "color": "bfd4f2",
+    "description": "Tests and test infrastructure"
+  },
+  {
+    "name": "research",
+    "color": "7d5c2f",
+    "description": "Research and investigation"
+  },
+  {
+    "name": "priority:critical",
+    "color": "B60205",
+    "description": "Blocks work streams, address immediately"
+  },
+  {
+    "name": "priority:high",
+    "color": "D93F0B",
+    "description": "Important, schedule next"
+  },
+  {
+    "name": "priority:normal",
+    "color": "0075ca",
+    "description": "Standard priority"
+  },
+  {
+    "name": "priority:low",
+    "color": "c2e0c6",
+    "description": "Nice to have, schedule when convenient"
+  },
+  {
+    "name": "milestone:1",
+    "color": "a2eeef",
+    "description": "Milestone 1 work"
+  },
+  {
+    "name": "milestone:2",
+    "color": "a2eeef",
+    "description": "Milestone 2 work"
+  },
+  {
+    "name": "milestone:3",
+    "color": "a2eeef",
+    "description": "Milestone 3 work"
+  },
+  {
+    "name": "milestone:4",
+    "color": "a2eeef",
+    "description": "Milestone 4 work"
+  },
+  {
+    "name": "blocked",
+    "color": "b60205",
+    "description": "Waiting on something external or internal"
+  },
+  {
+    "name": "question",
+    "color": "d876e3",
+    "description": "Needs clarification, decision, or design review"
+  },
+  {
+    "name": "good-first-issue",
+    "color": "7057ff",
+    "description": "Good for newcomers to the project"
+  },
+  {
+    "name": "help-wanted",
+    "color": "33aa3f",
+    "description": "Actively seeking contributions"
+  }
+]
