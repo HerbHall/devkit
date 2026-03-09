@@ -1,8 +1,8 @@
 ---
 description: Learned patterns from past sessions. Read when encountering similar situations.
 tier: 2
-entry_count: 72
-last_updated: "2026-03-08"
+entry_count: 73
+last_updated: "2026-03-09"
 ---
 
 # Learned Patterns
@@ -135,6 +135,7 @@ detection (KG#8). Always set UTF-8 I/O to prevent cp1252 crashes on Unicode cont
 Without this, any Unicode character in output causes `UnicodeEncodeError: 'charmap'
 codec can't encode character`. The two-layer fix (env var + reconfigure) is needed
 because the env var only covers the outer process; subprocess.run needs its own arg.
+**See also:** AP#122 (standalone entry for the broader encoding pattern beyond jq use)
 
 ## 16. Remove Heavy Dependencies for Unfixable Vulnerabilities
 
@@ -768,3 +769,25 @@ On resume: `git status`, `git diff --stat`, `go build ./...`, then commit. Subag
 **Context:** Documentation, skill lists, CI coverage, and setup scripts drift from reality over time without automated validation. Stale counts, missing checklist blocks, and undocumented CI gaps accumulate invisibly.
 **Fix:** Run a structured Explore subagent audit periodically. The prompt should cover 10 dimensions: (1) docs-vs-reality count claims, (2) skill routing table completeness, (3) agent template coverage, (4) rules file metadata accuracy, (5) CI job gap analysis, (6) setup script completeness, (7) project template freshness, (8) hook coverage, (9) sync manifest integrity, (10) cross-reference completeness. Results from one DevKit audit: found stale README counts, 3 missing skills in verify.sh, absent `node` check, missing RUST-CI/DOTNET-CI checklists, no PSScriptAnalyzer in CI -- all actionable in the same session.
 **See also:** AP#47 (check existing assets before scoping issues), AP#83 (sprint scope reduction via exploration), AP#85 (roadmap drift)
+
+## 122. Python UTF-8 I/O on Windows for Unicode-Heavy Scripts
+
+**Added:** 2026-03-09 | **Source:** Samverk | **Status:** active
+
+**Category:** platform-workaround
+**Context:** Python on Windows defaults to cp1252 encoding. Any script that processes
+Unicode content (GitHub issue bodies with →, em-dashes, smart quotes, etc.) crashes
+with `UnicodeEncodeError: 'charmap' codec can't encode character '\uXXXX'`. This
+applies to any Python script, not just jq replacements.
+**Fix:** Apply a three-layer fix -- all three layers are required:
+
+1. In the calling bash script: `export PYTHONIOENCODING=utf-8`
+2. At the top of the Python script:
+   `if hasattr(sys.stdout, "reconfigure"): sys.stdout.reconfigure(encoding="utf-8")`
+3. In every `subprocess.run` call: pass `encoding="utf-8"` explicitly
+
+The env var (layer 1) covers the outer process stdout/stderr. The reconfigure call
+(layer 2) is the preferred way to switch an already-open stream; the `hasattr` guard
+keeps it safe on Python < 3.7. `subprocess.run` (layer 3) opens a new stream and
+ignores PYTHONIOENCODING, so it needs its own `encoding=` argument.
+**See also:** AP#11 (jq-replacement context where this pattern was first documented)
