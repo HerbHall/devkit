@@ -266,3 +266,25 @@ jobs:
               sys.exit(1)
           print(f'All {len(configs)} config JSON files valid')
           "
+
+  powershell-lint:
+    name: PowerShell lint
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PSScriptAnalyzer
+        shell: pwsh
+        run: Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser
+      - name: Lint PowerShell scripts
+        shell: pwsh
+        run: |
+          $results = Invoke-ScriptAnalyzer -Path . -Recurse -Include '*.ps1' `
+            -Severity Warning,Error `
+            -Settings '.\PSScriptAnalyzerSettings.psd1'
+          if ($results.Count -gt 0) {
+            $results | Format-Table -AutoSize
+            exit 1
+          }
+          Write-Host "PSScriptAnalyzer: no issues found"
