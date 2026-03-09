@@ -2,16 +2,17 @@
 # setup/new-project.ps1 -- Kit 3: New project scaffolder (Steps 1-4)
 #
 # Collects project concept, creates directory structure, initializes
-# the git repo and GitHub remote, generates CLAUDE.md, and opens VS Code.
+# the git repo and forge remote, generates CLAUDE.md, and opens VS Code.
 #
 # Usage:
 #   .\setup\new-project.ps1                                  # Fully interactive
 #   .\setup\new-project.ps1 -Name my-tool                   # Pre-fill project name
 #   .\setup\new-project.ps1 -Profile go-cli                  # Pre-fill profile
 #   .\setup\new-project.ps1 -ConceptFile path\to\brief.md   # Load concept from file
-#   .\setup\new-project.ps1 -NoGitHub                        # Skip GitHub repo creation
+#   .\setup\new-project.ps1 -NoGitHub                        # Skip forge repo creation
+#   .\setup\new-project.ps1 -Gitea                           # Create on Gitea instead of GitHub
 #   .\setup\new-project.ps1 -Samverk                         # Apply Samverk overlay
-#   .\setup\new-project.ps1 -Profile go-cli -Samverk         # Profile + Samverk
+#   .\setup\new-project.ps1 -Profile go-cli -Gitea -Samverk  # Gitea + Samverk overlay
 
 Set-StrictMode -Version Latest
 
@@ -19,7 +20,8 @@ param(
     [string]$Name,         # Pre-fill project name (skip prompt)
     [string]$Profile,      # Pre-fill profile selection (comma-separated names)
     [string]$ConceptFile,  # Path to filled concept-brief.md
-    [switch]$NoGitHub,     # Skip GitHub repo creation
+    [switch]$NoGitHub,     # Skip forge repo creation
+    [switch]$Gitea,        # Use Gitea instead of GitHub
     [switch]$Samverk       # Apply Samverk lifecycle overlay
 )
 
@@ -32,6 +34,13 @@ param(
 . "$PSScriptRoot\lib\install.ps1"
 . "$PSScriptRoot\lib\profiles.ps1"
 . "$PSScriptRoot\lib\forge-wrappers.ps1"
+
+# ---------------------------------------------------------------------------
+# Forge type detection
+# -Gitea flag overrides; otherwise default to GitHub.
+# ---------------------------------------------------------------------------
+
+$script:ForgeType = if ($Gitea) { 'gitea' } else { 'github' }
 
 # ---------------------------------------------------------------------------
 # Helper: parse a concept-brief.md file into a concept hashtable
@@ -168,7 +177,7 @@ function Read-LineList {
 
 # ---------------------------------------------------------------------------
 # STEP 1: Concept Collection
-# Returns a hashtable with: Name, DevSpace, GitHubUser, Profiles, Concept
+# Returns a hashtable with: Name, DevSpace, ForgeUser, Profiles, Concept
 # ---------------------------------------------------------------------------
 
 function Invoke-ConceptCollection {
@@ -232,47 +241,63 @@ function Invoke-ConceptCollection {
     Write-Step "DevSpace path: $devspacePath"
 
     # ------------------------------------------------------------------
-    # 1c. GitHub username
+    # 1c. Forge username
     # ------------------------------------------------------------------
 
-    $githubUser = $null
+    $forgeUser = $null
 
     # Try git config
     try {
         $gitUser = & git config --global user.name 2>$null
         if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace($gitUser)) {
-            $githubUser = $gitUser.Trim()
+            $forgeUser = $gitUser.Trim()
         }
     } catch { }
 
-    # Try gh api as fallback
-    if ([string]::IsNullOrWhiteSpace($githubUser)) {
-        try {
-            $ghUser = & gh api user --jq '.login' 2>$null
-            if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace($ghUser)) {
-                $githubUser = $ghUser.Trim()
+    # Try forge-specific API as fallback
+    if ([string]::IsNullOrWhiteSpace($forgeUser)) {
+        if ($script:ForgeType -eq 'github') {
+            try {
+                $ghUser = & gh api user --jq '.login' 2>$null
+                if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace($ghUser)) {
+                    $forgeUser = $ghUser.Trim()
+                }
+            } catch { }
+        } elseif ($script:ForgeType -eq 'gitea') {
+            $giteaCfg = Get-GiteaConfig
+            if ($giteaCfg.Url -and $giteaCfg.Token) {
+                try {
+                    $me = Invoke-GiteaApi -Path '/api/v1/user' -Method 'GET'
+                    if ($me.login) { $forgeUser = $me.login }
+                } catch { }
             }
-        } catch { }
+        }
     }
 
     # Prompt if still not found
-    if ([string]::IsNullOrWhiteSpace($githubUser)) {
+    $forgeLabel = if ($script:ForgeType -eq 'gitea') { 'Gitea' } else { 'GitHub' }
+    if ([string]::IsNullOrWhiteSpace($forgeUser)) {
         Write-Host ''
-        $githubUser = Read-Required 'GitHub username'
+        $forgeUser = Read-Required "$forgeLabel username"
     } else {
-        Write-Step "GitHub user: $githubUser"
+        Write-Step "$forgeLabel user: $forgeUser"
     }
 
     # ------------------------------------------------------------------
-    # 1d. Show target directory and GitHub repo URL
+    # 1d. Show target directory and forge repo URL
     # ------------------------------------------------------------------
 
     $targetDir = Join-Path $devspacePath $projectName
-    $repoUrl   = "https://github.com/$githubUser/$projectName"
+    if ($script:ForgeType -eq 'gitea') {
+        $giteaCfg = Get-GiteaConfig
+        $repoUrl  = "$($giteaCfg.Url)/$forgeUser/$projectName"
+    } else {
+        $repoUrl = "https://github.com/$forgeUser/$projectName"
+    }
 
     Write-Host ''
     Write-Host "  ${script:Bold}Target directory:${script:Reset} $targetDir"
-    Write-Host "  ${script:Bold}GitHub repo:${script:Reset}      $repoUrl"
+    Write-Host "  ${script:Bold}${forgeLabel} repo:${script:Reset}      $repoUrl"
 
     # ------------------------------------------------------------------
     # 1e. Profile selection (reuse stack.ps1 approach)
@@ -400,7 +425,7 @@ function Invoke-ConceptCollection {
     return @{
         Name           = $projectName
         DevSpace       = $devspacePath
-        GitHubUser     = $githubUser
+        ForgeUser      = $forgeUser
         Profiles       = $selectedProfileNames
         Concept        = $concept
         SamverkManaged = $samverkManaged
@@ -428,7 +453,7 @@ function Invoke-Scaffolding {
 
     $projectName = $Data.Name
     $devspace    = $Data.DevSpace
-    $githubUser  = $Data.GitHubUser
+    $forgeUser  = $Data.ForgeUser
     $profileNames = @($Data.Profiles)
     $concept     = $Data.Concept
     $targetDir   = Join-Path $devspace $projectName
@@ -631,7 +656,13 @@ build/
     if ($isGo) {
         $goModPath = Join-Path $targetDir 'go.mod'
         if (-not (Test-Path $goModPath)) {
-            $goModContent = "module github.com/$githubUser/$projectName`n`ngo 1.23`n"
+            $goModHost = if ($script:ForgeType -eq 'gitea') {
+                $giteaCfg = Get-GiteaConfig
+                ($giteaCfg.Url -replace '^https?://', '')
+            } else {
+                'github.com'
+            }
+            $goModContent = "module $goModHost/$forgeUser/$projectName`n`ngo 1.23`n"
             try {
                 Set-Content -Path $goModPath -Value $goModContent -Encoding utf8NoBOM
                 Write-OK 'Created go.mod'
@@ -722,12 +753,14 @@ logger:
         } else {
             '[]'
         }
+        $forgeUrlEscaped = $repoUrl -replace '\\', '\\'
         $claudeSettingsContent = @"
 {
   "project": "$projectName",
   "profiles": $profileList,
   "devspace": "$($devspace -replace '\\', '\\')",
-  "github": "https://github.com/$githubUser/$projectName"
+  "forge": "$($script:ForgeType)",
+  "forge_url": "$forgeUrlEscaped"
 }
 "@
         try {
@@ -741,7 +774,7 @@ logger:
     }
 
     # ------------------------------------------------------------------
-    # 2.5 Create GitHub repo
+    # 2.5 Create forge repo (GitHub or Gitea)
     # ------------------------------------------------------------------
 
     $githubCreated = $false
@@ -749,7 +782,7 @@ logger:
     if ($NoGitHub) {
         Write-Warn 'Skipping GitHub repo creation (-NoGitHub flag set)'
     } else {
-        Write-Step "Creating forge repo: $githubUser/$projectName ..."
+        Write-Step "Creating forge repo: $forgeUser/$projectName ..."
         try {
             Push-Location $targetDir
 
@@ -757,7 +790,7 @@ logger:
             $null = & git add -A 2>&1
             $null = & git commit -m "chore: initial project scaffolding" 2>&1
 
-            New-ForgeRepo -Owner $githubUser -Name $projectName -Private -SourceDir '.'
+            New-ForgeRepo -Owner $forgeUser -Name $projectName -Private -SourceDir '.'
             Pop-Location
             $githubCreated = $true
         } catch {
@@ -796,12 +829,13 @@ logger:
     }
 
     # ------------------------------------------------------------------
-    # 2.6 Apply GitHub labels
+    # 2.6 Apply forge labels
     # ------------------------------------------------------------------
 
     if ($githubCreated) {
-        Write-Step 'Applying GitHub labels...'
-        $labelsFile = Join-Path $script:RepoRoot 'project-templates' 'github-labels.json'
+        $labelsFileName = if ($script:ForgeType -eq 'gitea') { 'gitea-labels.json' } else { 'github-labels.json' }
+        Write-Step "Applying $($script:ForgeType) labels..."
+        $labelsFile = Join-Path $script:RepoRoot 'project-templates' $labelsFileName
 
         if (-not (Test-Path $labelsFile)) {
             Write-Warn "Labels file not found: $labelsFile -- skipping label setup"
@@ -813,7 +847,7 @@ logger:
 
                 foreach ($label in $labels) {
                     try {
-                        New-ForgeLabel -Repo "$githubUser/$projectName" `
+                        New-ForgeLabel -Repo "$forgeUser/$projectName" `
                             -LabelName $label.name `
                             -Color $label.color `
                             -Description $label.description
@@ -825,7 +859,7 @@ logger:
                 }
 
                 if ($labelFail -eq 0) {
-                    Write-OK "Applied $labelOk GitHub labels"
+                    Write-OK "Applied $labelOk $($script:ForgeType) labels"
                 } else {
                     Write-Warn "Applied $labelOk labels, $labelFail failed"
                 }
@@ -865,12 +899,11 @@ logger:
             $projectYamlTemplate = Join-Path $samverkOverlayDir 'templates' 'project.yaml.template'
             if (Test-Path $projectYamlTemplate) {
                 $yamlContent = Get-Content $projectYamlTemplate -Raw
-                $forgeUrl    = "https://github.com/$githubUser/$projectName"
                 $today       = Get-Date -Format 'yyyy-MM-dd'
 
                 $yamlContent = $yamlContent -replace '\{\{PROJECT_NAME\}\}', $projectName
-                $yamlContent = $yamlContent -replace '\{\{FORGE\}\}', 'github'
-                $yamlContent = $yamlContent -replace '\{\{FORGE_URL\}\}', $forgeUrl
+                $yamlContent = $yamlContent -replace '\{\{FORGE\}\}', $script:ForgeType
+                $yamlContent = $yamlContent -replace '\{\{FORGE_URL\}\}', $repoUrl
                 $yamlContent = $yamlContent -replace '\{\{DATE\}\}', $today
 
                 $yamlContent | Out-File (Join-Path $samverkDir 'project.yaml') -Encoding UTF8 -NoNewline
@@ -894,7 +927,7 @@ logger:
                 Write-Warn "Template not found: $statusTemplate"
             }
 
-            # Apply overlay labels (if GitHub repo was created)
+            # Apply overlay labels (if forge repo was created)
             if ($githubCreated) {
                 $overlayLabelsFile = Join-Path $samverkOverlayDir 'labels.json'
                 if (Test-Path $overlayLabelsFile) {
@@ -905,7 +938,7 @@ logger:
 
                         foreach ($label in $overlayLabels) {
                             try {
-                                New-ForgeLabel -Repo "$githubUser/$projectName" `
+                                New-ForgeLabel -Repo "$forgeUser/$projectName" `
                                     -LabelName $label.name `
                                     -Color $label.color `
                                     -Description $label.description
@@ -925,7 +958,7 @@ logger:
                     }
                 }
             } else {
-                Write-Warn 'GitHub repo not created -- overlay labels skipped (apply manually later)'
+                Write-Warn 'Forge repo not created -- overlay labels skipped (apply manually later)'
             }
 
             # Commit overlay files
@@ -949,7 +982,7 @@ logger:
     # 2.7 Set repo secrets
     # ------------------------------------------------------------------
 
-    if ($githubCreated) {
+    if ($githubCreated -and $script:ForgeType -eq 'github') {
         Write-Step 'Setting repo secrets...'
 
         $configFile = Join-Path $HOME '.devkit-config.json'
@@ -978,22 +1011,25 @@ logger:
 
         if (-not [string]::IsNullOrWhiteSpace($rpt)) {
             try {
-                $rptResult = ($rpt | & gh secret set RELEASE_PLEASE_TOKEN --repo "$githubUser/$projectName" 2>&1)
+                $rptResult = ($rpt | & gh secret set RELEASE_PLEASE_TOKEN --repo "$forgeUser/$projectName" 2>&1)
                 if ($LASTEXITCODE -eq 0) {
                     Write-OK 'Set RELEASE_PLEASE_TOKEN'
                 } else {
                     Write-Warn "Could not set RELEASE_PLEASE_TOKEN: $rptResult"
-                    Write-Warn "Run manually: gh secret set RELEASE_PLEASE_TOKEN --repo $githubUser/$projectName"
+                    Write-Warn "Run manually: gh secret set RELEASE_PLEASE_TOKEN --repo $forgeUser/$projectName"
                 }
             } catch {
                 Write-Warn "Exception setting RELEASE_PLEASE_TOKEN: $_"
-                Write-Warn "Run manually: gh secret set RELEASE_PLEASE_TOKEN --repo $githubUser/$projectName"
+                Write-Warn "Run manually: gh secret set RELEASE_PLEASE_TOKEN --repo $forgeUser/$projectName"
             }
         } else {
             Write-Warn 'RELEASE_PLEASE_TOKEN not found -- skipping'
-            Write-Warn "Run manually: gh secret set RELEASE_PLEASE_TOKEN --repo $githubUser/$projectName"
+            Write-Warn "Run manually: gh secret set RELEASE_PLEASE_TOKEN --repo $forgeUser/$projectName"
             Write-Warn 'To automate: run sync-secrets in PS7 to push vault secrets to env vars'
         }
+    } elseif ($githubCreated -and $script:ForgeType -eq 'gitea') {
+        Write-Step 'Gitea Actions secrets must be set via the Gitea web UI or API'
+        Write-Warn 'Skipping RELEASE_PLEASE_TOKEN -- gh secret set is GitHub-only'
     }
 
     # ------------------------------------------------------------------
@@ -1003,7 +1039,7 @@ logger:
     return @{
         TargetDir       = $targetDir
         GitHubCreated   = $githubCreated
-        RepoUrl         = if ($githubCreated) { "https://github.com/$githubUser/$projectName" } else { '' }
+        RepoUrl         = if ($githubCreated) { $repoUrl } else { '' }
         SamverkApplied  = $Data.SamverkManaged
     }
 }
@@ -1033,7 +1069,7 @@ function Invoke-ClaudeMdGeneration {
     Write-Section 'Step 3: CLAUDE.md Generation'
 
     $projectName = $Data.Name
-    $githubUser  = $Data.GitHubUser
+    $forgeUser  = $Data.ForgeUser
     $targetDir   = $ScaffoldResult.TargetDir
     $concept     = $Data.Concept
     $profiles    = @($Data.Profiles)
@@ -1094,7 +1130,8 @@ $featuresText
 Non-goals:
 $nonGoalsText
 Profile: $primaryProfile
-GitHub: https://github.com/$githubUser/$projectName
+Forge: $($script:ForgeType)
+Repo URL: $repoUrl
 
 PROFILE DETAILS:
 $profileBody
@@ -1190,7 +1227,7 @@ Generate only the CLAUDE.md content. Do not include any preamble or explanation.
             $templateContent = $templateContent -replace '\{\{PROJECT_DESCRIPTION\}\}', $concept.Description
             $templateContent = $templateContent -replace '\{\{PROFILE\}\}',         $primaryProfile
             $templateContent = $templateContent -replace '\{\{DEVSPACE\}\}',        $Data.DevSpace
-            $templateContent = $templateContent -replace '\{\{AUTHOR\}\}',          $githubUser
+            $templateContent = $templateContent -replace '\{\{AUTHOR\}\}',          $forgeUser
             $templateContent = $templateContent -replace '\{\{MACHINE\}\}',         $machine
             $templateContent = $templateContent -replace '\{\{PROFILE_EXT\}\}',     $profileExt
 
@@ -1205,11 +1242,11 @@ Generate only the CLAUDE.md content. Do not include any preamble or explanation.
     }
 
     # ------------------------------------------------------------------
-    # 3.3 Create Phase 0 GitHub issue
+    # 3.3 Create Phase 0 issue on forge
     # ------------------------------------------------------------------
 
     if ($ScaffoldResult.GitHubCreated) {
-        Write-Step 'Creating Phase 0 GitHub issue...'
+        Write-Step "Creating Phase 0 issue on $($script:ForgeType)..."
 
         $featuresSection = if ($concept.Features.Count -gt 0) {
             ($concept.Features | ForEach-Object { "- $_" }) -join "`n"
@@ -1254,24 +1291,48 @@ $nonGoalsSection
 4. Break the concept into implementable issues
 "@
 
-        try {
-            $ghIssueOutput = & gh issue create `
-                -R "$githubUser/$projectName" `
-                --title "Phase 0 -- Concept validation: $projectName" `
-                --body $issueBody `
-                --label 'chore' `
-                --label 'phase-1' 2>&1 | Out-String
-            $ghIssueExit = $LASTEXITCODE
+        $issueTitle = "Phase 0 -- Concept validation: $projectName"
 
-            if ($ghIssueExit -eq 0) {
-                $issueUrl = $ghIssueOutput.Trim()
-                Write-OK "Phase 0 issue created: $issueUrl"
-                $issueCreated = $true
-            } else {
-                Write-Warn "Could not create GitHub issue (exit $ghIssueExit): $ghIssueOutput"
+        if ($script:ForgeType -eq 'gitea') {
+            try {
+                $issuePayload = @{
+                    title  = $issueTitle
+                    body   = $issueBody
+                    labels = @()
+                } | ConvertTo-Json -Depth 3
+                $result = Invoke-GiteaApi -Method 'POST' `
+                    -Path "/api/v1/repos/$forgeUser/$projectName/issues" `
+                    -Body $issuePayload
+                if ($result.html_url) {
+                    $issueUrl = $result.html_url
+                    Write-OK "Phase 0 issue created: $issueUrl"
+                    $issueCreated = $true
+                } else {
+                    Write-Warn 'Could not create Gitea issue -- unexpected response'
+                }
+            } catch {
+                Write-Warn "Gitea issue creation failed: $_"
             }
-        } catch {
-            Write-Warn "gh issue create threw exception: $_"
+        } else {
+            try {
+                $ghIssueOutput = & gh issue create `
+                    -R "$forgeUser/$projectName" `
+                    --title $issueTitle `
+                    --body $issueBody `
+                    --label 'chore' `
+                    --label 'phase-1' 2>&1 | Out-String
+                $ghIssueExit = $LASTEXITCODE
+
+                if ($ghIssueExit -eq 0) {
+                    $issueUrl = $ghIssueOutput.Trim()
+                    Write-OK "Phase 0 issue created: $issueUrl"
+                    $issueCreated = $true
+                } else {
+                    Write-Warn "Could not create GitHub issue (exit $ghIssueExit): $ghIssueOutput"
+                }
+            } catch {
+                Write-Warn "gh issue create threw exception: $_"
+            }
         }
     }
 
@@ -1316,7 +1377,8 @@ function Invoke-WorkspaceOpen {
 
     Write-Host "  Location: $targetDir"
     if ($ScaffoldResult.GitHubCreated) {
-        Write-Host "  GitHub:   $($ScaffoldResult.RepoUrl)"
+        $forgeDisplayLabel = if ($script:ForgeType -eq 'gitea') { 'Gitea' } else { 'GitHub' }
+        Write-Host "  ${forgeDisplayLabel}:   $($ScaffoldResult.RepoUrl)"
     }
     if ($ClaudeMdResult.IssueCreated) {
         Write-Host "  Issue #1: $($ClaudeMdResult.IssueUrl)"
