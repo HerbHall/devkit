@@ -159,6 +159,59 @@ Docker Desktop extension gotchas to watch for:
   of `update` when testing locally after rebuilding the image (KG#39).
 ```
 
+## Rust Agent Checklist [RUST-CI] (paste into Rust agent prompts)
+
+```text
+## Pre-Commit CI Checklist (MUST verify before finishing)
+
+Run these checks and fix any errors:
+
+1. `cargo build` -- Compilation
+2. `cargo test` -- Tests
+3. `cargo clippy -- -D warnings` -- Lint (all warnings are errors in CI)
+4. `cargo fmt --check` -- Formatting (CI fails on any diff)
+5. If targeting multiple platforms: `cargo build --target <target>` -- Cross-compile check
+6. If `cargo-audit` is installed: `cargo audit` -- Security vulnerability scan
+
+Common Rust CI failures to watch for:
+- clippy unused_imports: Remove all unused `use` statements; clippy -D warnings makes these errors.
+- clippy dead_code: Remove or annotate unused functions/structs with `#[allow(dead_code)]` if intentional.
+- clippy needless_return: Remove explicit `return` from last expression in a function.
+- clippy redundant_clone: Don't `.clone()` values that are already owned or can be moved.
+- cargo fmt diff: Run `cargo fmt` locally before committing; CI uses --check and fails on any diff.
+- Cross-compile failures: Windows-only APIs (e.g., winapi crate features) must be gated with
+  `#[cfg(target_os = "windows")]` or feature flags; Linux CI will fail without guards.
+- Cargo.lock drift: Commit Cargo.lock for binaries; do not commit it for libraries.
+```
+
+## .NET Agent Checklist [DOTNET-CI] (paste into .NET/C# agent prompts)
+
+```text
+## Pre-Commit CI Checklist (MUST verify before finishing)
+
+Run these checks and fix any errors:
+
+1. `dotnet build <project>.csproj` -- Compilation (scope to cross-platform .csproj, NOT the .sln)
+2. `dotnet test <project>.Tests.csproj --no-build` -- Tests
+3. `dotnet format --verify-no-changes` -- Formatting check (CI fails on any diff)
+
+IMPORTANT -- Solution vs. project scoping (KG#88):
+- CI runs on Linux. Do NOT run `dotnet build` or `dotnet restore` against the .sln file.
+- WPF and WinForms projects fail on Linux with NETSDK1100 ("Building WPF projects is not
+  supported on this platform"). Scope all CI commands to individual cross-platform .csproj files.
+
+Common .NET CI failures to watch for:
+- NETSDK1100: WPF/WinForms project in solution scope on Linux. Use individual .csproj, not .sln.
+- dotnet format diff: Run `dotnet format` locally before committing; CI uses --verify-no-changes.
+- StyleCop/Roslyn analyzer warnings: Treat-as-errors is common. Fix SA#### and CS#### warnings
+  before committing; they will fail the build if <TreatWarningsAsErrors> is set.
+- Windows-only P/Invoke or COM interop: Gate with `[SupportedOSPlatform("windows")]` or
+  `#if WINDOWS` to prevent CA1416 analyzer errors on cross-platform builds.
+- Nullable reference types: If <Nullable>enable</Nullable> is set, all CS8600/CS8602/CS8603
+  null-safety warnings become errors. Add null checks or null-forgiving operators (`!`) as needed.
+- Missing NuGet restore: Run `dotnet restore <project>.csproj` before build if restore cache is cold.
+```
+
 ## Markdown Agent Checklist [MD-CI] (paste into agent prompts that create .md files)
 
 ```text
