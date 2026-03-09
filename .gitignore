@@ -29,6 +29,9 @@ history.jsonl
 plugins/cache/
 plugins/marketplaces/
 
+# Node.js
+node_modules/
+
 # OS
 Thumbs.db
 .DS_Store
