@@ -1,7 +1,7 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 94
+entry_count: 95
 last_updated: "2026-03-09"
 ---
 
@@ -907,3 +907,13 @@ To scan only specific subdirectories, scope `Get-ChildItem -Path setup,scripts`.
 **Platform:** PowerShell (all)
 **Issue:** `Set-StrictMode -Version Latest` at the top level of a dot-sourced `.ps1` lib file (`. "$PSScriptRoot\lib\foo.ps1"`) propagates to the calling script's scope and all subsequently dot-sourced files. This silently tightens rules in callers that didn't opt in and can cause unexpected runtime errors.
 **Fix:** Do NOT put `Set-StrictMode` in dot-sourced library files. Set it only in the entry-point script (`setup.ps1`, `new-project.ps1`, etc.) that owns its own execution context.
+
+## 115. TypeScript API Interface Phantom Field Drift from Go Backend
+
+**Added:** 2026-03-09 | **Source:** Samverk | **Status:** active
+
+**Platform:** TypeScript / Go (full-stack)
+**Issue:** TypeScript API interfaces accumulate phantom fields that the Go backend never sends. Fields written speculatively before Go types were finalized are never reconciled after Go changes. This causes `undefined` values used as React keys, missing data bugs, and silent failures.
+**Symptom:** `key={e.id}` produces React warnings because the Go backend never serializes an `id` field -- the TypeScript interface declares it but the JSON payload omits it.
+**Fix:** Always verify TypeScript API interfaces against actual Go JSON output (`curl` the endpoint, check the real payload). When changing Go JSON field names or removing fields, grep for TypeScript uses immediately. Use present fields (e.g., `e.timestamp`) as React keys instead of phantom fields.
+**See also:** AP#79 (cross-language enum exhaustiveness audit -- same cross-language drift surface)

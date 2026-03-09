@@ -1,7 +1,7 @@
 ---
 description: Learned patterns from past sessions. Read when encountering similar situations.
 tier: 2
-entry_count: 74
+entry_count: 75
 last_updated: "2026-03-09"
 ---
 
@@ -810,3 +810,12 @@ $results | Format-Table -AutoSize
 
 Create `PSScriptAnalyzerSettings.psd1` with justified exclusions before the first CI run. Common brownfield exclusions for DevKit-style repos: `PSAvoidUsingWriteHost`, `PSUseShouldProcessForStateChangingFunctions`, `PSReviewUnusedParameter` (ParameterSetName dispatch), `PSUseSingularNouns` (internal helpers), `PSAvoidAssignmentToAutomaticVariable` (loop vars named `$profile`), `PSUseUsingScopeModifierInNewRunspaces` (Start-Job with ArgumentList), `PSAvoidUsingPlainTextForPassword` ([object[]]$Credentials false positive), `PSUseBOMForUnicodeEncodedFile` (cross-platform git strips BOM).
 **See also:** KG#112 (Invoke-ScriptAnalyzer -Include invalid parameter), AP#84 (mandatory lint step language)
+
+## 124. Pre-Sprint Human-Label Audit for Mislabeled Issues
+
+**Added:** 2026-03-09 | **Source:** Samverk | **Status:** active
+
+**Category:** process-pattern
+**Context:** Issues labeled `agent:human` (or `agent:qc`, `agent:test`) may be mislabeled as requiring human intervention when they are actually automatable. Planning without auditing labels leads to false blockers and overscoped sprints.
+**Fix:** Before starting sprint or milestone work, audit all human-labeled issues against three categories: (1) automatable via API/scripts -- relabel to correct agent type, (2) already implemented but never closed -- close immediately, (3) genuinely human (GUI, time-based, quality judgment) -- keep label. Also list BOTH closed AND open issues for a milestone to understand true remaining scope. In one Samverk audit: 2 closed immediately, 9 relabeled automatable, 4 correctly kept human.
+**See also:** AP#83 (sprint scope reduction via exploration), AP#47 (check existing assets before scoping issues)
