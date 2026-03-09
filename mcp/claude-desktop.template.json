@@ -1,5 +1,10 @@
 {
-  "_comment": "Copy to %APPDATA%/Claude/claude_desktop_config.json and replace <PLACEHOLDER> values",
+  "_comment": [
+    "Copy to %APPDATA%/Claude/claude_desktop_config.json",
+    "Secrets come from user-level environment variables (populated by HomeLabVault via sync-secrets).",
+    "Replace <PATH> placeholders with machine-specific paths.",
+    "See docs/credentials.md for the full credential workflow."
+  ],
   "mcpServers": {
     "sequential-thinking": {
       "command": "npx",
@@ -15,14 +20,16 @@
     },
     "sqlite": {
       "command": "npx",
-      "args": ["-y", "mcp-sqlite", "<PATH_TO_DATABASES>/claude.db"]
+      "args": ["-y", "mcp-sqlite", "<PATH_TO_DATABASES>/claude.db"],
+      "_comment": "Replace <PATH_TO_DATABASES> with your databases directory (e.g. ~/databases)"
     },
     "github": {
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-github"],
       "env": {
-        "GITHUB_PERSONAL_ACCESS_TOKEN": "<GITHUB_PAT>"
-      }
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_MCP_TOKEN}"
+      },
+      "_comment": "Uses GITHUB_MCP_TOKEN env var (classic PAT for MCP servers)"
     },
     "gitlab": {
       "command": "npx",
@@ -30,7 +37,8 @@
       "env": {
         "GITLAB_PERSONAL_ACCESS_TOKEN": "<GITLAB_PAT>",
         "GITLAB_API_URL": "https://gitlab.com/api/v4"
-      }
+      },
+      "_comment": "GitLab PAT not yet in vault -- replace manually if needed"
     },
     "docker-local": {
       "command": "uvx",
@@ -41,15 +49,17 @@
       "args": ["mcp-server-docker"],
       "env": {
         "DOCKER_HOST": "ssh://<USER>@<UNRAID_HOST>"
-      }
+      },
+      "_comment": "Replace with SSH host alias from ~/.ssh/config (e.g. ssh://root@unraid)"
     },
     "hass-mcp": {
       "command": "uvx",
       "args": ["hass-mcp"],
       "env": {
         "HA_URL": "http://<HOME_ASSISTANT_HOST>:8123",
-        "HA_TOKEN": "<HA_LONG_LIVED_TOKEN>"
-      }
+        "HA_TOKEN": "${HOME_ASSISTANT_TOKEN}"
+      },
+      "_comment": "Uses HOME_ASSISTANT_TOKEN env var. Replace <HOME_ASSISTANT_HOST> with your HA hostname."
     },
     "MCP_DOCKER": {
       "command": "docker",
@@ -58,11 +68,13 @@
         "LOCALAPPDATA": "<LOCALAPPDATA_PATH>",
         "ProgramData": "<PROGRAMDATA_PATH>",
         "ProgramFiles": "<PROGRAMFILES_PATH>"
-      }
+      },
+      "_comment": "Windows system paths -- typically auto-detected. Only set if Docker MCP gateway needs explicit paths."
     },
     "filesystem-docker": {
       "command": "docker",
-      "args": ["run", "-i", "--rm", "-v", "<HOME_DIR>:/workspace", "mcp/filesystem", "/workspace"]
+      "args": ["run", "-i", "--rm", "-v", "<HOME_DIR>:/workspace", "mcp/filesystem", "/workspace"],
+      "_comment": "Replace <HOME_DIR> with your home directory path"
     },
     "playwright-docker": {
       "command": "docker",

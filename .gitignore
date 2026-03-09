@@ -10,6 +10,10 @@ CLAUDE.local.md
 
 # Machine-specific devkit config (written by bootstrap.ps1)
 .devkit-config.json
+.devkit-config.json.bak*
+
+# Credential backups from vault migration
+.credentials.bak-*
 
 # Machine state snapshots (hardware-specific, contain serial numbers)
 machine/SystemConfig*.txt

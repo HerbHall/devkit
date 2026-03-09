@@ -1,5 +1,14 @@
 # setup/lib/credentials.ps1 -- Windows Credential Manager integration
 #
+# STATUS: SUPERSEDED (2026-03-09)
+#   The primary secret store is now PowerShell SecretStore vault (HomeLabVault).
+#   Secrets are pushed to user-level environment variables via sync-secrets.
+#   See docs/credentials.md for the current architecture.
+#
+#   This module is retained for backward compatibility. Existing devkit/
+#   entries in Windows Credential Manager still work. New secrets should
+#   be stored in the vault instead.
+#
 # Provides: Set-DevkitCredential, Get-DevkitCredential, Test-DevkitCredential,
 #           Remove-DevkitCredential, Invoke-CredentialCollection
 # Stores API tokens and secrets in Windows Credential Manager via cmdkey.

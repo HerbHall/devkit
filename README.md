@@ -169,7 +169,9 @@ cp claude/settings.template.json ~/.claude/settings.json
 ```bash
 # Copy and customize the desktop config
 cp mcp/claude-desktop.template.json "$HOME/.config/Claude/claude_desktop_config.json"
-# Edit the file and replace all <PLACEHOLDER> values with your tokens/paths
+# Edit the file: replace <PATH> placeholders with machine-specific paths
+# Secret tokens are read from environment variables (populated by HomeLabVault)
+# See docs/credentials.md for the full credential workflow
 ```
 
 See [mcp/servers.md](mcp/servers.md) for the full server inventory and install instructions.
@@ -217,7 +219,7 @@ With symlinks active, changes flow automatically:
 
 ## What's NOT in This Repo
 
-- **API keys and tokens** — Use placeholders in templates, fill in per machine
+- **API keys and tokens** — Stored in HomeLabVault, consumed via env vars ([docs/credentials.md](docs/credentials.md))
 - **MCP Memory data** — Accumulates organically; see `mcp/memory-seeds.md` for bootstrap
 - **Session state** — Debug logs, file history, task state (machine-specific, not portable)
 - **Project-specific CLAUDE.md** — Each project has its own; only the template is here
