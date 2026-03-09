@@ -1,8 +1,8 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 88
-last_updated: "2026-03-08"
+entry_count: 89
+last_updated: "2026-03-09"
 ---
 
 # Known Gotchas
@@ -728,7 +728,7 @@ All parallel agents write to the same working directory. Changes mix as unstaged
   `body = body.replace("\r\n", "\n")` before any regex matching
 
 **See also:** KG#62 (CRLF breaks bash grep in CI -- same root cause, different tool);
-KG#107 (GitHub API response CRLF -- same root cause, third surface)
+KG#109 (GitHub API response CRLF -- same root cause, third surface)
 
 ## 102. Samverk Dispatcher False-Positive on Issues Without Frontmatter
 
@@ -833,3 +833,17 @@ gh issue create --milestone "$MILESTONE_NUM"    # wrong -- number is not a title
 Note: `gh api PATCH /repos/{owner}/{repo}/issues/{n}` with `-F milestone=5` does
 accept the number (REST API level). The discrepancy is in the `gh` CLI layer.
 **See also:** KG#107 (gh api -f flag POST/GET issue)
+
+## 109. GitHub REST API Returns CRLF in Issue Body Text Fields
+
+**Added:** 2026-03-09 | **Source:** Samverk | **Status:** active
+
+**Platform:** Windows / GitHub REST API (gh api)
+**Issue:** When fetching issue bodies via `gh api`, the `body` field contains `\r\n` (CRLF) line endings on Windows. Python regex patterns that match `\n` fail silently — for example, `FRONTMATTER_RE.search(body)` returns `None` even when the body starts with `---`, because the actual content is `---\r\n`.
+**Fix:** Normalize line endings before any regex or string parsing:
+
+```python
+body = body.replace("\r\n", "\n")
+```
+
+**See also:** KG#62 (CRLF breaks bash grep in CI); KG#101 (Edit tool CRLF matching failure -- same root cause, different surface)
