@@ -33,6 +33,15 @@
         # These are pre-existing throughout stack.ps1 where $profile means a
         # DevKit stack profile object (unrelated to PS's $profile path string).
         # Tracked for future rename in https://github.com/HerbHall/devkit/issues
-        'PSAvoidAssignmentToAutomaticVariable'
+        'PSAvoidAssignmentToAutomaticVariable',
+
+        # Start-Job ScriptBlocks that use param() + -ArgumentList pass variables
+        # explicitly and do not need $using: scope. PSScriptAnalyzer cannot distinguish
+        # parameterized from closure-captured variables and flags them as false positives.
+        'PSUseUsingScopeModifierInNewRunspaces',
+
+        # credentials.ps1 uses [object[]]$Credentials (not [string]) to accept
+        # PSCredential objects. The rule fires on parameter name alone regardless of type.
+        'PSAvoidUsingPlainTextForPassword'
     )
 }
