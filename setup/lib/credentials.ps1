@@ -16,7 +16,8 @@
 
 #Requires -Version 7.0
 
-Set-StrictMode -Version Latest
+# NOTE: Do NOT add Set-StrictMode here -- this file is dot-sourced by callers
+# and StrictMode propagates to their scope (see KG#114).
 
 # ---------------------------------------------------------------------------
 # P/Invoke type for reading Generic credentials from Windows Credential Manager
