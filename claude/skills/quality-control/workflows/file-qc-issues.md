@@ -29,7 +29,8 @@ Ask the user (or review conversation history) for:
 For each finding, search existing issues:
 
 ```bash
-gh issue list --state open --search "<keywords>" --json number,title --limit 5
+source scripts/forge-wrappers.sh
+devkit-issue-list --state open --search "<keywords>" --json number,title --limit 5
 ```
 
 Skip any finding that already has an open issue.
@@ -43,10 +44,11 @@ For each new finding, create a GitHub issue with:
 - Appropriate label (`bug`, `enhancement`, `documentation`)
 - "Found During" section noting QC session date
 
-Use `gh issue create` with HEREDOC for the body:
+Use `devkit-issue-create` with HEREDOC for the body:
 
 ```bash
-gh issue create --title "Title" --body "$(cat <<'EOF'
+source scripts/forge-wrappers.sh
+devkit-issue-create --title "Title" --body "$(cat <<'EOF'
 ## Description
 ...
 
@@ -56,7 +58,7 @@ EOF
 )" --label "bug"
 ```
 
-Launch parallel `gh issue create` calls when possible (issues are independent).
+Launch parallel `devkit-issue-create` calls when possible (issues are independent).
 
 ### 5. Generate Summary
 

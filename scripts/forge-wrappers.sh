@@ -162,3 +162,86 @@ devkit-pr-merge() {
     gitea)  _devkit-require-tea && tea pulls merge "$@" ;;
   esac
 }
+
+# ---------------------------------------------------------------------------
+# devkit-pr-view -- View a pull request (number or current branch)
+# ---------------------------------------------------------------------------
+devkit-pr-view() {
+  case "$(devkit-forge-detect)" in
+    github) gh pr view "$@" ;;
+    gitea)  _devkit-require-tea && tea pulls show "$@" ;;
+  esac
+}
+
+# ---------------------------------------------------------------------------
+# devkit-issue-view -- View an issue by number
+# ---------------------------------------------------------------------------
+devkit-issue-view() {
+  case "$(devkit-forge-detect)" in
+    github) gh issue view "$@" ;;
+    gitea)  _devkit-require-tea && tea issues show "$@" ;;
+  esac
+}
+
+# ---------------------------------------------------------------------------
+# devkit-issue-edit -- Edit an issue
+#   First positional arg is issue number. Extra flags passed through.
+#   Common flags: --add-label "label"  --milestone "name"
+# ---------------------------------------------------------------------------
+devkit-issue-edit() {
+  local number="$1"; shift
+  case "$(devkit-forge-detect)" in
+    github) gh issue edit "$number" "$@" ;;
+    gitea)  _devkit-require-tea && tea issues edit "$number" "$@" ;;
+  esac
+}
+
+# ---------------------------------------------------------------------------
+# devkit-issue-comment -- Post a comment on an issue
+#   First positional arg is issue number, --body "text" required.
+# ---------------------------------------------------------------------------
+devkit-issue-comment() {
+  local number="$1"; shift
+  local body=""
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --body) body="$2"; shift 2 ;;
+      *) shift ;;
+    esac
+  done
+  case "$(devkit-forge-detect)" in
+    github) gh issue comment "$number" --body "$body" ;;
+    gitea)  _devkit-require-tea && tea issues comment "$number" --text "$body" ;;
+  esac
+}
+
+# ---------------------------------------------------------------------------
+# devkit-issue-close -- Close an issue (with optional comment)
+#   First positional arg is issue number. --comment "text" optional.
+# ---------------------------------------------------------------------------
+devkit-issue-close() {
+  local number="$1"; shift
+  local comment=""
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --comment) comment="$2"; shift 2 ;;
+      *) shift ;;
+    esac
+  done
+  case "$(devkit-forge-detect)" in
+    github)
+      if [[ -n "$comment" ]]; then
+        gh issue close "$number" --comment "$comment"
+      else
+        gh issue close "$number"
+      fi
+      ;;
+    gitea)
+      _devkit-require-tea
+      if [[ -n "$comment" ]]; then
+        tea issues comment "$number" --text "$comment"
+      fi
+      tea issues close "$number"
+      ;;
+  esac
+}

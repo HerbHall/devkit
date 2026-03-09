@@ -1,0 +1,212 @@
+name: Lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  markdown:
+    name: Markdown lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Markdown lint
+        run: npx markdownlint-cli2 "**/*.md"
+
+  validate-skills:
+    name: Validate skill routing
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check skill routing targets exist
+        run: |
+          errors=0
+          for skill_md in claude/skills/*/SKILL.md; do
+            skill_dir=$(dirname "$skill_md")
+            for wf in $(grep -oP 'workflows/[a-z0-9-]+\.md' "$skill_md" | sort -u); do
+              if [ ! -f "$skill_dir/$wf" ]; then
+                echo "ERROR: $skill_md references $wf but file not found at $skill_dir/$wf"
+                errors=$((errors + 1))
+              fi
+            done
+          done
+          if [ "$errors" -gt 0 ]; then
+            echo "Found $errors missing workflow file(s)"
+            exit 1
+          fi
+          echo "All skill routing targets exist"
+
+  verify-skill-count:
+    name: Verify skill counts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: README skill count matches directory count
+        run: |
+          ACTUAL=$(ls -d claude/skills/*/ | wc -l | tr -d ' ')
+          README_COUNT=$(grep -oP '\d+(?= skills)' README.md | head -1)
+          if [ "$ACTUAL" != "$README_COUNT" ]; then
+            echo "ERROR: README says $README_COUNT skills but claude/skills/ has $ACTUAL directories. Update README."
+            exit 1
+          fi
+          echo "OK: $ACTUAL skills match README"
+
+      - name: Verify script skill list matches directories
+        run: |
+          LISTED=$(grep 'for skill in' setup/legacy/verify.sh | sed 's/.*for skill in //;s/;.*//' | tr ' ' '\n' | sort)
+          PRESENT=$(ls claude/skills/ | sort)
+
+          MISSING=$(comm -23 <(echo "$LISTED") <(echo "$PRESENT"))
+          if [ -n "$MISSING" ]; then
+            echo "ERROR: Skills listed in verify.sh but not found in claude/skills/: $MISSING"
+            exit 1
+          fi
+
+          UNLISTED=$(comm -13 <(echo "$LISTED") <(echo "$PRESENT"))
+          if [ -n "$UNLISTED" ]; then
+            echo "WARNING: Skills in claude/skills/ not listed in verify.sh: $UNLISTED"
+          fi
+          echo "OK: verify.sh skill list is accurate"
+
+  validate-rule-metadata:
+    name: Validate rule metadata
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate lifecycle metadata in Tier 2 rules
+        run: |
+          errors=0
+
+          declare -A FILE_PREFIX=(
+            ["claude/rules/autolearn-patterns.md"]="AP"
+            ["claude/rules/known-gotchas.md"]="KG"
+          )
+
+          declare -A ALL_ENTRIES
+          for file in "${!FILE_PREFIX[@]}"; do
+            prefix="${FILE_PREFIX[$file]}"
+            while IFS=: read -r num rest; do
+              ALL_ENTRIES["${prefix}#${num}"]=1
+            done < <(tr -d '\r' < "$file" | grep -P '^## (\d+)\.' | grep -oP '(?<=## )\d+')
+          done
+
+          for file in "${!FILE_PREFIX[@]}"; do
+            prefix="${FILE_PREFIX[$file]}"
+            echo "--- Validating $file (prefix: $prefix) ---"
+
+            clean_file=$(mktemp)
+            tr -d '\r' < "$file" > "$clean_file"
+
+            while IFS=: read -r lineno line; do
+              if ! echo "$line" | grep -qP '^\*\*Added:\*\* \d{4}-\d{2}-\d{2} \| \*\*Source:\*\* .+? \| \*\*Status:\*\* .+$'; then
+                echo "ERROR: $file:$lineno: Malformed **Added:** line"
+                errors=$((errors + 1))
+                continue
+              fi
+
+              date_val=$(echo "$line" | grep -oP '(?<=\*\*Added:\*\* )\d{4}-\d{2}-\d{2}')
+              if ! date -d "$date_val" >/dev/null 2>&1; then
+                echo "ERROR: $file:$lineno: Invalid date '$date_val'"
+                errors=$((errors + 1))
+              fi
+
+              status_val=$(echo "$line" | grep -oP '(?<=\*\*Status:\*\* ).+$')
+              if [ "$status_val" != "active" ] && \
+                 ! echo "$status_val" | grep -qP '^deprecated \(\d{4}-\d{2}-\d{2}\) -- .+$' && \
+                 ! echo "$status_val" | grep -qP '^superseded-by-(AP|KG)#?\d+$'; then
+                echo "ERROR: $file:$lineno: Invalid status '$status_val'"
+                errors=$((errors + 1))
+              fi
+            done < <(grep -nP '^\*\*Added:\*\*' "$clean_file")
+
+            while IFS=: read -r lineno line; do
+              refs=$(echo "$line" | grep -oP '(AP|KG)#\d+' || true)
+              for ref in $refs; do
+                ref_num=$(echo "$ref" | grep -oP '\d+$')
+                ref_prefix=$(echo "$ref" | grep -oP '^(AP|KG)')
+                if [ "$ref_prefix" = "AP" ]; then
+                  target_file="claude/rules/autolearn-patterns.md"
+                else
+                  target_file="claude/rules/known-gotchas.md"
+                fi
+                if ! tr -d '\r' < "$target_file" | grep -qP "^## ${ref_num}\."; then
+                  echo "ERROR: $file:$lineno: Reference $ref not found in $target_file"
+                  errors=$((errors + 1))
+                fi
+              done
+            done < <(grep -nP '^\*\*See also:\*\*' "$clean_file")
+
+            frontmatter_count=$(grep -P '^entry_count:\s*\d+' "$clean_file" | grep -oP '\d+' || echo "")
+            if [ -z "$frontmatter_count" ]; then
+              echo "ERROR: $file: Missing entry_count in YAML frontmatter"
+              errors=$((errors + 1))
+            else
+              total_entries=$(grep -cP '^## \d+\.' "$clean_file" || true)
+              inactive_entries=$(grep -cP '^\*\*Status:\*\* (deprecated|superseded)' "$clean_file" || true)
+              active_entries=$((total_entries - inactive_entries))
+              if [ "$active_entries" != "$frontmatter_count" ]; then
+                echo "ERROR: $file: entry_count=$frontmatter_count but active entries=$active_entries"
+                errors=$((errors + 1))
+              fi
+            fi
+
+            rm -f "$clean_file"
+            echo "--- Done: $file ---"
+          done
+
+          if [ "$errors" -gt 0 ]; then
+            echo "Found $errors metadata validation error(s)"
+            exit 1
+          fi
+          echo "All rule metadata is valid"
+
+  validate-templates:
+    name: Validate project templates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate YAML templates
+        run: |
+          pip install pyyaml
+          python -c "
+          import yaml, glob, sys
+          errors = 0
+          for f in sorted(glob.glob('project-templates/*.yml')):
+              try:
+                  with open(f) as fh:
+                      yaml.safe_load(fh)
+                  print(f'OK: {f}')
+              except yaml.YAMLError as e:
+                  print(f'ERROR: {f}: {e}')
+                  errors += 1
+          if errors:
+              sys.exit(1)
+          print(f'All {len(glob.glob(\"project-templates/*.yml\"))} YAML templates valid')
+          "
+
+      - name: Validate JSON templates
+        run: |
+          python -c "
+          import json, glob, sys
+          errors = 0
+          for f in sorted(glob.glob('project-templates/*.json')):
+              try:
+                  with open(f) as fh:
+                      json.load(fh)
+                  print(f'OK: {f}')
+              except json.JSONDecodeError as e:
+                  print(f'ERROR: {f}: {e}')
+                  errors += 1
+          if errors:
+              sys.exit(1)
+          print(f'All {len(glob.glob(\"project-templates/*.json\"))} JSON templates valid')
+          "

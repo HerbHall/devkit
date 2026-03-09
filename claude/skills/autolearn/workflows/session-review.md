@@ -219,7 +219,8 @@ If rules files were modified in step 7, commit and open a PR:
 git add ~/.claude/rules/autolearn-patterns.md ~/.claude/rules/known-gotchas.md
 git commit -m "chore(rules): session review -- <N> patterns, <M> gotchas added"
 git push origin HEAD
-gh pr create --title "chore(rules): session review learnings" --body "<session summary from step 8>"
+source scripts/forge-wrappers.sh
+devkit-pr-create --title "chore(rules): session review learnings" --body "<session summary from step 8>"
 ```
 
 **Never commit directly to main.** The PR ensures changes are reviewable and CI passes before merge.

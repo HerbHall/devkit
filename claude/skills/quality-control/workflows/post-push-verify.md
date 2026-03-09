@@ -15,13 +15,15 @@ Monitor CI after pushing code to verify all checks pass. Designed to be used imm
 If no PR number given, detect from current branch:
 
 ```bash
-gh pr view --json number,title,headRefName --jq '{number, title, branch: .headRefName}'
+source scripts/forge-wrappers.sh
+devkit-pr-view --json number,title,headRefName --jq '{number, title, branch: .headRefName}'
 ```
 
 ### 2. Initial Status Check
 
 ```bash
-gh pr checks <number>
+source scripts/forge-wrappers.sh
+devkit-pr-checks <number>
 ```
 
 Report which checks are:
@@ -35,7 +37,7 @@ Report which checks are:
 If checks are still running, wait 30 seconds and check again:
 
 ```bash
-sleep 30 && gh pr checks <number>
+sleep 30 && devkit-pr-checks <number>
 ```
 
 Repeat up to 3 times (90 seconds total). After that, report current status and let the user know which checks are still pending.
@@ -52,7 +54,7 @@ Transition to the check-pr workflow for diagnosis. Follow the steps in `workflow
 Report current status and suggest the user can:
 
 - Wait and run `/quality-control` again later
-- Check manually with `gh pr checks <number>`
+- Check manually with `devkit-pr-checks <number>`
 
 ## Output
 

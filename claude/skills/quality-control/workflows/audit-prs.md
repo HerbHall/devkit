@@ -5,7 +5,8 @@
 ### 1. Fetch All Open PRs
 
 ```bash
-gh pr list --state open --json number,title,headRefName,updatedAt,statusCheckRollup,mergeable,reviewDecision --limit 50
+source scripts/forge-wrappers.sh
+devkit-pr-list --state open --json number,title,headRefName,updatedAt,statusCheckRollup,mergeable,reviewDecision --limit 50
 ```
 
 ### 2. Categorize Each PR

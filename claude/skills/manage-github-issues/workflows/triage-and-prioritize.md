@@ -25,7 +25,8 @@ Check for project configuration:
 Fetch open issues that lack a priority label:
 
 ```bash
-gh issue list --state open --limit 200 --json number,title,labels,milestone,createdAt,body
+source scripts/forge-wrappers.sh
+devkit-issue-list --state open --limit 200 --json number,title,labels,milestone,createdAt,body
 ```
 
 Filter the results to find issues that:
@@ -37,7 +38,8 @@ Filter the results to find issues that:
 Also fetch recently created issues (last 14 days) that may need review:
 
 ```bash
-gh issue list --state open --limit 50 --json number,title,labels,milestone,createdAt,body --sort created
+source scripts/forge-wrappers.sh
+devkit-issue-list --state open --limit 50 --json number,title,labels,milestone,createdAt,body --sort created
 ```
 
 **Step 3: Read Current Phase Context (if available)**
@@ -97,7 +99,8 @@ For each triaged issue, recommend an execution target based on task complexity:
 Apply the delegation label alongside the priority label:
 
 ```bash
-gh issue edit {NUMBER} --add-label "agent:{TARGET}"
+source scripts/forge-wrappers.sh
+devkit-issue-edit {NUMBER} --add-label "agent:{TARGET}"
 ```
 
 Reference the delegation model in `docs/copilot-integration.md` for detailed routing
@@ -135,19 +138,22 @@ Ask the user:
 For each approved recommendation:
 
 ```bash
-gh issue edit {NUMBER} --add-label "{PRIORITY_LABEL}"
+source scripts/forge-wrappers.sh
+devkit-issue-edit {NUMBER} --add-label "{PRIORITY_LABEL}"
 ```
 
 If a milestone is also needed:
 
 ```bash
-gh issue edit {NUMBER} --milestone "{MILESTONE}"
+source scripts/forge-wrappers.sh
+devkit-issue-edit {NUMBER} --milestone "{MILESTONE}"
 ```
 
 If additional labels are needed:
 
 ```bash
-gh issue edit {NUMBER} --add-label "{AREA_LABEL}"
+source scripts/forge-wrappers.sh
+devkit-issue-edit {NUMBER} --add-label "{AREA_LABEL}"
 ```
 
 **Step 8: Identify Blocking Chains**

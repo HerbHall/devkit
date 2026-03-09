@@ -39,6 +39,8 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+. (Join-Path $PSScriptRoot '..' 'setup' 'lib' 'forge-wrappers.ps1')
+
 # ---------------------------------------------------------------------------
 # Load config
 # ---------------------------------------------------------------------------
@@ -157,14 +159,9 @@ foreach ($targetRepo in $repos) {
         }
 
         try {
-            $result = ($secretValue | & gh secret set $secretName --repo $targetRepo 2>&1)
-            if ($LASTEXITCODE -eq 0) {
-                Write-Host "    [OK] $secretName"
-                $ok++
-            } else {
-                Write-Warning "    [FAIL] $secretName -- $result"
-                $fail++
-            }
+            Set-ForgeSecret -Repo $targetRepo -SecretName $secretName -SecretValue $secretValue
+            Write-Host "    [OK] $secretName"
+            $ok++
         } catch {
             Write-Warning "    [FAIL] $secretName -- $_"
             $fail++

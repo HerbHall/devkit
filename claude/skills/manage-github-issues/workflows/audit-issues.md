@@ -40,13 +40,15 @@ Based on scope, run the appropriate `gh` command:
 For all open issues:
 
 ```bash
-gh issue list --state open --limit 500 --json number,title,state,labels,milestone,createdAt,updatedAt,body,assignees
+source scripts/forge-wrappers.sh
+devkit-issue-list --state open --limit 500 --json number,title,state,labels,milestone,createdAt,updatedAt,body,assignees
 ```
 
 For a specific phase/milestone:
 
 ```bash
-gh issue list --state open --label "{PHASE_LABEL}" --limit 200 --json number,title,state,labels,milestone,createdAt,updatedAt,body,assignees
+source scripts/forge-wrappers.sh
+devkit-issue-list --state open --label "{PHASE_LABEL}" --limit 200 --json number,title,state,labels,milestone,createdAt,updatedAt,body,assignees
 ```
 
 **Step 4: Read Current Roadmap (if available)**
@@ -158,25 +160,29 @@ For each approved fix, use the appropriate `gh` command:
 Add labels:
 
 ```bash
-gh issue edit {NUMBER} --add-label "{LABELS}"
+source scripts/forge-wrappers.sh
+devkit-issue-edit {NUMBER} --add-label "{LABELS}"
 ```
 
 Set milestone:
 
 ```bash
-gh issue edit {NUMBER} --milestone "{MILESTONE}"
+source scripts/forge-wrappers.sh
+devkit-issue-edit {NUMBER} --milestone "{MILESTONE}"
 ```
 
 Flag stale:
 
 ```bash
-gh issue comment {NUMBER} --body "This issue has had no activity for 30+ days. Is it still relevant? Please update with current status or close if no longer needed."
+source scripts/forge-wrappers.sh
+devkit-issue-comment {NUMBER} --body "This issue has had no activity for 30+ days. Is it still relevant? Please update with current status or close if no longer needed."
 ```
 
 Close duplicate:
 
 ```bash
-gh issue close {NUMBER} --comment "Closing as duplicate of #{OTHER}. See #{OTHER} for continued tracking."
+source scripts/forge-wrappers.sh
+devkit-issue-close {NUMBER} --comment "Closing as duplicate of #{OTHER}. See #{OTHER} for continued tracking."
 ```
 
 **Step 9: Report Results**
