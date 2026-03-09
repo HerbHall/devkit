@@ -11,6 +11,9 @@ CLAUDE.local.md
 # Machine-specific devkit config (written by bootstrap.ps1)
 .devkit-config.json
 
+# Machine state snapshots (hardware-specific, contain serial numbers)
+machine/SystemConfig*.txt
+
 # Claude Code runtime state
 debug/
 file-history/
