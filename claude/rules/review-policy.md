@@ -1,7 +1,7 @@
 ---
 description: Review and merge policy. Auto-loaded at session start. Defines when review is mandatory, how PRs are merged, and protections against policy regression.
 tier: 1
-last_updated: "2026-03-06"
+last_updated: "2026-03-09"
 ---
 
 # Review and Merge Policy
@@ -24,6 +24,11 @@ The pipeline is:
 1. Agent creates branch, implements feature, pushes
 2. CI runs (build, test, lint)
 3. Copilot auto-reviews and leaves comments
+   > **Warning:** Copilot sub-PRs (auto-generated follow-up fix PRs) target the
+   > feature branch, not `main`. Before merging any Copilot sub-PR, check its base:
+   > `gh pr view <number> --json baseRefName,state`
+   > If `baseRefName` is not `main` and the parent PR is already merged, apply
+   > the fixes manually on a new branch from `main`. See KG#103.
 4. Claude Code reads Copilot comments, implements valid ones, merges
 5. No waiting for Copilot re-review -- Copilot cannot approve
 
