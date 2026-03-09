@@ -1,7 +1,7 @@
 ---
 description: Learned patterns from past sessions. Read when encountering similar situations.
 tier: 2
-entry_count: 73
+entry_count: 74
 last_updated: "2026-03-09"
 ---
 
@@ -791,3 +791,22 @@ The env var (layer 1) covers the outer process stdout/stderr. The reconfigure ca
 keeps it safe on Python < 3.7. `subprocess.run` (layer 3) opens a new stream and
 ignores PYTHONIOENCODING, so it needs its own `encoding=` argument.
 **See also:** AP#11 (jq-replacement context where this pattern was first documented)
+
+## 123. PSScriptAnalyzer Brownfield Onboarding — Audit Before First CI Run
+
+**Added:** 2026-03-09 | **Source:** DevKit | **Status:** active
+
+**Category:** ci-config
+**Context:** Adding PSScriptAnalyzer CI to an existing repo with many PowerShell scripts surfaces pre-existing violations iteratively across multiple CI cycles (each 2-minute windows-latest run reveals a different set of failures). On DevKit: first run surfaced PSReviewUnusedParameter/PSUseSingularNouns, second run surfaced PSUseUsingScopeModifierInNewRunspaces/PSAvoidUsingPlainTextForPassword, third run surfaced PSUseBOMForUnicodeEncodedFile.
+**Fix:** Before pushing CI integration, run PSScriptAnalyzer locally against all scripts and resolve or exclude ALL violations in a single pass:
+
+```powershell
+$files = Get-ChildItem -Path setup,scripts -Recurse -Filter '*.ps1'
+$results = $files | ForEach-Object {
+    Invoke-ScriptAnalyzer -Path $_.FullName -Severity Warning,Error
+}
+$results | Format-Table -AutoSize
+```
+
+Create `PSScriptAnalyzerSettings.psd1` with justified exclusions before the first CI run. Common brownfield exclusions for DevKit-style repos: `PSAvoidUsingWriteHost`, `PSUseShouldProcessForStateChangingFunctions`, `PSReviewUnusedParameter` (ParameterSetName dispatch), `PSUseSingularNouns` (internal helpers), `PSAvoidAssignmentToAutomaticVariable` (loop vars named `$profile`), `PSUseUsingScopeModifierInNewRunspaces` (Start-Job with ArgumentList), `PSAvoidUsingPlainTextForPassword` ([object[]]$Credentials false positive), `PSUseBOMForUnicodeEncodedFile` (cross-platform git strips BOM).
+**See also:** KG#112 (Invoke-ScriptAnalyzer -Include invalid parameter), AP#84 (mandatory lint step language)
