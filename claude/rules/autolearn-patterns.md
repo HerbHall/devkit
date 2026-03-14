@@ -1,7 +1,7 @@
 ---
 description: Learned patterns from past sessions. Read when encountering similar situations.
 tier: 2
-entry_count: 71
+entry_count: 72
 last_updated: "2026-03-14"
 ---
 
@@ -680,3 +680,11 @@ ignores PYTHONIOENCODING, so it needs its own `encoding=` argument.
 **Context:** Issues labeled `agent:human` may be mislabeled as requiring human intervention when automatable.
 **Fix:** Audit human-labeled issues before sprint: (1) automatable via API/scripts -- relabel, (2) already implemented -- close, (3) genuinely human -- keep. List both closed and open issues for true remaining scope.
 **See also:** AP#83, AP#47
+
+## 125. Copilot Post-Merge Review Followup Workflow
+
+**Added:** 2026-03-14 | **Source:** Samverk | **Status:** active
+
+**Category:** process-pattern
+**Context:** Copilot adds NEW review comments to already-merged PRs, days after merge. These need a second pass.
+**Fix:** Fetch via `gh api repos/{o}/{r}/pulls/{n}/comments`, filter by `created_at` post-merge. Implement clear fixes on a followup branch referencing the original PR number. Flag questionable changes for user decision.
