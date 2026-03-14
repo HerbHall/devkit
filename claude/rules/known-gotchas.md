@@ -1,8 +1,8 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 95
-last_updated: "2026-03-09"
+entry_count: 63
+last_updated: "2026-03-14"
 ---
 
 # Known Gotchas
@@ -22,24 +22,7 @@ Platform-specific issues, tool quirks, and surprising behaviors discovered throu
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Platform:** GitHub
-**Issue:** When branch protection requires PR reviews or status checks, `gh pr merge` fails if you're the only maintainer.
-**Fix:** Use `gh pr merge --admin` to bypass (only for repo admins).
-
-## 3. Git Stash Before PR Merge
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Platform:** Git
-**Issue:** `gh pr merge` can fail if there are uncommitted local changes, even if unrelated.
-**Fix:** `git stash` before merging, `git stash pop` after.
-
-## 4. Force Push to Already-Merged Branch Creates Orphan
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Platform:** GitHub
-**Issue:** `git push --force` to a merged PR branch creates a new orphaned remote branch.
-**Fix:** Check PR state first: `gh pr view <number> --json state`. Clean up: `git push origin --delete <branch-name>`.
+**Fix:** `gh pr merge --admin` bypasses protection when you're the only maintainer.
 
 ## 5. Incomplete Range Variable Replacement in Loop Refactoring
 
@@ -52,7 +35,6 @@ Platform-specific issues, tool quirks, and surprising behaviors discovered throu
 ## 6. React Compiler Lint: Refs During Render (Consolidated Reference)
 
 **Added:** 2026-02-17 | **Source:** Multiple | **Status:** active
-**Consolidates:** AP#114 (archived)
 
 **Platform:** React 19+ / ESLint react-hooks
 
@@ -79,24 +61,8 @@ Platform-specific issues, tool quirks, and surprising behaviors discovered throu
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Platform:** Windows (MSYS_NT)
-**Issue:** `python3`/`python`/`py` resolve to Windows Store alias stubs that prompt for install instead of running Python. `command -v` reports them as found.
-**Fix:** Check with `"$p" --version` (not `command -v`) and include explicit Windows paths in the search loop.
-
-## 9. jq Not Available on Windows MSYS by Default
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Platform:** Windows (MSYS_NT)
-**Issue:** `jq` is not in Git for Windows / MSYS2 by default.
-**Fix:** Use Python's `json` module instead (once you work around gotcha #8).
-
-## 10. UserPromptSubmit Hooks Block Slash Commands and Menu Selections
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Platform:** Claude Code (all)
-**Issue:** `UserPromptSubmit` hooks with `type: "prompt"` block slash commands and bare numeric menu selections.
-**Fix:** Add `matcher` regex: `"^(?!/)(?!\\d{1,2}$)"` to skip slash commands and 1-2 digit numbers.
+**Issue:** `python3`/`python`/`py` resolve to Windows Store alias stubs. `command -v` reports them as found.
+**Fix:** Check with `"$p" --version` (not `command -v`). Include explicit Windows paths in the search loop.
 
 ## 11. GitHub API Returns Empty Without User-Agent Header
 
@@ -109,25 +75,24 @@ Platform-specific issues, tool quirks, and surprising behaviors discovered throu
 ## 12. Swagger Cross-Platform Drift (Consolidated Reference)
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-**Consolidates:** KG#57, KG#59 (archived)
 **See also:** AP#17
 
 **Platform:** Go (swaggo/swag, cross-platform)
 
 ### time.Duration enum drift
 
-**Issue:** `swag init` generates platform-specific `time.Duration` enum values. Linux CI differs from Windows.
-**Fix:** Add `swaggertype:"integer"` struct tag to all `time.Duration` fields in swagger-annotated handlers.
+**Issue:** `swag init` generates platform-specific `time.Duration` enum values.
+**Fix:** Add `swaggertype:"integer"` struct tag to `time.Duration` fields.
 
 ### x-enum-descriptions drift
 
 **Issue:** Windows `swag init` generates `x-enum-descriptions` blocks; Linux omits them.
-**Fix:** After `swag init` on Windows, remove all `x-enum-descriptions` blocks: `grep -c "x-enum-descriptions" api/swagger/*` should be 0.
+**Fix:** Remove all `x-enum-descriptions` blocks after `swag init` on Windows.
 
 ### Perl regex corrupts YAML
 
-**Issue:** Perl regex stripping `x-enum-descriptions` from `swagger.yaml` can join adjacent lines.
-**Fix:** After stripping, verify YAML integrity. Consider using yq instead of regex.
+**Issue:** Perl regex stripping `x-enum-descriptions` can join adjacent lines.
+**Fix:** Verify YAML integrity after stripping. Consider using yq instead.
 
 ## 13. Swagger Drift After Any Handler/Model Change
 
@@ -172,13 +137,12 @@ Platform-specific issues, tool quirks, and surprising behaviors discovered throu
 ## 18. Windows PowerShell Process and JSON Quirks (Consolidated Reference)
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-**Consolidates:** KG#19 (archived)
 
 **Platform:** Windows (PowerShell)
 
 ### Start-Process gives child real console
 
-**Issue:** `Start-Process` gives child `ModeCharDevice=true` even with `-WindowStyle Hidden`. Go terminal-detection code still prompts on stdin.
+**Issue:** `Start-Process` gives child `ModeCharDevice=true` even with `-WindowStyle Hidden`.
 **Fix:** Set environment variables before `Start-Process` to bypass interactive prompts.
 
 ### ConvertFrom-Json drops empty arrays (PS 5.1)
@@ -186,51 +150,33 @@ Platform-specific issues, tool quirks, and surprising behaviors discovered throu
 **Issue:** `ConvertFrom-Json` on `[]` returns `$null` instead of `@()`.
 **Fix:** Use `Invoke-WebRequest` and check `$resp.StatusCode` instead of parsing JSON.
 
-## 20. Stacked PR Rebase After Squash-Merge Requires Skip
+## 20. Stacked PR Rebase After Squash-Merge Requires Skip (Consolidated Reference)
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Platform:** Git / GitHub
-**Issue:** After squash-merge, downstream stacked branches have different hashes. `git rebase origin/main` produces conflicts.
-**Fix:** Use `git rebase --skip` for each already-merged commit, or `git rebase --onto origin/main <old-base> <branch>`.
-
-## 22. Project Renames Create Competitive Research Blind Spots
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Platform:** GitHub / All
-**Issue:** GitHub project renames make keyword searches miss established competitors. Docker Hub retains old names.
-**Fix:** Search by function not product name. Check Docker Hub, GitHub topics/tags, star counts. Re-scan monthly.
+**Issue:** After squash-merge, downstream stacked branches have different hashes. `git rebase origin/main` produces conflicts. Also, local merge commits cause `git pull --ff-only` to fail after squash-merge.
+**Fix:** Use `git rebase --skip` for each already-merged commit, or `git rebase --onto origin/main <old-base> <branch>`. For local main divergence: `git reset --hard origin/main`. Prevent with `git config pull.ff only`.
 
 ## 23. GitHub Rulesets and Protection (Consolidated Reference)
 
 **Added:** 2026-02-17 | **Source:** Multiple | **Status:** active
-**Consolidates:** KG#98, KG#99 (archived)
 
 **Platform:** GitHub
 
-- **404 on protection API:** Repos using rulesets return 404 from branch protection API. Check rulesets: `gh api repos/{owner}/{repo}/rulesets --jq '.[] | {id, name, enforcement}'`.
-- **Review conflict:** Both rulesets and branch protection requiring reviews doubles the requirement. Use rulesets for reviews; branch protection only for CI status checks.
-- **Split rulesets break Copilot:** Separate PR review and Copilot rulesets cause COMMENTED not APPROVED. Use single combined ruleset. Template: `project-templates/copilot-ruleset.json`. See `claude/rules/review-policy.md`.
-
-## 24. cla-assistant.io Blocks Dependabot PRs
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Platform:** GitHub
-**Issue:** cla-assistant.io creates a permanently "pending" `license/cla` check on Dependabot PRs.
-**Fix:** Remove cla-assistant.io (redundant with Actions CLA workflow) or add `dependabot[bot]` to allowlist.
+- Repos using rulesets return 404 from branch protection API. Check rulesets: `gh api repos/{owner}/{repo}/rulesets`.
+- Both rulesets and branch protection requiring reviews doubles the requirement. Use rulesets for reviews; branch protection only for CI status checks.
+- Split rulesets break Copilot. Use single combined ruleset. Template: `project-templates/copilot-ruleset.json`.
 
 ## 25. Parallel Background Agents Share Working Tree (Consolidated Reference)
 
 **Added:** 2026-02-17 | **Source:** Multiple | **Status:** active
-**Consolidates:** KG#76 (archived)
 
 **Platform:** Claude Code (all)
 
-All parallel agents write to the same working directory. Changes mix as unstaged modifications. Sort into branches via stage/stash/pop after agents complete.
+All parallel agents write to the same working directory. Sort into branches via stage/stash/pop after agents complete.
 
-**Key scenarios:** (1) Agent autonomous commit runs `git checkout`, destroying other agents' unstaged tracked files -- restrict agents from committing or re-apply from summary. (2) `go build` compiles untracked files from other agents -- stash them before pushing. (3) Stash during running agents is unsafe -- agents keep writing, pop fails. Recovery: commit one agent's files, extract other's via `git diff stash@{0} -- <file>`.
+**Key scenarios:** (1) `git checkout` destroys other agents' unstaged tracked files. (2) `go build` compiles untracked files from other agents -- stash before pushing. (3) Stash during running agents is unsafe -- commit one agent's files first.
 
 ## 26. Sequential Same-File PR Merge Requires Rebase Between Each
 
@@ -254,7 +200,7 @@ All parallel agents write to the same working directory. Changes mix as unstaged
 
 **Platform:** React / recharts 3.x
 **Issue:** `<Tooltip content={...} />` receives `TooltipContentProps`, not `TooltipProps`. Using JSX element form renders with empty `{}` initially.
-**Fix:** Use `TooltipContentProps<number, string>`. For JSX element form, use `Partial<TooltipContentProps<...>>`. See AP#63.
+**Fix:** Use `TooltipContentProps<number, string>`. For JSX element form, use `Partial<TooltipContentProps<...>>`. See AP#63 (archived).
 
 ## 29. Build-Tag Files Invisible to Local Lint on Different OS
 
@@ -263,46 +209,6 @@ All parallel agents write to the same working directory. Changes mix as unstaged
 **Platform:** Go (cross-platform)
 **Issue:** `//go:build !windows` files are excluded from `golangci-lint` on Windows. Lint errors only appear in Linux CI.
 **Fix:** Mentally check for `filepathJoin`, `G115`, `paramTypeCombine`, `prealloc` in platform-specific files. Consider `GOOS=linux golangci-lint run`.
-
-## 30. Background Agents Can't Prompt for Tool Permissions
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Platform:** Claude Code (all)
-**Issue:** Background agents inherit tool permissions. Unapproved tools are silently denied.
-**Fix:** Ensure tools are approved before launching background agents. Prefer `subagent_type=Bash` with `gh api`.
-
-## 31. Reddit Blocks WebFetch but gh api Works
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Platform:** All (Claude Code)
-**Issue:** Reddit blocks WebFetch. Web search with reddit domains returns nothing.
-**Fix:** Append `.json` to any Reddit URL and use `gh api -X GET "$URL.json"`. Extract with `--jq`.
-
-## 32. SessionStart Hook: Use `type: "command"` Not `type: "prompt"`
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Platform:** Claude Code (all)
-**Issue:** `SessionStart` with `type: "prompt"` sends to a small model that can't process instructions.
-**Fix:** Use `type: "command"` with `echo` to inject system reminders.
-
-## 33. Claude Code Hooks Cannot Initiate Conversation
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Platform:** Claude Code (all)
-**Issue:** Hooks inject context as system reminders but cannot make Claude proactively start a conversation. User must type something first.
-**Fix:** Accept two-step startup. Pair with VS Code `runOn: folderOpen` task for orientation.
-
-## 34. Chrome Ignores autocomplete="off" on Form Fields
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Platform:** All browsers
-**Issue:** `autocomplete="off"` is ignored. Non-standard `name` attributes cause autofill to overwrite wrong fields.
-**Fix:** Use standard `name` + `autocomplete` values: `username`, `email`, `new-password`, `current-password`.
 
 ## 35. Go Race Detection Requires CGO on Windows MSYS
 
@@ -328,62 +234,6 @@ All parallel agents write to the same working directory. Changes mix as unstaged
 **Issue:** `getByLabel('Password')` matches both the input and companion toggle button.
 **Fix:** Use `page.locator('#password')` to target by ID instead.
 
-## 39. Docker Extension `update` Fails After Image Rebuild
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Platform:** Docker Desktop Extensions
-**Issue:** `docker extension update` returns "not installed" after rebuilding (tracks by image digest, not tag).
-**Fix:** Use `docker extension install` instead of `update` when image has been rebuilt.
-
-## 41. .claude/settings.local.json Should Be Gitignored
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Platform:** Claude Code (all)
-**Issue:** `.claude/settings.local.json` contains local tool permissions. Can be accidentally committed.
-**Fix:** Add `.claude/` to `.gitignore`. If committed, `git rm --cached .claude/settings.local.json`.
-
-## 42. BMAD Method Generates 42 Slash Commands
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Platform:** Claude Code (all)
-**Issue:** `npx bmad-method install` generates 42 slash commands, overwhelming the namespace.
-**Fix:** Install in a separate directory, or selectively delete unused `/bmad-bmm-*` command files.
-
-## 43. Spec Kit `specify init` Hangs on Windows MSYS
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Platform:** Windows (MSYS_NT) / Python Rich library
-**Issue:** `specify init` hangs at interactive prompt. Rich library blocks even with piping/redirection.
-**Fix:** Skip CLI. Fetch templates via `gh api repos/github/spec-kit/contents/templates/commands --jq '.[].name'`.
-
-## 44. BMAD npm Package Name Is Not Obvious
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Platform:** npm / Node.js
-**Issue:** Package is `bmad-method`. Common wrong guesses: `bmad-cli`, `@bmadcode/bmad`.
-**Fix:** `npx -y bmad-method install --modules bmm --tools claude-code --directory <path> -y`.
-
-## 45. markdownlint-cli2 Config Must Be at Repo Root for CI
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Platform:** GitHub Actions / markdownlint-cli2
-**Issue:** `config` parameter doesn't reliably override lookup. Config in subdirectory only won't be found by CI.
-**Fix:** Place `.markdownlint.json` at repo root. Remove `config` parameter from the action.
-
-## 46. markdownlint MD060 Auto-Enabled by Default: True
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Platform:** markdownlint v0.40.0+
-**Issue:** MD060 (table-column-style) auto-enables with `"default": true`. Appears after version upgrade.
-**Fix:** Add `"MD060": false` to config, or fix table pipe spacing consistency.
-
 ## 47. PowerShell [Mandatory] Validates Each Element in String Arrays
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
@@ -397,7 +247,7 @@ All parallel agents write to the same working directory. Changes mix as unstaged
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Platform:** Windows (Hyper-V)
-**Issue:** `VirtualizationFirmwareEnabled` returns `$false` when Hyper-V is already active (hypervisor claimed VT-x).
+**Issue:** Returns `$false` when Hyper-V is already active (hypervisor claimed VT-x).
 **Fix:** Use Hyper-V state as fallback: `if ($virtCheck.Met -or $hyperVMet) { # confirmed }`.
 
 ## 49. PowerShell Get-ChildItem Misses Dotfiles Without -Force
@@ -408,46 +258,37 @@ All parallel agents write to the same working directory. Changes mix as unstaged
 **Issue:** `Get-ChildItem` skips dotfiles (hidden on Windows). Filter `credentials*` won't match `.credentials*`.
 **Fix:** Use `-Force` flag AND add separate `.credentials*` filter.
 
-## 50. Winget Exit Code -1978335189 Means Already Installed
+## 50. Winget Installation Gotchas (Consolidated Reference)
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
-**Platform:** Windows (winget)
-**Issue:** `winget install` returns `-1978335189` when already installed. Scripts treat it as failure.
-**Fix:** Check for exit codes `-1978335189` and `-1978335184` and treat as success.
+**Platform:** Windows (winget / PowerShell / MSYS)
 
-## 51. Winget Installs Update Registry PATH but Current Session Is Stale
+### Exit codes for "already installed"
 
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+**Issue:** `winget install` returns `-1978335189` (already installed) or `-1978335184`. Scripts treat as failure.
+**Fix:** Check for both exit codes and treat as success.
 
-**Platform:** Windows (PowerShell / MSYS)
+### PATH staleness after install
+
 **Issue:** Winget-installed tools update registry PATH but current session has old PATH.
 **Fix:** Refresh: `$env:PATH = [Environment]::GetEnvironmentVariable('PATH', 'Machine') + ';' + [Environment]::GetEnvironmentVariable('PATH', 'User')`.
 
 ## 54. PowerShell param() and CI Ordering (Consolidated Reference)
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-**Consolidates:** KG#75 (archived)
 
 **Platform:** PowerShell 7+ / GitHub
 
 ### param() must be first executable statement
 
 **Issue:** `Set-StrictMode` before `param()` causes confusing error.
-**Fix:** Only comments and `#Requires` before `param()`. Everything else after.
+**Fix:** Only comments and `#Requires` before `param()`.
 
 ### Branch protection requires pre-existing CI check names
 
-**Issue:** `required_status_checks.contexts` must reference jobs that have already run. Setting protection before CI workflow ships blocks all PRs.
+**Issue:** `required_status_checks.contexts` must reference jobs that have already run.
 **Fix:** Merge CI workflow first, verify job names in Actions tab, then apply protection.
-
-## 55. VS 2022 Bundled Node.js as Fallback for Frontend Builds
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Platform:** Windows (MSYS_NT)
-**Issue:** Node.js/npm/pnpm may not be on PATH, but VS 2022 bundles Node.js at a known path.
-**Fix:** Write a temp `.ps1` file with PATH prepended, execute with `powershell.exe -NoProfile -File`. See AP#76.
 
 ## 56. Subagent pnpm-lock.yaml Drift When Node.js Unavailable
 
@@ -457,53 +298,35 @@ All parallel agents write to the same working directory. Changes mix as unstaged
 **Issue:** Subagent adds deps to `package.json` but can't run `pnpm install`. CI fails with `ERR_PNPM_OUTDATED_LOCKFILE`.
 **Fix:** Run `pnpm install` after merging subagent changes to update lockfile.
 
-## 58. Local Main Diverges After Squash-Merge When Merge Commits Exist
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Platform:** Git (all)
-**Issue:** Local merge commits cause `git pull --ff-only` to fail after squash-merge.
-**Fix:** `git reset --hard origin/main` when local main has no uncommitted work. Prevent with `git config pull.ff only`.
-
-## 60. Go Binary Permission Denied on MSYS -- Use go run Instead
-
-**Added:** 2026-02-24 | **Source:** SubNetree | **Status:** active
-
-**Platform:** Windows (MSYS_NT)
-**Issue:** Go binaries in `~/go/bin/` get "permission denied" on MSYS despite execute bits.
-**Fix:** Use `go run github.com/.../tool@vX.Y.Z` instead of local binary. Works for swag, golangci-lint, etc.
-
-## 61. Claude Code settings.local.json Does NOT Cascade from Parent Directories
+## 61. Claude Code Settings Scope and Gitignore (Consolidated Reference)
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Platform:** Claude Code (all)
-**Issue:** Settings do NOT cascade from parent directories. Each project is independent. Hierarchy: user (`~/.claude/`) > project (`.claude/`) > local.
+
+### Settings do NOT cascade from parent directories
+
+**Issue:** Each project is independent. Hierarchy: user (`~/.claude/`) > project (`.claude/`) > local.
 **Fix:** Put broad wildcards in `~/.claude/settings.json`. Copy `project-templates/settings.json` for new projects. See AP#86.
 
-## 62. Windows CRLF Breaks Bash grep Value Extraction in CI
+### settings.local.json should be gitignored
 
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+**Issue:** `.claude/settings.local.json` contains local tool permissions. Can be accidentally committed.
+**Fix:** Add `.claude/*` to `.gitignore` (use glob, not trailing slash -- see KG#92). If committed, `git rm --cached`.
 
-**Platform:** GitHub Actions (Ubuntu) / Windows-committed files
-**Issue:** `\r\n` line endings cause trailing `\r` in grep output, breaking string comparisons and arithmetic.
-**Fix:** Pre-process with `tr -d '\r' < "$file" > "$clean_file"` before parsing.
+## 62. Windows CRLF Breaks Tool String Matching (Consolidated Reference)
 
-## 63. Lipgloss Emoji Variation Selector Width Mismatch
+**Added:** 2026-02-17 | **Source:** Multiple | **Status:** active
 
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+**Platform:** Windows (all tools)
 
-**Platform:** Go (charmbracelet/lipgloss)
-**Issue:** Emoji with U+FE0F renders as 2 cells but lipgloss counts as 1, causing border misalignment.
-**Fix:** Use emoji in U+1Fxxx range (consistent 2-cell width). Avoid variation selectors in TUI content.
+Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known surfaces:
 
-## 64. lipgloss.Place Output Is Not Safely ANSI-Strippable
+- **Bash grep in CI:** `\r\n` in Windows-committed files causes trailing `\r` in grep output, breaking comparisons. Fix: `tr -d '\r' < "$file" > "$clean_file"`.
+- **Claude Code Edit tool:** `old_string` matching fails silently on CRLF files. Workaround: use Write tool for new files, or Python binary-mode (`open('file', 'rb')`).
+- **GitHub API body fields:** `gh api` returns `\r\n` in `body` field on Windows. Python regex fails silently. Fix: `body = body.replace("\r\n", "\n")` before parsing.
 
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Platform:** Go (charmbracelet/lipgloss)
-**Issue:** Stripping ANSI from lipgloss output for position computation fails due to width calculation mismatches.
-**Fix:** Create a dedicated plain-text renderer method sharing layout logic, not strip ANSI from styled output.
+**Universal fix:** Normalize `\r\n` to `\n` before any string processing on Windows.
 
 ## 65. golangci-lint v2 Config Requirements
 
@@ -556,17 +379,16 @@ All parallel agents write to the same working directory. Changes mix as unstaged
 ## 77. Docker Desktop Extension Development Gotchas (Consolidated Reference)
 
 **Added:** 2026-02-17 | **Source:** Multiple | **Status:** active
-**Consolidates:** KG#78, KG#81, KG#82, KG#83, KG#84, KG#85 (archived)
 
 **Platform:** Docker Desktop Extensions
 
-- **Marketplace:** Images show as regular containers on Docker Hub. Submit via [docker/extensions-submissions](https://github.com/docker/extensions-submissions). Run `docker extension validate` first.
-- **hadolint:** DL3048/DL3045 are false positives. Add `.hadolint.yaml` with `ignored: [DL3048, DL3045]`.
+- **Marketplace:** Submit via docker/extensions-submissions. Run `docker extension validate` first.
+- **hadolint:** DL3048/DL3045 false positives. Add `.hadolint.yaml` with `ignored: [DL3048, DL3045]`.
 - **Vitest:** `@docker/extension-api-client` CJS/ESM mismatch. Add `resolve.alias` -> mock file. See KG#87.
-- **Version drift:** Designate one source of truth (`VERSION` or `package.json`). CI overrides Dockerfile ARG via `--build-arg`.
-- **Labels:** Screenshots (JSON array, min 3, 2400x1600px), changelog (HTML), additional-urls (JSON), icon (local file). Escaped quotes. See [docs](https://docs.docker.com/extensions/extensions-sdk/extensions/labels/).
+- **Version drift:** Designate one source of truth. CI overrides Dockerfile ARG via `--build-arg`.
+- **Labels:** Screenshots (JSON array, min 3, 2400x1600px), changelog (HTML), icon (local file).
 - **Multi-arch:** Must build `linux/amd64` + `linux/arm64` via `docker buildx`.
-- **MUI v5:** `@docker/docker-mui-theme` pins v5. Use `InputProps` not `slotProps.input`. Reference v5 docs only.
+- **MUI v5:** `@docker/docker-mui-theme` pins v5. Use `InputProps` not `slotProps.input`.
 - **Update after rebuild:** Use `docker extension install` (not `update`) -- tracks by digest.
 
 ## 79. GitHub Secrets UI Is Buried Under Expandable Sidebar
@@ -583,7 +405,7 @@ All parallel agents write to the same working directory. Changes mix as unstaged
 
 **Platform:** PowerShell 7+
 **Issue:** Under StrictMode, accessing nonexistent property on PSCustomObject throws -- even in conditionals.
-**Fix:** Use `$obj.PSObject.Properties.Match('prop').Count -gt 0` for existence checks. Does NOT affect hashtables.
+**Fix:** Use `$obj.PSObject.Properties.Match('prop').Count -gt 0`. Does NOT affect hashtables.
 
 ## 86. grep -c With || echo "0" Doubles Output on No Match
 
@@ -591,7 +413,7 @@ All parallel agents write to the same working directory. Changes mix as unstaged
 
 **Platform:** Bash (all, especially CI)
 **Issue:** `grep -c` outputs "0" AND exits code 1. `$(grep -c ... || echo "0")` captures "0\n0", breaking arithmetic.
-**Fix:** Use `|| true` instead of `|| echo "0"`. See also KG#62 (CRLF grep issues).
+**Fix:** Use `|| true` instead of `|| echo "0"`.
 
 ## 87. Vitest Cannot Resolve Browser-Only npm Package Exports
 
@@ -607,7 +429,7 @@ All parallel agents write to the same working directory. Changes mix as unstaged
 
 **Platform:** .NET / GitHub Actions (Ubuntu)
 **Issue:** `dotnet restore` on solution with WPF projects fails on Ubuntu with `NETSDK1100`.
-**Fix:** Scope `dotnet restore` and `dotnet test` to individual cross-platform .csproj files instead of the solution.
+**Fix:** Scope all `dotnet` commands to individual cross-platform .csproj files, not the .sln.
 
 ## 89. go get Does Not Resolve All Transitive Dependencies
 
@@ -641,30 +463,21 @@ All parallel agents write to the same working directory. Changes mix as unstaged
 **Issue:** `.claude/` (trailing slash) ignores entire directory. `!.claude/settings.json` cannot override.
 **Fix:** Use `.claude/*` (glob) instead. Glob-level ignores allow negation.
 
-## 93. Git Init Template CLAUDE.md Breaks Markdownlint
-
-**Added:** 2026-03-05 | **Source:** DigitalRain | **Status:** active
-
-**Platform:** Git (all) / markdownlint-cli2
-**Issue:** `git init.templateDir` copies CLAUDE.md into `.git/`. Markdownlint's `**/*.md` picks it up.
-**Fix:** Add `"#.git"` to all markdownlint exclusion patterns.
-
 ## 94. GITHUB_TOKEN-Created Tags Don't Trigger Push Events
 
 **Added:** 2026-03-05 | **Source:** Runbooks | **Status:** active
-**Last relevant:** 2026-03-08
 
 **Platform:** GitHub Actions
-**Issue:** Tags created by `GITHUB_TOKEN` don't trigger `on: push: tags:` in other workflows (anti-recursion safeguard).
-**Fix:** Chain publish job in same workflow using `release_created` output. Or use `on: release: types: [published]` in separate workflow. For release-please specifically, use `RELEASE_PLEASE_TOKEN` (a PAT) instead of `GITHUB_TOKEN` -- see AP#120.
+**Issue:** Tags created by `GITHUB_TOKEN` don't trigger `on: push: tags:` in other workflows (anti-recursion).
+**Fix:** Chain publish job in same workflow, or use `on: release: types: [published]`. For release-please, use `RELEASE_PLEASE_TOKEN` (PAT) -- see AP#120.
 
 ## 95. Release-Please Branch Updates Don't Always Trigger CI
 
 **Added:** 2026-03-05 | **Source:** Runbooks | **Status:** active
 
 **Platform:** GitHub Actions
-**Issue:** `pull_request: synchronize` sometimes doesn't fire for release-please commits. PR gets stale checks.
-**Fix:** Deploy `retrigger-ci.yml` workflow. Manual: `gh pr close N && sleep 2 && gh pr reopen N`. Template: `project-templates/retrigger-ci.yml`.
+**Issue:** `pull_request: synchronize` sometimes doesn't fire for release-please commits.
+**Fix:** Deploy `retrigger-ci.yml`. Manual: `gh pr close N && sleep 2 && gh pr reopen N`.
 
 ## 96. Auto-Merge Requires Explicit Repo Setting
 
@@ -687,209 +500,94 @@ All parallel agents write to the same working directory. Changes mix as unstaged
 **Added:** 2026-03-07 | **Source:** DevKit | **Status:** active
 
 **Platform:** Claude Code (all)
-**Issue:** Rules files in `claude/rules/` load into every Claude Code session as system context. Files over 40k cause large input blocks to be ignored at task transitions (Variant B stall pattern). The session appears to work normally but silently drops context from oversized rules, leading to repeated mistakes and missed patterns.
-**Symptom:** Agent ignores known patterns documented in rules files. Task transitions (switching between plan/code/verify phases) lose context from rules that should apply. Rules files that were 2.5x over the 40k threshold caused measurable degradation.
-**Fix:** Run `/rules-compact` to archive stale entries, deduplicate same-root-cause patterns, and consolidate related entries below 35k per file.
-**Prevention:** The conformance-audit checklist (check #17) flags any rules file over 40k. Run `/conformance-audit` periodically to catch growth before it hits the limit. Target 35k per file to leave headroom.
+**Issue:** Rules files over 40k cause context to be silently dropped at task transitions.
+**Fix:** Run `/rules-compact` to stay below 35k per file. `/conformance-audit` check #17 flags violations.
 
-## 99. Copilot Cannot Approve PRs -- Review Is Informational Only
+## 99. Copilot Cannot Approve PRs -- Review Is Informational Only (Consolidated Reference)
 
 **Added:** 2026-03-07 | **Source:** DevKit | **Status:** active
-**Last relevant:** 2026-03-09
 
 **Platform:** GitHub
-**Issue:** Copilot code review can only COMMENT on PRs, never APPROVE. Setting `required_approving_review_count: 1` in a ruleset creates a gate that can never be satisfied without `--admin` bypass. Previous configurations attempted workarounds (combined rulesets, split rulesets) but none solve the fundamental constraint: Copilot cannot approve.
-**Fix:** Set `required_approving_review_count: 0`. Keep `copilot_code_review` with `review_on_push: true` for informational comments. CI is the only merge gate. Claude Code reads Copilot comments after CI passes, implements valid ones, and merges without waiting for re-review. Use `--admin` only for CI infrastructure failures, never to skip Copilot feedback. Template: `project-templates/copilot-ruleset.json`. Audit: `scripts/copilot-review-setup.sh audit OWNER/REPO`.
+**Issue:** Copilot can only COMMENT, never APPROVE. Setting `required_approving_review_count: 1` creates an unsatisfiable gate.
+**Fix:** Set `required_approving_review_count: 0`. Keep `copilot_code_review` with `review_on_push: true` for informational comments. CI is the only merge gate. Use `--admin` only for CI infrastructure failures. Template: `project-templates/copilot-ruleset.json`.
+
+### Sub-PR target branch
+
+**Issue:** Copilot sub-PRs target the feature branch, not `main`. After squash-merge, merging these lands commits on a dead branch.
+**Fix:** Check target first: `gh pr view <number> --json baseRefName,state`. If base is not `main`, apply fixes manually on a new branch.
 
 ## 100. Large Input Block Ignored at Task Transition (Variant B Stall)
 
 **Added:** 2026-03-07 | **Source:** DevKit | **Status:** active
 
-**Platform:** Claude Code (sidebar extension and terminal)
-**Issue:** After completing a multi-step task, CC displays a newly pasted large input block as text rather than executing it. The session appears frozen. This is distinct from Variant A (skill menu blocking) -- there is no menu, no prompt, CC simply does not act on the input.
-**Root cause:** Context saturation at task boundaries. CC has processed a full implementation session and the accumulated context leaves insufficient headroom to treat the new input as a fresh task instruction.
-**Symptoms:** Large handoff prompt pasted after task completion. CC shows the text in the chat panel. No bash commands run. `?` button appears at bottom. Sending `?` or `continue` may or may not unstick it -- success rate is low on third or subsequent attempts.
-**Fix:** Kill the session and open a fresh one (`+` in sidebar, `Ctrl+C` then `claude` in terminal). Paste the handoff into the new session. Do NOT attempt to recover a saturated session with multiple `?` prompts -- each attempt consumes more context.
-**Prevention:** Keep handoff prompts under 40 lines. Split multi-part handoffs into separate sessions. Run `/rules-compact` if rules files approach 40k -- oversized rules files accelerate context saturation on load.
-**Recovery escalation:** If `?` fails twice, the session is unrecoverable. Open fresh immediately.
+**Platform:** Claude Code (all)
+**Issue:** After completing a multi-step task, CC displays a pasted large input block as text rather than executing it. Context saturation at task boundaries.
+**Fix:** Kill session and open fresh. Do NOT attempt multiple `?` prompts -- if it fails twice, session is unrecoverable.
+**Prevention:** Keep handoff prompts under 40 lines. Run `/rules-compact` if rules files approach 40k.
 
-## 101. Claude Code Edit Tool CRLF Matching Failure on Windows
-
-**Added:** 2026-03-07 | **Source:** Samverk | **Status:** active
-
-**Platform:** Windows (MSYS_NT) / Claude Code
-**Issue:** The Edit tool's `old_string` matching fails silently on files with Windows CRLF (`\r\n`) line endings. The `\r` characters are invisible but prevent exact string matching. Affects every Edit call on CRLF files.
-**Workarounds:**
-
-- Use Python binary-mode scripts: `open('file', 'rb')` / `open('file', 'wb')` with explicit `\r\n` in replacement strings
-- Use the Write tool to create new files instead of appending to large existing CRLF files
-- `sed` is also unreliable on MSYS (literal `t` instead of tab with `\t` escapes)
-
-- When parsing GitHub API issue bodies in Python, always normalize first:
-  `body = body.replace("\r\n", "\n")` before any regex matching
-
-**See also:** KG#62 (CRLF breaks bash grep in CI -- same root cause, different tool);
-KG#109 (GitHub API response CRLF -- same root cause, third surface)
-
-## 102. Samverk Dispatcher False-Positive on Issues Without Frontmatter
-
-**Added:** 2026-03-07 | **Source:** Samverk | **Status:** active
-
-**Platform:** Samverk dispatcher
-**Issue:** The dispatcher's `classify` path requires YAML frontmatter in issue bodies. Issues that are valid but have no frontmatter (e.g., plain prose issues, Copilot-generated issues) trigger `invalid_frontmatter` escalation, which applies `status:needs-human` and halts routing. The issue is not actually blocked -- the label is a false positive.
-**Symptom:** Valid issue receives `status:needs-human` label immediately after creation or assignment. Dispatcher comment reads: `ESCALATE [dispatcher] trigger: invalid_frontmatter details: classify issue ... no frontmatter found`.
-**Workaround:** Remove the `status:needs-human` label manually. The issue is valid; proceed normally.
-**Fix needed:** Dispatcher should treat `invalid_frontmatter` as a soft warning, not a hard escalation. Options: (1) skip frontmatter requirement for issues created by Copilot or external agents, (2) route to a fallback classify path using title/label heuristics, (3) only escalate if frontmatter is present but malformed. See Samverk issue #180.
-**See also:** KG#99 (Copilot review is informational -- same "Copilot-as-actor" surface area)
-
-## 103. Copilot Sub-PRs Target Feature Branch, Not Main
-
-**Added:** 2026-03-08 | **Source:** DevKit | **Status:** active
-
-**Platform:** GitHub (Copilot coding agent)
-**Issue:** Copilot's auto-generated sub-PRs (follow-up fix suggestions) target the feature branch that triggered the review, not `main`. When that feature branch is squash-merged and closed, the Copilot sub-PRs still point to the now-dead branch. Merging them (even with `--admin`) lands commits on the dead branch, not `main`. Changes are silently lost.
-**Symptom:** `gh pr merge <copilot-pr> --admin` succeeds but the fixes never appear on `main`.
-**Fix:** Before merging any Copilot sub-PR, check its target: `gh pr view <number> --json baseRefName,state`. If `baseRefName` is not `main` and the original PR is already merged, apply the fixes manually on a new branch from `main`.
-**See also:** KG#99 (Copilot review is informational -- same Copilot-as-actor surface area)
-
-## 104. PowerShell Unused Variable Triggers PSScriptAnalyzer Warning
-
-**Added:** 2026-03-08 | **Source:** DevKit | **Status:** active
-
-**Platform:** PowerShell (PSScriptAnalyzer)
-**Issue:** `PSUseDeclaredVarsMoreThanAssignments` fires when command output is captured into a variable that is never read: `$output = & command 2>&1 | Out-String`. If `$output` is only assigned and never referenced, the analyser warns. Caught by local PostToolUse hook; NOT caught by DevKit CI (issue #243 tracks adding PS lint to CI).
-**Fix:** Use `$null = & command 2>&1` to explicitly discard output. Drop `Out-String` — allocation is wasted if the result isn't used.
-
-## 105. PowerShell 2>&1 Mixes Stderr Into Parsed Output
+## 104. PowerShell Output Capture Gotchas (Consolidated Reference)
 
 **Added:** 2026-03-08 | **Source:** DevKit | **Status:** active
 
 **Platform:** PowerShell (all)
-**Issue:** `& command 2>&1 | Out-String` merges stderr into the stdout string. When the output is parsed line-by-line for data (e.g. repo names from `gh api`), any error message from the command appears as a fake data record. Splitting on newlines produces garbage entries.
-**Fix:** Redirect stderr to a temp file to isolate it:
 
-```powershell
-$tmpErr = [System.IO.Path]::GetTempFileName()
-try {
-    $out = & command 2>$tmpErr | Out-String
-    if ($LASTEXITCODE -ne 0) {
-        $err = Get-Content $tmpErr -Raw -ErrorAction SilentlyContinue
-        Write-Error "command failed: $err"
-        exit 1
-    }
-} finally {
-    Remove-Item $tmpErr -ErrorAction SilentlyContinue
-}
-```
+### Unused variable warning
 
-**See also:** AP#76 (temp-file pattern for MSYS→PowerShell), KG#104 (unused var warning from the same code path)
+**Issue:** `$output = & command 2>&1 | Out-String` where `$output` is never read triggers `PSUseDeclaredVarsMoreThanAssignments`.
+**Fix:** Use `$null = & command 2>&1` to explicitly discard output.
 
-## 106. Inserting into Numbered Markdown List Requires Full Renumbering
+### Stderr mixes into parsed output
 
-**Added:** 2026-03-08 | **Source:** DevKit | **Status:** active
+**Issue:** `& command 2>&1 | Out-String` merges stderr into stdout. Parsing line-by-line produces garbage entries.
+**Fix:** Redirect stderr to a temp file: `$out = & command 2>$tmpErr | Out-String`. Check `$LASTEXITCODE` and read `$tmpErr` on failure.
 
-**Platform:** All (markdownlint MD029)
-**Issue:** When inserting a new item mid-way into a numbered markdown list, every subsequent item must be renumbered in the same edit. Forgetting to renumber creates duplicate numbers and triggers MD029: "Expected: N; Actual: M; Style: 1/2/3".
-**Fix:** Before inserting, count the total items. After inserting, update every item number from the insertion point to the end. When in doubt, read the list with line numbers first (`Read` tool with limit), then make all numbering changes in a single Edit call.
-
-## 107. gh api -f Flags Default to POST — Use URL Query Params for GET
+## 107. gh CLI Parameter Gotchas (Consolidated Reference)
 
 **Added:** 2026-03-08 | **Source:** Samverk | **Status:** active
 
 **Platform:** GitHub CLI (all)
-**Issue:** Using `-f field=value` with `gh api` automatically sets the HTTP method
-to POST. For GET requests (listing issues, milestones, etc.) passing `-f milestone=5`
-causes HTTP 422 "title wasn't supplied" because GitHub interprets it as a create call.
-**Fix:** Embed params as URL query string instead:
 
-```bash
-gh api "repos/{owner}/{repo}/issues?milestone=5&state=open&per_page=100" --paginate
-```
+### -f flags default to POST
 
-**See also:** KG#108 (gh issue create --milestone takes title, not number)
+**Issue:** `-f field=value` with `gh api` sets HTTP method to POST. GET requests fail with 422.
+**Fix:** Embed params as URL query string: `gh api "repos/{owner}/{repo}/issues?milestone=5&state=open"`.
 
-## 108. gh issue create --milestone Takes Title, Not Number
+### --milestone takes title, not number
 
-**Added:** 2026-03-08 | **Source:** Samverk | **Status:** active
-
-**Platform:** GitHub CLI (all)
-**Issue:** `gh issue create --milestone` accepts the milestone TITLE as a string.
-If you resolve a title to its number (e.g., 5) and pass `--milestone 5`, gh CLI
-searches for a milestone titled "5" and fails with "could not add to milestone
-'5': '5' not found".
-**Symptom:**
-
-```bash
-MILESTONE_NUM=$(resolve_milestone "$MILESTONE_TITLE")  # returns 5
-gh issue create --milestone "$MILESTONE_NUM"            # fails: '5' not found
-```
-
-**Fix:** Pass the title directly:
-
-```bash
-gh issue create --milestone "Gitea Migration"   # correct
-gh issue create --milestone "$MILESTONE_NUM"    # wrong -- number is not a title
-```
-
-Note: `gh api PATCH /repos/{owner}/{repo}/issues/{n}` with `-F milestone=5` does
-accept the number (REST API level). The discrepancy is in the `gh` CLI layer.
-**See also:** KG#107 (gh api -f flag POST/GET issue)
-
-## 109. GitHub REST API Returns CRLF in Issue Body Text Fields
-
-**Added:** 2026-03-09 | **Source:** Samverk | **Status:** active
-
-**Platform:** Windows / GitHub REST API (gh api)
-**Issue:** When fetching issue bodies via `gh api`, the `body` field contains `\r\n` (CRLF) line endings on Windows. Python regex patterns that match `\n` fail silently — for example, `FRONTMATTER_RE.search(body)` returns `None` even when the body starts with `---`, because the actual content is `---\r\n`.
-**Fix:** Normalize line endings before any regex or string parsing:
-
-```python
-body = body.replace("\r\n", "\n")
-```
-
-**See also:** KG#62 (CRLF breaks bash grep in CI); KG#101 (Edit tool CRLF matching failure -- same root cause, different surface)
+**Issue:** `gh issue create --milestone 5` fails -- CLI expects the milestone TITLE, not its number.
+**Fix:** Pass title directly: `gh issue create --milestone "Gitea Migration"`. Note: REST API (`-F milestone=5`) does accept numbers.
 
 ## 110. GitHub Actions New CI Job Uses Base Branch Workflow, Not PR Branch
 
 **Added:** 2026-03-09 | **Source:** DevKit | **Status:** active
 
 **Platform:** GitHub Actions
-**Issue:** When a PR introduces a new CI job for the first time, GitHub Actions runs the workflow from the BASE branch (usually `main`), not the PR branch. The new job doesn't exist on `main` yet, so it is silently absent from the CI run. The PR passes CI (the new job never runs), then ALL subsequent PRs fail because the job now exists on `main` and is broken.
-**Fix:** Before merging a PR that adds a new CI job, verify the job ran in the CI check list. If the new job name is absent from the check list, the workflow was evaluated from `main`. To test the new job, merge a trivially correct version first, then fix issues in follow-up PRs.
-**See also:** KG#66 (golangci-lint-action v7 schema enforcement -- same CI surprise pattern)
+**Issue:** PR introducing a new CI job runs the workflow from `main`, so the new job is silently absent. PR passes, then subsequent PRs fail.
+**Fix:** Verify the job ran in the CI check list. Merge a trivially correct version first, fix in follow-ups.
 
-## 111. markdownlint 3-Backtick Outer Fence Broken by Inner Backtick Blocks
+## 111. Markdown Editing Gotchas (Consolidated Reference)
 
 **Added:** 2026-03-09 | **Source:** DevKit | **Status:** active
 
 **Platform:** All (markdownlint-cli2)
-**Issue:** A fenced code block using ` ```language ` as the outer fence is terminated by the first inner ` ``` ` block it contains. Everything after the inner block is treated as regular markdown, triggering MD029, MD031, MD033, MD040, and other rules on content that was supposed to be inside the fence.
-**Fix:** When a code block's content contains triple-backtick fences (e.g., a markdown template or documentation showing code examples), use a 4-backtick outer fence:
 
-`````markdown
-````markdown
-...content with inner ```bash blocks...
-````
-`````
+### 3-backtick fence broken by inner backtick blocks
 
-Verify locally with `npx markdownlint-cli2 "path/to/file.md"` before pushing.
+**Issue:** Outer ` ``` ` fence is terminated by the first inner ` ``` `. Content after is treated as regular markdown.
+**Fix:** Use 4-backtick outer fence when content contains triple-backtick fences.
+
+### Inserting into numbered list requires full renumbering
+
+**Issue:** Inserting mid-list without renumbering subsequent items triggers MD029.
+**Fix:** Update every item number from insertion point to end in a single edit.
 
 ## 112. Invoke-ScriptAnalyzer Has No -Include Parameter
 
 **Added:** 2026-03-09 | **Source:** DevKit | **Status:** active
 
 **Platform:** PowerShell / PSScriptAnalyzer
-**Issue:** `Invoke-ScriptAnalyzer -Path . -Include '*.ps1'` throws "A parameter cannot be found that matches parameter name 'Include'". The `-Include` parameter does not exist on `Invoke-ScriptAnalyzer`. Copilot and LLMs commonly generate this invalid syntax.
-**Fix:** Use `Get-ChildItem` to collect files, then pipe each to `Invoke-ScriptAnalyzer`:
-
-```powershell
-$files = Get-ChildItem -Path . -Recurse -Filter '*.ps1'
-$results = $files | ForEach-Object {
-    Invoke-ScriptAnalyzer -Path $_.FullName -Severity Warning,Error
-}
-```
-
-To scan only specific subdirectories, scope `Get-ChildItem -Path setup,scripts`.
+**Issue:** `-Include` parameter does not exist. Copilot and LLMs commonly generate this invalid syntax.
+**Fix:** Use `Get-ChildItem -Recurse -Filter '*.ps1'` to collect files, then pipe each to `Invoke-ScriptAnalyzer`.
 
 ## 113. PowerShell $args Is an Automatic Variable
 
@@ -913,7 +611,5 @@ To scan only specific subdirectories, scope `Get-ChildItem -Path setup,scripts`.
 **Added:** 2026-03-09 | **Source:** Samverk | **Status:** active
 
 **Platform:** TypeScript / Go (full-stack)
-**Issue:** TypeScript API interfaces accumulate phantom fields that the Go backend never sends. Fields written speculatively before Go types were finalized are never reconciled after Go changes. This causes `undefined` values used as React keys, missing data bugs, and silent failures.
-**Symptom:** `key={e.id}` produces React warnings because the Go backend never serializes an `id` field -- the TypeScript interface declares it but the JSON payload omits it.
-**Fix:** Always verify TypeScript API interfaces against actual Go JSON output (`curl` the endpoint, check the real payload). When changing Go JSON field names or removing fields, grep for TypeScript uses immediately. Use present fields (e.g., `e.timestamp`) as React keys instead of phantom fields.
-**See also:** AP#79 (cross-language enum exhaustiveness audit -- same cross-language drift surface)
+**Issue:** TypeScript API interfaces accumulate phantom fields the Go backend never sends. Causes `undefined` React keys and silent failures.
+**Fix:** Verify TS interfaces against actual Go JSON output (`curl` the endpoint). Grep for TS uses when changing Go JSON field names. See AP#79.

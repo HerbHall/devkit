@@ -363,3 +363,43 @@ if err != nil {
 **Category:** research-methodology
 **Context:** Awesome-lists as discovery channels. Category structure reveals gaps.
 **Fix:** Analyze empty/redirected sections, check listing requirements, identify integration targets.
+
+## Archived 2026-03-14: Rules compaction (below 35k threshold)
+
+### Superseded entries
+
+## 63. Recharts Custom Tooltip Needs Partial Props (archived 2026-03-14)
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** superseded-by-KG28
+
+**Category:** frontend-pattern
+**Context:** Passing `<Tooltip content={<CustomTooltip />} />` -- component initially receives empty `{}` props.
+**Fix:** Use `Partial<TooltipContentProps<number, string>>`. See KG#28 for consolidated entry.
+
+### Obsolete entries
+
+## 70. SDD Tool Abstraction Level Check Before Integration (archived 2026-03-14)
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** archived-obsolete
+
+**Category:** research-methodology
+**Context:** Two SDD tools at different abstraction levels (product vs feature vs task) can't pipe directly.
+**Fix:** Map each tool's level first. If different, identify a bridge artifact.
+
+## 109. Standalone Python File for Regex-Heavy Bash Scripts (archived 2026-03-14)
+
+**Added:** 2026-03-02 | **Source:** Runbooks | **Status:** consolidated-into-AP122
+
+**Category:** correction
+**Context:** Python with complex regex inside bash heredocs fails due to three-layer escaping conflicts.
+**Fix:** Write standalone `.py` file, call from thin bash wrapper. Core insight folded into AP#122.
+
+### Consolidation victims: Python UTF-8 (merged into AP#122)
+
+## 11. Python as jq Replacement on Windows MSYS (archived 2026-03-14)
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** consolidated-into-AP122
+
+**Category:** platform-workaround
+**Context:** `jq` unavailable on Windows MSYS. Python's `json` + `urllib.request` modules provide equivalent functionality.
+**Fix:** Use inline Python for JSON operations. Combine with Windows Python path detection (KG#8). UTF-8 I/O fix now documented in AP#122.
