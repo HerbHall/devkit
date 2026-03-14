@@ -1,7 +1,7 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 68
+entry_count: 76
 last_updated: "2026-03-14"
 ---
 
@@ -656,3 +656,67 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Issue:** A fine-grained PAT set as Windows User env var `GITHUB_TOKEN` shadows `gh` CLI's keyring-stored OAuth token. Token precedence: `GITHUB_TOKEN` env > keyring OAuth > `GH_TOKEN` env. Fine-grained PATs often lack `issues:write` scope, causing 403 on `gh issue close/create`.
 **Fix:** Remove the User env var: `[Environment]::SetEnvironmentVariable('GITHUB_TOKEN', $null, 'User')`. PATs for CI (e.g., release-please) should only be GitHub Actions secrets, never local env vars. Inline override: `GITHUB_TOKEN= gh <command>`.
 **See also:** KG#94 (GITHUB_TOKEN tags), AP#120 (secrets distribution)
+
+## 121. MailChannels Free Tier Deprecated
+
+**Added:** 2026-03-14 | **Source:** herbhall.net | **Status:** active
+
+**Platform:** Cloudflare Workers
+**Issue:** MailChannels shut down free Cloudflare Workers integration. `api.mailchannels.net/tx/v1/send` returns 401 Unauthorized.
+**Fix:** Migrate to Cloudflare Email Routing `send_email` binding. See AP#126 for the replacement pattern.
+
+## 122. Cloudflare Account Token Requires CLOUDFLARE_ACCOUNT_ID for Wrangler
+
+**Added:** 2026-03-14 | **Source:** herbhall.net | **Status:** active
+
+**Platform:** Cloudflare / Wrangler
+**Issue:** Account API tokens fail on `/memberships` (error 10001) and `/user/tokens/verify` (error 9109). Wrangler calls `/memberships` on startup and fails with "Unable to authenticate request."
+**Fix:** Set `CLOUDFLARE_ACCOUNT_ID` env var alongside Account API token. Wrangler skips memberships lookup when account ID is explicit. User API tokens work without this workaround.
+
+## 123. Gitea API Token from Git Credential Manager
+
+**Added:** 2026-03-14 | **Source:** Synapset | **Status:** active
+
+**Platform:** Gitea / Git (all)
+**Issue:** When `tea` CLI is unavailable, need Gitea token for API calls.
+**Fix:** Extract from git credential manager: `git credential fill <<< 'protocol=https\nhost=gitea.example.com' | grep password`. Use with `Authorization: token` header. Gitea REST API is largely GitHub-compatible.
+
+## 124. Gitea PR Merge After Rebase Needs Pause
+
+**Added:** 2026-03-14 | **Source:** Synapset | **Status:** active
+
+**Platform:** Gitea
+**Issue:** After force-pushing a rebased branch, Gitea's merge API may reject immediately with "not mergeable" while it recalculates merge status.
+**Fix:** Add a brief pause (2-3 seconds) between force-push and merge API call. Check mergeable status before merging.
+
+## 125. go:embed Cache Misses Embedded File Changes
+
+**Added:** 2026-03-14 | **Source:** Samverk | **Status:** active
+
+**Platform:** Go (all)
+**Issue:** Go build cache doesn't detect changes to `go:embed` files when Go source hasn't changed. Embedded SPA files (`web/dist/` -> `internal/server/static/`) stay stale after frontend rebuild, causing deployed binary to serve old JS bundles.
+**Fix:** Always use `make build` or `make redeploy` for projects with embedded SPAs. Consider `go build -a` or touching a Go source file after SPA rebuild to bust cache.
+
+## 126. Tailscale Funnel Rejects Host Header from Within Tailnet
+
+**Added:** 2026-03-14 | **Source:** Samverk | **Status:** active
+
+**Platform:** Tailscale
+**Issue:** Funnel returns "Forbidden: invalid Host header" when accessed from a device within the same tailnet. Intra-tailnet traffic bypasses Funnel's public ingress path via WireGuard. External clients work fine.
+**Fix:** Use Cloudflare Tunnel instead of Tailscale Funnel for universal access (both internal and external clients).
+
+## 127. sqlite-vec vec0 Dimension Must Match Embedding Provider
+
+**Added:** 2026-03-14 | **Source:** Synapset | **Status:** active
+
+**Platform:** SQLite / sqlite-vec
+**Issue:** vec0 virtual table dimension (`float[N]`) is fixed at CREATE time. Hardcoding 1536 (OpenAI) but using Ollama (768) at runtime causes "Dimension mismatch" on insert.
+**Fix:** Pass dims from embedding provider at DB init time. Don't use const schema strings for vec0 -- make dimension configurable.
+
+## 128. Claude Code User-Scope MCP Config Location Is ~/.claude.json
+
+**Added:** 2026-03-14 | **Source:** Synapset | **Status:** active
+
+**Platform:** Claude Code (all)
+**Issue:** User-scope MCP servers go in `~/.claude.json`, NOT `~/.claude/.mcp.json` or `~/.claude/settings.json`. Easy to put config in the wrong file.
+**Fix:** Use `claude mcp add --transport http <name> <url> --scope user`. HTTP servers need `"type": "http"` in the JSON config.

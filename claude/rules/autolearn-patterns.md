@@ -1,7 +1,7 @@
 ---
 description: Learned patterns from past sessions. Read when encountering similar situations.
 tier: 2
-entry_count: 72
+entry_count: 74
 last_updated: "2026-03-14"
 ---
 
@@ -688,3 +688,20 @@ ignores PYTHONIOENCODING, so it needs its own `encoding=` argument.
 **Category:** process-pattern
 **Context:** Copilot adds NEW review comments to already-merged PRs, days after merge. These need a second pass.
 **Fix:** Fetch via `gh api repos/{o}/{r}/pulls/{n}/comments`, filter by `created_at` post-merge. Implement clear fixes on a followup branch referencing the original PR number. Flag questionable changes for user decision.
+
+## 126. Cloudflare Email Routing Replaces MailChannels for Workers
+
+**Added:** 2026-03-14 | **Source:** herbhall.net | **Status:** active
+
+**Category:** pattern
+**Context:** MailChannels shut down free Cloudflare Workers integration. Replacement is Cloudflare Email Routing `send_email` binding.
+**Fix:** Enable Email Routing on zone, add `[[send_email]]` binding in wrangler.toml with `destination_address`, use `EmailMessage` from `cloudflare:email` + `mimetext` for MIME. Requires `nodejs_compat` flag. Note: mimetext `setHeader('Reply-To', ...)` is broken -- inject into raw MIME directly.
+
+## 127. Worktree Isolation for Parallel Code-Gen Agents
+
+**Added:** 2026-03-14 | **Source:** Synapset | **Status:** active
+
+**Category:** workflow-pattern
+**Context:** Using `isolation: "worktree"` in Agent tool calls gives each parallel agent a fully isolated git copy. No shared working tree conflicts (solves KG#25). Each agent commits to its own branch in its own worktree.
+**Fix:** Use `isolation: "worktree"` for parallel code-gen agents. Merge via API after all complete. Proven: 3 waves x 2 agents = 7 total agents, all CI-clean first pass. Supersedes stash/pop workflow from AP#48 for new work.
+**See also:** KG#25 (parallel agents share working tree), AP#48 (legacy stash/pop approach)
