@@ -1,8 +1,8 @@
 ---
 description: Learned patterns from past sessions. Read when encountering similar situations.
 tier: 2
-entry_count: 75
-last_updated: "2026-03-09"
+entry_count: 71
+last_updated: "2026-03-14"
 ---
 
 # Learned Patterns
@@ -24,62 +24,17 @@ Patterns discovered through past sessions. Each entry includes the pattern, cont
 
 **Category:** lint-fix
 
-Comprehensive reference for gocritic lint rules encountered across projects.
-
-### rangeValCopy
-
-**Context:** `for _, v := range slice` copies structs >64 bytes each iteration.
-**Fix:** Use `for i := range slice` with `slice[i].Field`. Replace ALL loop body references.
-
-### builtinShadow
-
-**Context:** Parameters named `new`, `make`, `len`, `cap`, `close`, `delete`, `copy`, `append`, `min`, `max`, `clear` shadow Go builtins.
-**Fix:** Rename to `n`, `count`, `limit`, `val`, `updated`, etc.
-
-### httpNoBody
-
-**Context:** `http.NewRequestWithContext(ctx, http.MethodGet, url, nil)` -- nil body is ambiguous.
-**Fix:** Use `http.NoBody` instead of `nil` for GET/HEAD/DELETE requests.
-
-### commentedOutCode
-
-**Context:** Math-heavy comments like `// OUI(15) + Port(15) = 30` look like code.
-**Fix:** Rephrase to natural language: `// Expected: OUI weight + Port weight`.
-
-### unnamedResult
-
-**Context:** Functions returning `(float64, string)` without named returns.
-**Fix:** Add names, then change `:=` to `=` for those variables and remove redundant `var` declarations.
-
-### appendCombine
-
-**Context:** Two consecutive `append()` calls to the same slice.
-**Fix:** Combine into single `append` with multiple elements.
-
-### paramTypeCombine
-
-**Context:** `(a int, b int)` -- consecutive same-type params.
-**Fix:** Combine: `(a, b int)`. Only applies to adjacent params.
-
-### dupBranchBody
-
-**Context:** Identical `if/else` branch bodies.
-**Fix:** Remove the conditional, keep just the body.
-
-### emptyStringTest
-
-**Context:** `len(s) > 0` for string emptiness.
-**Fix:** Use `s != ""` (or `s == ""`).
-
-### sloppyReassign
-
-**Context:** `if err = f(); err != nil` overwrites named return `err`.
-**Fix:** Use `:=` to shadow: `if err := f(); err != nil { return err }`.
-
-### preferFprint
-
-**Context:** `b.WriteString(fmt.Sprintf(...))` allocates intermediate string.
-**Fix:** Use `fmt.Fprintf(&b, ...)` to write directly to builder.
+- **rangeValCopy**: `for _, v := range slice` copies large structs -> use `for i := range slice` with `slice[i]`
+- **builtinShadow**: params named `new`, `make`, `len`, `cap`, etc. -> rename to `n`, `count`, `limit`, `val`
+- **httpNoBody**: `http.NewRequestWithContext(..., nil)` for GET -> use `http.NoBody`
+- **commentedOutCode**: math-heavy comments look like code -> rephrase to natural language
+- **unnamedResult**: `(float64, string)` without names -> add names, change `:=` to `=`, remove redundant `var`
+- **appendCombine**: two consecutive `append()` to same slice -> combine into single call
+- **paramTypeCombine**: `(a int, b int)` -> `(a, b int)` for adjacent same-type params
+- **dupBranchBody**: identical if/else branches -> remove conditional, keep body
+- **emptyStringTest**: `len(s) > 0` -> use `s != ""`
+- **sloppyReassign**: `if err = f(); err != nil` overwrites named return -> use `:=` to shadow
+- **preferFprint**: `b.WriteString(fmt.Sprintf(...))` -> use `fmt.Fprintf(&b, ...)`
 
 ## 3. golangci-lint install-mode for CI
 
@@ -117,26 +72,6 @@ go-licenses check ./... 2>&1 | grep -E "GPL|AGPL|LGPL|SSPL" && exit 1 || echo "N
 **Context:** Dockerfile ARG names for `-ldflags -X` must exactly match Go `var` names in version.go. Mismatch causes "unknown" version info.
 **Fix:** Cross-reference Dockerfile ldflags with version.go. Common mismatch: `version.Commit` vs `version.GitCommit`.
 
-## 11. Python as jq Replacement on Windows MSYS
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** platform-workaround
-**Context:** `jq` unavailable on Windows MSYS. Python's `json` + `urllib.request` modules provide equivalent functionality.
-**Fix:** Use inline Python for JSON operations. Combine with Windows Python path
-detection (KG#8). Always set UTF-8 I/O to prevent cp1252 crashes on Unicode content
-(issue bodies with →, em-dashes, etc.):
-
-1. In the calling bash script: `export PYTHONIOENCODING=utf-8`
-2. At the top of the Python script:
-   `if hasattr(sys.stdout, "reconfigure"): sys.stdout.reconfigure(encoding="utf-8")`
-3. In all `subprocess.run` calls: pass `encoding="utf-8"` explicitly
-
-Without this, any Unicode character in output causes `UnicodeEncodeError: 'charmap'
-codec can't encode character`. The two-layer fix (env var + reconfigure) is needed
-because the env var only covers the outer process; subprocess.run needs its own arg.
-**See also:** AP#122 (standalone entry for the broader encoding pattern beyond jq use)
-
 ## 16. Remove Heavy Dependencies for Unfixable Vulnerabilities
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
@@ -148,19 +83,10 @@ because the env var only covers the outer process; subprocess.run needs its own 
 ## 17. Swagger Platform-Specific Issues (Consolidated Reference)
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-**See also:** KG#12
 
 **Category:** ci-fix
-
-### swaggertype tags for type enums
-
-**Context:** swag introspects `time.Duration` and generates platform-specific enum definitions that differ between Linux and Windows.
-**Fix:** Add `swaggertype:"integer"` struct tag to override introspection. Pin swag version in CI.
-
-### CI swagger job needs go mod download
-
-**Context:** Dependabot bumps change `go.sum` cache key. Without explicit download, `swag init --parseDependency` fails.
-**Fix:** Add `go mod download` step before `swag init` in CI.
+**Context:** Swagger cross-platform drift (enum definitions, x-enum-descriptions, go mod download for CI).
+**Fix:** See KG#12 for full consolidated reference. Key fix: add `swaggertype:"integer"` to `time.Duration` fields, run `go mod download` before `swag init` in CI.
 
 ## 18. Documentation Drift Audit After PR Bursts
 
@@ -177,25 +103,10 @@ because the env var only covers the outer process; subprocess.run needs its own 
 
 **Category:** lint-fix
 
-### nilerr
-
-**Context:** Function receives non-nil error but returns `(result, nil)` instead of propagating.
-**Fix:** Return both result AND wrapped error: `return &Result{Err: e.Error()}, fmt.Errorf("op: %w", e)`.
-
-### noctx
-
-**Context:** `db.Exec()`, `db.Query()`, `db.QueryRow()` without context.
-**Fix:** Use `ExecContext`, `QueryContext`, `QueryRowContext`. For init code, use `context.Background()`.
-
-### errcheck (resp.Body.Close)
-
-**Context:** `errcheck` flags both direct and deferred `resp.Body.Close()`.
-**Fix:** Direct: `_ = resp.Body.Close()`. Deferred: `defer func() { _ = resp.Body.Close() }()`.
-
-### gosec G704 (SSRF)
-
-**Context:** `httpClient.Do(req)` flagged as SSRF in trusted-base-URL clients.
-**Fix:** Add `//nolint:gosec // G704: URL is from trusted baseURL config`.
+- **nilerr**: function receives non-nil error but returns `nil` -> return wrapped error: `fmt.Errorf("op: %w", e)`
+- **noctx**: `db.Exec()` without context -> use `ExecContext`, `QueryContext`, `QueryRowContext`
+- **errcheck** (resp.Body.Close): direct `_ = resp.Body.Close()`, deferred `defer func() { _ = resp.Body.Close() }()`
+- **gosec G704** (SSRF): trusted-base-URL clients -> `//nolint:gosec // G704: URL is from trusted baseURL config`
 
 ## 20. staticcheck SA4023: Concrete Type Assigned to Interface Is Never Nil
 
@@ -287,23 +198,23 @@ Archived to `claude/rules/archive/autolearn-patterns.md`. See KG#17 for the cons
 
 ### Search GitHub before claiming "no competitors"
 
-Search by function ("network topology visualization"), not product names. Check GitHub, Docker Hub, Product Hunt, HN. Re-scan monthly. Project renames create blind spots.
+Search by function, not product names. Check GitHub, Docker Hub, Product Hunt, HN. Re-scan monthly.
 
 ### Deep competitive analysis via gh CLI
 
-Key commands: `gh api repos/{o}/{r}/contents/`, `gh issue list --state open --json title,comments,labels` (sort by comment count = highest friction), `gh release list`, `gh api repos/{o}/{r}/contributors`. Issues sorted by reactions reveal demand; Discussions API reveals UX pain.
+Use `gh api` for repo structure, releases, contributors. Sort issues by comment count for highest friction. Discussions API reveals UX pain.
 
 ### Gap exploitation report structure
 
-Structure: Updated Metrics, Exploitable Weaknesses (backed by issue #s), Feature Request Gaps, Discussion Intelligence, Strategic Action Items, Competitive Moat, Risk Analysis. Every claim must link to evidence.
+7 sections: metrics, weaknesses (with issue #s), feature gaps, discussion intelligence, action items, moat, risk. Every claim links to evidence.
 
 ### Blog aggregation for blocked platforms
 
-Reddit blocks WebFetch. Search "best X tools reddit 2025" on aggregator sites (elest.io, betterstack, etc.). For specific Reddit threads: `gh api -X GET "https://www.reddit.com/r/{sub}/comments/{id}/.json"`.
+Reddit blocks WebFetch. Search aggregator sites instead. For Reddit threads, append `.json` to URL.
 
 ### Curated list ecosystem mapping
 
-Analyze awesome-selfhosted category structure for gaps. Empty categories = underserved segments. Check listing requirements and license classification before submission.
+Analyze awesome-selfhosted categories for gaps. Empty categories = underserved segments.
 
 ## 36. Merge and PR Ordering (Consolidated Reference)
 
@@ -314,19 +225,19 @@ Analyze awesome-selfhosted category structure for gaps. Empty categories = under
 
 ### Dependabot PR CI fix ordering
 
-Cannot fix CI on Dependabot branches. Fix CI on separate branch, merge to main, then `gh pr update-branch <number>`.
+Cannot fix CI on Dependabot branches. Fix CI on separate branch, merge to main, then `gh pr update-branch`.
 
 ### Dependency PR merge ordering
 
-Merge the PR with new `go.mod` dependency FIRST, then rebase stdlib-only PR. Go.mod/go.sum changes don't overlap.
+Merge the PR with new `go.mod` dependency FIRST, then rebase stdlib-only PR.
 
 ### Multi-PR contributor config rollout
 
-Dependency chain: (1) Community health files, (2) ESLint/linting (parallel with 1), (3) CI enhancements (needs 2), (4) Repo settings + branch protection (needs 3). Protection API call goes AFTER PR 4 merges.
+4-PR chain: (1) health files, (2) linting, (3) CI, (4) branch protection. Protection API call after last PR merges.
 
 ### Dependabot triage workflow
 
-Check CI on ALL PRs first. Merge green ones sequentially (rebase between each). Close failing ones with comment. Order: Actions bumps first, then build tools, then framework deps.
+Check CI on ALL PRs first. Merge green sequentially (rebase between each). Close failing with comment.
 
 ## 38. Gitignored Generated Files Break CI Compilation
 
@@ -353,15 +264,11 @@ Check CI on ALL PRs first. Merge green ones sequentially (rebase between each). 
 
 ### Self-recovery from shared working tree
 
-Agents detect leaked files via `git status`, clean with `git checkout -- <leaked>`. Wrong-branch agents recover with `git stash && git checkout <correct> && git stash pop`. Key: prompts must specify target branch, exact files, and `git checkout <branch>` as first step.
+Agents detect leaked files via `git status`, clean with `git checkout -- <leaked>`. Prompts must specify target branch, exact files, and `git checkout <branch>` as first step.
 
-### Main.go split for parallel branches
+### Agent disruption of parallel work (commit/checkout/same-file)
 
-When 2+ agents modify same file: (1) Read combined diff FIRST, (2) stash all, (3) checkout branch-A, pop, remove B's changes, commit, (4) stash remaining, (5) checkout branch-B, pop, re-apply B's changes, commit.
-
-### Autonomous commit disrupts parallel work
-
-Agent running `git checkout <branch>` discards other agents' unstaged tracked-file changes. Untracked files survive. Two approaches: restrict agents from committing (safer) or accept loss and re-apply from output summary (faster).
+`git checkout <branch>` discards other agents' unstaged tracked-file changes. When 2+ agents modify same file, read combined diff first, then stash/pop to sort into correct branches. Two approaches: restrict agents from committing (safer) or re-apply from output summary (faster).
 
 ### Subagent recovery after session break
 
@@ -399,14 +306,6 @@ On resume: `git status`, `git diff --stat`, `go build ./...`, then commit. Subag
 **Context:** Two issues modifying same files where one depends on the other's types -- parallel agents fail because second can't compile.
 **Fix:** Run sequentially. If urgent, rebase #2 onto #1's branch (not main), then rebase onto main after #1 merges.
 
-## 63. Recharts Custom Tooltip Needs Partial Props
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** frontend-pattern
-**Context:** Passing `<Tooltip content={<CustomTooltip />} />` -- component initially receives empty `{}` props. Using `TooltipContentProps` directly causes TS error.
-**Fix:** Use `Partial<TooltipContentProps<number, string>>` for the function signature. See also KG#28.
-
 ## 68. E2E Tests: Assert Core Structure, Not Specific Widget Names
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
@@ -422,14 +321,6 @@ On resume: `git status`, `git diff --stat`, `go build ./...`, then commit. Subag
 **Category:** tooling-workaround
 **Context:** CLI scaffold/init commands fail on Windows MSYS (hanging prompts, Unicode crashes).
 **Fix:** Fetch templates via `gh api repos/{owner}/{repo}/contents/{path} --jq '.content' | base64 -d`.
-
-## 70. SDD Tool Abstraction Level Check Before Integration
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** research-methodology
-**Context:** Two SDD tools at different abstraction levels (product vs feature vs task) can't pipe directly.
-**Fix:** Map each tool's level first. If different, identify a bridge artifact. Direct piping between levels requires manual decomposition.
 
 ## 71. Scope CI Lint to Maintained Files on First Introduction
 
@@ -572,8 +463,7 @@ On resume: `git status`, `git diff --stat`, `go build ./...`, then commit. Subag
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** correction
-**Context:** Subagents produce code spans with trailing spaces triggering MD038.
-**Fix:** Run `npx markdownlint-cli2 file.md` on agent-generated markdown before committing.
+**Fix:** Subagents produce code spans with trailing spaces triggering MD038. Run `npx markdownlint-cli2 file.md` on agent-generated markdown before committing.
 
 ## 90. golangci-lint v2 Migration (Consolidated Reference)
 
@@ -582,20 +472,9 @@ On resume: `git status`, `git diff --stat`, `go build ./...`, then commit. Subag
 
 **Category:** ci-config
 
-### version field required
-
-**Context:** v2 requires `version: "2"` as first field. Without it: `unsupported version of the configuration: ""`.
-**Fix:** Add `version: "2"`. Module path changed to `.../golangci-lint/v2/cmd/golangci-lint`.
-
-### Formatters are separate top-level section
-
-**Context:** v2 moved `gofmt`/`goimports` from `linters:` to `formatters:`. "Unknown linters" error.
-**Fix:** Move to `formatters: enable:` top-level key.
-
-### gosimple absorbed into staticcheck
-
-**Context:** `gosimple` merged into `staticcheck` in v2. Listing separately causes "unknown linter".
-**Fix:** Remove `gosimple`. All S1xxx rules covered by `staticcheck` automatically.
+- **version field**: v2 requires `version: "2"` as first field. Module path: `.../golangci-lint/v2/cmd/golangci-lint`.
+- **formatters**: v2 moved `gofmt`/`goimports` from `linters:` to `formatters: enable:` top-level key.
+- **gosimple**: merged into `staticcheck` in v2. Remove from linters list.
 
 **See also:** KG#65 (silent config failure), KG#66 (v7 action schema enforcement).
 
@@ -687,14 +566,6 @@ On resume: `git status`, `git diff --stat`, `go build ./...`, then commit. Subag
 **Context:** Flat issue backlogs lead to underresearched designs and no validation checkpoints.
 **Fix:** Structure as: Research issues -> Implementation issues -> Gate issue (checklist). Forces thinking before coding at every stage.
 
-## 109. Standalone Python File for Regex-Heavy Bash Scripts
-
-**Added:** 2026-03-02 | **Source:** Runbooks | **Status:** active
-
-**Category:** correction
-**Context:** Python with complex regex inside bash heredocs fails due to three-layer escaping conflicts.
-**Fix:** Write standalone `.py` file, call from thin bash wrapper. Eliminates all escaping layers. Extends AP#11.
-
 ## 110. Docker Desktop Extension Marketplace Submission Checklist
 
 **Added:** 2026-03-02 | **Source:** Runbooks, RunNotes | **Status:** active
@@ -742,43 +613,44 @@ On resume: `git status`, `git diff --stat`, `go build ./...`, then commit. Subag
 **Added:** 2026-03-07 | **Source:** DevKit | **Status:** active
 
 **Category:** process-pattern
-**Context:** If a skill's intake prompt mentions "skip" or "dismiss", users will try it. Without a routing table entry for cancel/skip, the input falls through to the default route and triggers unintended work.
-**Fix:** Any skill with optional steps or confirmations must have an explicit cancel entry in its SKILL.md routing table that exits cleanly.
+**Context:** Without a cancel route, "skip"/"dismiss" inputs fall through to default and trigger unintended work.
+**Fix:** Any skill with optional steps must have an explicit cancel entry in its SKILL.md routing table.
 
 ## 119. Known-Gotchas Frontmatter Must Update With New Entries
 
 **Added:** 2026-03-07 | **Source:** DevKit | **Status:** active
 
 **Category:** process-pattern
-**Context:** Adding a KG entry without updating `entry_count` and `last_updated` in the YAML frontmatter causes drift between metadata and actual content.
-**Fix:** Always update `entry_count` and `last_updated` in the same commit that adds or removes entries. Applies to both `known-gotchas.md` and `autolearn-patterns.md`.
+**Fix:** Always update `entry_count` and `last_updated` in YAML frontmatter when adding or removing entries from `known-gotchas.md` or `autolearn-patterns.md`.
 
 ## 120. Secrets Block in ~/.devkit-config.json for PAT Distribution
 
 **Added:** 2026-03-08 | **Source:** DevKit | **Status:** active
 
 **Category:** scaffolding-pattern
-**Context:** New repos need long-lived PATs (e.g., `RELEASE_PLEASE_TOKEN`) set as GitHub Actions secrets. Prompting users each time is fragile; env vars don't survive across sessions.
-**Fix:** Store PATs in `~/.devkit-config.json` under `.Secrets`. New-project.ps1 reads and sets them automatically (section 2.7). Use `scripts/Set-DevkitSecrets.ps1` to backfill existing repos (`-Repo HerbHall/foo` for one, no args for all). File is local-only, never committed. See KG#94 for why `GITHUB_TOKEN` is insufficient for release-please.
+**Context:** New repos need PATs (e.g., `RELEASE_PLEASE_TOKEN`) as GitHub Actions secrets.
+**Fix:** Store in `~/.devkit-config.json` under `.Secrets`. `new-project.ps1` auto-sets them. Use `Set-DevkitSecrets.ps1` to backfill. See KG#94.
 
 ## 121. Periodic Project Audit via Explore Subagent
 
 **Added:** 2026-03-08 | **Source:** DevKit | **Status:** active
 
 **Category:** process-pattern
-**Context:** Documentation, skill lists, CI coverage, and setup scripts drift from reality over time without automated validation. Stale counts, missing checklist blocks, and undocumented CI gaps accumulate invisibly.
-**Fix:** Run a structured Explore subagent audit periodically. The prompt should cover 10 dimensions: (1) docs-vs-reality count claims, (2) skill routing table completeness, (3) agent template coverage, (4) rules file metadata accuracy, (5) CI job gap analysis, (6) setup script completeness, (7) project template freshness, (8) hook coverage, (9) sync manifest integrity, (10) cross-reference completeness. Results from one DevKit audit: found stale README counts, 3 missing skills in verify.sh, absent `node` check, missing RUST-CI/DOTNET-CI checklists, no PSScriptAnalyzer in CI -- all actionable in the same session.
+**Context:** Documentation, skill lists, CI coverage, and setup scripts drift from reality over time without automated validation.
+**Fix:** Run a structured Explore subagent audit periodically covering 10 dimensions: docs-vs-reality counts, skill routing completeness, agent template coverage, rules file metadata accuracy, CI job gaps, setup script completeness, project template freshness, hook coverage, sync manifest integrity, cross-reference completeness.
 **See also:** AP#47 (check existing assets before scoping issues), AP#83 (sprint scope reduction via exploration), AP#85 (roadmap drift)
 
 ## 122. Python UTF-8 I/O on Windows for Unicode-Heavy Scripts
 
 **Added:** 2026-03-09 | **Source:** Samverk | **Status:** active
+**Consolidates:** AP#11, AP#109 (archived)
 
 **Category:** platform-workaround
 **Context:** Python on Windows defaults to cp1252 encoding. Any script that processes
-Unicode content (GitHub issue bodies with →, em-dashes, smart quotes, etc.) crashes
-with `UnicodeEncodeError: 'charmap' codec can't encode character '\uXXXX'`. This
-applies to any Python script, not just jq replacements.
+Unicode content (GitHub issue bodies, em-dashes, smart quotes, etc.) crashes
+with `UnicodeEncodeError`. This applies to any Python script, including jq replacements
+(use Python `json` + `urllib.request` instead of `jq` on Windows MSYS).
+For regex-heavy scripts, write a standalone `.py` file and call from a thin bash wrapper.
 **Fix:** Apply a three-layer fix -- all three layers are required:
 
 1. In the calling bash script: `export PYTHONIOENCODING=utf-8`
@@ -790,25 +662,14 @@ The env var (layer 1) covers the outer process stdout/stderr. The reconfigure ca
 (layer 2) is the preferred way to switch an already-open stream; the `hasattr` guard
 keeps it safe on Python < 3.7. `subprocess.run` (layer 3) opens a new stream and
 ignores PYTHONIOENCODING, so it needs its own `encoding=` argument.
-**See also:** AP#11 (jq-replacement context where this pattern was first documented)
 
-## 123. PSScriptAnalyzer Brownfield Onboarding — Audit Before First CI Run
+## 123. PSScriptAnalyzer Brownfield Onboarding -- Audit Before First CI Run
 
 **Added:** 2026-03-09 | **Source:** DevKit | **Status:** active
 
 **Category:** ci-config
-**Context:** Adding PSScriptAnalyzer CI to an existing repo with many PowerShell scripts surfaces pre-existing violations iteratively across multiple CI cycles (each 2-minute windows-latest run reveals a different set of failures). On DevKit: first run surfaced PSReviewUnusedParameter/PSUseSingularNouns, second run surfaced PSUseUsingScopeModifierInNewRunspaces/PSAvoidUsingPlainTextForPassword, third run surfaced PSUseBOMForUnicodeEncodedFile.
-**Fix:** Before pushing CI integration, run PSScriptAnalyzer locally against all scripts and resolve or exclude ALL violations in a single pass:
-
-```powershell
-$files = Get-ChildItem -Path setup,scripts -Recurse -Filter '*.ps1'
-$results = $files | ForEach-Object {
-    Invoke-ScriptAnalyzer -Path $_.FullName -Severity Warning,Error
-}
-$results | Format-Table -AutoSize
-```
-
-Create `PSScriptAnalyzerSettings.psd1` with justified exclusions before the first CI run. Common brownfield exclusions for DevKit-style repos: `PSAvoidUsingWriteHost`, `PSUseShouldProcessForStateChangingFunctions`, `PSReviewUnusedParameter` (ParameterSetName dispatch), `PSUseSingularNouns` (internal helpers), `PSAvoidAssignmentToAutomaticVariable` (loop vars named `$profile`), `PSUseUsingScopeModifierInNewRunspaces` (Start-Job with ArgumentList), `PSAvoidUsingPlainTextForPassword` ([object[]]$Credentials false positive), `PSUseBOMForUnicodeEncodedFile` (cross-platform git strips BOM).
+**Context:** Adding PSScriptAnalyzer CI to an existing repo surfaces pre-existing violations iteratively across multiple CI cycles. Each run reveals different failures.
+**Fix:** Run PSScriptAnalyzer locally against all scripts and resolve or exclude ALL violations in a single pass before pushing CI integration. Create `PSScriptAnalyzerSettings.psd1` with justified exclusions. Common brownfield exclusions: PSAvoidUsingWriteHost, PSUseShouldProcessForStateChangingFunctions, PSReviewUnusedParameter, PSUseSingularNouns, PSAvoidAssignmentToAutomaticVariable, PSUseUsingScopeModifierInNewRunspaces, PSAvoidUsingPlainTextForPassword, PSUseBOMForUnicodeEncodedFile.
 **See also:** KG#112 (Invoke-ScriptAnalyzer -Include invalid parameter), AP#84 (mandatory lint step language)
 
 ## 124. Pre-Sprint Human-Label Audit for Mislabeled Issues
@@ -816,6 +677,6 @@ Create `PSScriptAnalyzerSettings.psd1` with justified exclusions before the firs
 **Added:** 2026-03-09 | **Source:** Samverk | **Status:** active
 
 **Category:** process-pattern
-**Context:** Issues labeled `agent:human` (or `agent:qc`, `agent:test`) may be mislabeled as requiring human intervention when they are actually automatable. Planning without auditing labels leads to false blockers and overscoped sprints.
-**Fix:** Before starting sprint or milestone work, audit all human-labeled issues against three categories: (1) automatable via API/scripts -- relabel to correct agent type, (2) already implemented but never closed -- close immediately, (3) genuinely human (GUI, time-based, quality judgment) -- keep label. Also list BOTH closed AND open issues for a milestone to understand true remaining scope. In one Samverk audit: 2 closed immediately, 9 relabeled automatable, 4 correctly kept human.
-**See also:** AP#83 (sprint scope reduction via exploration), AP#47 (check existing assets before scoping issues)
+**Context:** Issues labeled `agent:human` may be mislabeled as requiring human intervention when automatable.
+**Fix:** Audit human-labeled issues before sprint: (1) automatable via API/scripts -- relabel, (2) already implemented -- close, (3) genuinely human -- keep. List both closed and open issues for true remaining scope.
+**See also:** AP#83, AP#47

@@ -274,3 +274,137 @@ KG#90 (release-please node type) was initially targeted for consolidation into K
 ### Consolidation victims -- React refs (consolidated into KG#6)
 
 ## 114. (Note: This entry number does not exist in the original file -- KG#114 was referenced in the task instructions but the callback ref pattern for MUI Popper anchors is documented in AP#114 in autolearn-patterns.md, not in known-gotchas.md. No action needed.)
+
+## Archived 2026-03-14: Rules compaction round 2 (below 35k threshold)
+
+### Trivial, covered elsewhere, or too specific
+
+## KG#3 (archived 2026-03-14)
+
+Git stash before PR merge. Trivial workflow tip, covered by AP#22.
+
+## KG#4 (archived 2026-03-14)
+
+Force push to already-merged branch creates orphan. General git safety, covered by core principles.
+
+## KG#9 (archived 2026-03-14)
+
+jq not available on Windows MSYS. Problem statement only; AP#11/AP#122 has the full solution.
+
+## KG#10 (archived 2026-03-14)
+
+UserPromptSubmit hooks block slash commands. Config detail -- use `matcher` regex `"^(?!/)(?!\\d{1,2}$)"`.
+
+## KG#22 (archived 2026-03-14)
+
+Project renames create competitive research blind spots. Research methodology, covered by AP#33.
+
+## KG#24 (archived 2026-03-14)
+
+cla-assistant.io blocks Dependabot PRs. Tool-specific, no longer relevant.
+
+## KG#30 (archived 2026-03-14)
+
+Background agents can't prompt for tool permissions. Ensure tools are approved before launching.
+
+## KG#31 (archived 2026-03-14)
+
+Reddit blocks WebFetch. Workaround: append `.json` to URL and use `gh api -X GET`.
+
+## KG#32 (archived 2026-03-14)
+
+SessionStart hook must use `type: "command"` not `type: "prompt"`. Config detail.
+
+## KG#33 (archived 2026-03-14)
+
+Claude Code hooks cannot initiate conversation. UI limitation, not technical gotcha.
+
+## KG#34 (archived 2026-03-14)
+
+Chrome ignores autocomplete="off". Generic web knowledge.
+
+## KG#39 (archived 2026-03-14)
+
+Docker Extension update fails after image rebuild. Already covered in KG#77 consolidated entry.
+
+## KG#42 (archived 2026-03-14)
+
+BMAD Method generates 42 slash commands. Tool trivia.
+
+## KG#43 (archived 2026-03-14)
+
+Spec Kit `specify init` hangs on Windows MSYS. Tool-specific workaround.
+
+## KG#44 (archived 2026-03-14)
+
+BMAD npm package name is `bmad-method`. Tool naming quirk.
+
+## KG#45 (archived 2026-03-14)
+
+markdownlint-cli2 config must be at repo root for CI. Config detail.
+
+## KG#46 (archived 2026-03-14)
+
+markdownlint MD060 auto-enabled by `"default": true`. Add `"MD060": false` to config.
+
+## KG#55 (archived 2026-03-14)
+
+VS 2022 bundled Node.js as fallback. Covered by AP#76.
+
+## KG#60 (archived 2026-03-14)
+
+Go binary permission denied on MSYS. Covered by AP#91 (use `go run` instead).
+
+## KG#63 (archived 2026-03-14)
+
+Lipgloss emoji variation selector width mismatch. Niche TUI library issue.
+
+## KG#64 (archived 2026-03-14)
+
+lipgloss.Place output not safely ANSI-strippable. Niche TUI library issue.
+
+## KG#93 (archived 2026-03-14)
+
+Git init template CLAUDE.md breaks markdownlint. Add `"#.git"` to exclusion patterns.
+
+## KG#102 (archived 2026-03-14)
+
+Samverk dispatcher false-positive on issues without frontmatter. Samverk-specific, belongs in Samverk project rules. See Samverk issue #180.
+
+### Consolidation victims (2026-03-14)
+
+## KG#41 (archived 2026-03-14, consolidated into KG#61)
+
+`.claude/settings.local.json` should be gitignored. Merged into KG#61 (Claude Code Settings Scope).
+
+## KG#51 (archived 2026-03-14, consolidated into KG#50)
+
+Winget installs update registry PATH but current session is stale. Merged into KG#50 (Winget Installation Gotchas).
+
+## KG#58 (archived 2026-03-14, consolidated into KG#20)
+
+Local main diverges after squash-merge when merge commits exist. Merged into KG#20.
+
+## KG#101 (archived 2026-03-14, consolidated into KG#62)
+
+Claude Code Edit tool CRLF matching failure on Windows. Merged into KG#62 (Windows CRLF Breaks Tool String Matching).
+
+## KG#103 (archived 2026-03-14, consolidated into KG#99)
+
+Copilot sub-PRs target feature branch, not main. Merged into KG#99 as subsection.
+
+## KG#105 (archived 2026-03-14, consolidated into KG#104)
+
+PowerShell 2>&1 mixes stderr into parsed output. Merged into KG#104 (PowerShell Output Capture Gotchas).
+
+## KG#106 (archived 2026-03-14, consolidated into KG#111)
+
+Inserting into numbered markdown list requires full renumbering. Merged into KG#111 (Markdown Editing Gotchas).
+
+## KG#108 (archived 2026-03-14, consolidated into KG#107)
+
+gh issue create --milestone takes title, not number. Merged into KG#107 (gh CLI Parameter Gotchas).
+
+## KG#109 (archived 2026-03-14, consolidated into KG#62)
+
+GitHub REST API returns CRLF in issue body text fields. Merged into KG#62 (Windows CRLF Breaks Tool String Matching).
