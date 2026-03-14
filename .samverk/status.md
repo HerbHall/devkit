@@ -1,7 +1,7 @@
 ---
 phase: execution
-updated: 2026-03-09T22:00:00Z
-updated_by: claude-chat
+updated: 2026-03-14T20:00:00Z
+updated_by: claude-code
 managed_by: samverk
 ---
 
@@ -15,7 +15,7 @@ Active maintenance and execution. AI tooling methodology, Claude Code configurat
 ## What Is Running
 
 - Symlinked rules loaded by all Claude Code sessions via ~/.claude/
-- 21 skills, 7 agents, 10 rules files, 170+ patterns
+- 21 skills, 7 agents, 11 rules files, 140 patterns (AP: 72, KG: 68)
 - SessionStart hook for context injection
 - Credentials migrated to PowerShell SecretStore vault (HomeLabVault)
 
@@ -25,15 +25,17 @@ Active maintenance and execution. AI tooling methodology, Claude Code configurat
 
 ## Queued
 
-- Synapset consumer integration -- when Synapset MVP ships, migrate autolearn backend from flat markdown to Synapset vector memory (189 entries). See Synapset project for implementation status.
+- Synapset consumer integration -- when Synapset MVP ships, migrate autolearn backend from flat markdown to Synapset vector memory (140 entries post-compaction). See Synapset project for implementation status.
+- MCP lazy-loading gateway feasibility research (#293)
 
 ## Recently Completed
 
-- Gitea forge support in new-project.ps1 -- -Gitea switch, forge-aware scaffolding, gitea-labels.json, ci-go-gitea.yml (PR #285)
-- MCP template ollama-local entry (PR #284)
-- credentials.ps1 StrictMode fix KG#114 (PR #283)
-- AP#124 human-label audit, KG#115 TS phantom field drift (PR #281)
-- Samverk project overlay formalization (PR #282)
+- Rules compaction: AP 42k->35k, KG 50k->30k (PR #295)
+- Autolearn batch: 6 new entries from #287-#291 (PR #296)
+- Tool selection guide added as rules file
+- Stale README/CLAUDE.md pattern counts fixed (PR #286)
+- Synapset status update (PR #294)
+- Gitea forge support in new-project.ps1 (PR #285)
 
 ## Related Projects
 
