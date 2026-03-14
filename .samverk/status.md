@@ -1,6 +1,6 @@
 ---
 phase: execution
-updated: 2026-03-09T15:00:00Z
+updated: 2026-03-09T22:00:00Z
 updated_by: claude-chat
 managed_by: samverk
 ---
@@ -15,21 +15,25 @@ Active maintenance and execution. AI tooling methodology, Claude Code configurat
 ## What Is Running
 
 - Symlinked rules loaded by all Claude Code sessions via ~/.claude/
-- 21 skills, 7 agents, 8 rules files, 135+ patterns
+- 21 skills, 7 agents, 10 rules files, 170+ patterns
 - SessionStart hook for context injection
 - Credentials migrated to PowerShell SecretStore vault (HomeLabVault)
 
 ## In Flight
 
-- Synapset integration research (OpenBrain-inspired vector memory for autolearn)
-- Credential management integration (Set-DevkitSecrets.ps1 patched for vault)
+(none)
 
 ## Queued
 
-- Update MCP template for vault-based credential references
-- Review setup/lib/credentials.ps1 compatibility with vault
-- docs/credentials.md for new vault workflow
-- Synapset consumer integration (autolearn → vector memory)
+- Synapset consumer integration -- when Synapset MVP ships, migrate autolearn backend from flat markdown to Synapset vector memory (189 entries). See Synapset project for implementation status.
+
+## Recently Completed
+
+- Gitea forge support in new-project.ps1 -- -Gitea switch, forge-aware scaffolding, gitea-labels.json, ci-go-gitea.yml (PR #285)
+- MCP template ollama-local entry (PR #284)
+- credentials.ps1 StrictMode fix KG#114 (PR #283)
+- AP#124 human-label audit, KG#115 TS phantom field drift (PR #281)
+- Samverk project overlay formalization (PR #282)
 
 ## Related Projects
 
