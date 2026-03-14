@@ -1,7 +1,7 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 63
+entry_count: 68
 last_updated: "2026-03-14"
 ---
 
@@ -613,3 +613,46 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Platform:** TypeScript / Go (full-stack)
 **Issue:** TypeScript API interfaces accumulate phantom fields the Go backend never sends. Causes `undefined` React keys and silent failures.
 **Fix:** Verify TS interfaces against actual Go JSON output (`curl` the endpoint). Grep for TS uses when changing Go JSON field names. See AP#79.
+
+## 116. Go context.WithTimeout Cancels Cleanup Operations
+
+**Added:** 2026-03-14 | **Source:** Samverk | **Status:** active
+
+**Platform:** Go (all)
+**Issue:** Wrapping task execution with `context.WithTimeout` cancels ALL downstream operations when timeout fires -- including session status updates, failure comments, and cost recording.
+**Fix:** Create a separate `cleanupCtx := context.Background()` BEFORE timeout wrapping. Pass it to the runner for cleanup/persistence paths. Use timeout-wrapped ctx only for the provider call itself.
+
+## 117. Claude Code Worktrees Cause markdownlint Hangs on node_modules
+
+**Added:** 2026-03-14 | **Source:** Samverk | **Status:** active
+
+**Platform:** Claude Code (all)
+**Issue:** Agent worktrees (`.claude/worktrees/`) create full repo copies including `web/node_modules/`. Markdownlint's `**/*.md` scans them -- 800+ files, 14k+ errors, hangs pre-push hook for 30+ minutes.
+**Fix:** Add `**/.claude` and `**/node_modules` to markdownlint exclusion patterns (not just root-level). Clean up with `rm -rf .claude/worktrees && git worktree prune`.
+**See also:** KG#91 (nested node_modules not excluded by root pattern)
+
+## 118. Parallel git push Triggers Concurrent Pre-Push Hooks
+
+**Added:** 2026-03-14 | **Source:** Samverk | **Status:** active
+
+**Platform:** Git (all)
+**Issue:** Two concurrent `git push` commands (from parallel agents or background tasks) trigger two parallel pre-push hooks sharing the same working directory, causing contention and hangs.
+**Fix:** Always push sequentially. When using parallel agents with `isolation: "worktree"`, push one at a time after agents complete.
+**See also:** KG#25 (parallel agents share working tree)
+
+## 119. Always html.EscapeString Server-Injected Values in HTML
+
+**Added:** 2026-03-14 | **Source:** Samverk | **Status:** active
+
+**Platform:** Go (all)
+**Issue:** Injecting server-side config values (auth tokens, URLs) into embedded HTML via string replacement without escaping creates XSS vulnerability.
+**Fix:** Always use `html.EscapeString()` for values injected into HTML context. Applies to any Go server serving embedded SPAs with injected configuration.
+
+## 120. Fine-Grained PAT as GITHUB_TOKEN Env Var Shadows gh Keyring OAuth
+
+**Added:** 2026-03-14 | **Source:** Samverk | **Status:** active
+
+**Platform:** Windows (MSYS_NT) / GitHub CLI
+**Issue:** A fine-grained PAT set as Windows User env var `GITHUB_TOKEN` shadows `gh` CLI's keyring-stored OAuth token. Token precedence: `GITHUB_TOKEN` env > keyring OAuth > `GH_TOKEN` env. Fine-grained PATs often lack `issues:write` scope, causing 403 on `gh issue close/create`.
+**Fix:** Remove the User env var: `[Environment]::SetEnvironmentVariable('GITHUB_TOKEN', $null, 'User')`. PATs for CI (e.g., release-please) should only be GitHub Actions secrets, never local env vars. Inline override: `GITHUB_TOKEN= gh <command>`.
+**See also:** KG#94 (GITHUB_TOKEN tags), AP#120 (secrets distribution)
