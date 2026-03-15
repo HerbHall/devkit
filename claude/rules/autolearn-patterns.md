@@ -1,7 +1,7 @@
 ---
 description: Learned patterns from past sessions. Read when encountering similar situations.
 tier: 2
-entry_count: 77
+entry_count: 67
 last_updated: "2026-03-15"
 ---
 
@@ -88,13 +88,36 @@ go-licenses check ./... 2>&1 | grep -E "GPL|AGPL|LGPL|SSPL" && exit 1 || echo "N
 **Context:** Swagger cross-platform drift (enum definitions, x-enum-descriptions, go mod download for CI).
 **Fix:** See KG#12 for full consolidated reference. Key fix: add `swaggertype:"integer"` to `time.Duration` fields, run `go mod download` before `swag init` in CI.
 
-## 18. Documentation Drift Audit After PR Bursts
+## 18. DevKit Governance and Validation Pipeline (Consolidated Reference)
 
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+**Added:** 2026-02-17 | **Source:** Multiple | **Status:** active
+**Consolidates:** AP#92, AP#93, AP#94, AP#95, AP#108 (archived)
 
 **Category:** process-pattern
-**Context:** After merging many PRs in a burst, roadmap checklists, README claims, and architecture docs drift from reality.
-**Fix:** Audit: (1) list merged PRs since last doc update, (2) cross-reference with roadmap, (3) check README claims against actual capabilities, (4) fix aspirational language.
+
+### Documentation drift audit
+
+After PR bursts, audit: list merged PRs since last doc update, cross-reference with roadmap, check README claims against actual capabilities, fix aspirational language.
+
+### Executable templates in scaffolding
+
+Profiles describing WHAT but no HOW leads to manual CI creation. Include ready-to-copy templates: pre-push hook, golangci-lint config, Makefile, CI workflow.
+
+### Enforcement over advisory rules
+
+Advisory-only rules are skipped under pressure. Use enforcement tiers (Tier 0 immutable, Tier 1 governed, Tier 2 learned). Pre-commit verification must be mandatory ("must" not "should").
+
+### Autolearn validation pipeline
+
+Five-stage pipeline before writing rules: evidence check, core principle alignment, best practices review, conflict check, risk classification. Dangerous patterns ("skip", "bypass", "suppress") always trigger human review.
+
+### Fix-forward replaces pre-existing classification
+
+Fix-forward: (1) fix inline <5 min, (2) can't fix? file GitHub issue, (3) systemic? update DevKit gap. Never acceptable: "noted as pre-existing, moving on."
+
+### Research-gate workflow for new projects
+
+Structure as: Research issues -> Implementation issues -> Gate issue (checklist). Forces thinking before coding at every stage.
 
 ## 19. golangci-lint Rules (Consolidated Reference)
 
@@ -158,12 +181,6 @@ copy(oldKEK, km.kek)
 **Category:** correction
 **Context:** `func handler(w http.ResponseWriter, _ *http.Request)` causes "undefined: r" when you later add `r.Context()`.
 **Fix:** Always name handler parameters, even if currently unused. Compiler allows named-but-unused params.
-
-## 27. golangci-lint bodyclose with websocket.Dial
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** superseded-by-KG17
-
-Archived to `claude/rules/archive/autolearn-patterns.md`. See KG#17 for the consolidated entry.
 
 ## 28. Go 1.22+ ServeMux Ambiguous Route Pattern Panic
 
@@ -262,17 +279,11 @@ Check CI on ALL PRs first. Merge green sequentially (rebase between each). Close
 
 **Category:** workflow-pattern
 
-### Self-recovery from shared working tree
+Legacy stash/pop approach for parallel agents. Superseded by AP#127 (worktree isolation) for new work. Retained for reference when worktrees unavailable.
 
-Agents detect leaked files via `git status`, clean with `git checkout -- <leaked>`. Prompts must specify target branch, exact files, and `git checkout <branch>` as first step.
-
-### Agent disruption of parallel work (commit/checkout/same-file)
-
-`git checkout <branch>` discards other agents' unstaged tracked-file changes. When 2+ agents modify same file, read combined diff first, then stash/pop to sort into correct branches. Two approaches: restrict agents from committing (safer) or re-apply from output summary (faster).
-
-### Subagent recovery after session break
-
-On resume: `git status`, `git diff --stat`, `go build ./...`, then commit. Subagent work persists in working tree even if main context was interrupted.
+- **Self-recovery from shared working tree**: Agents detect leaked files via `git status`, clean with `git checkout -- <leaked>`.
+- **Agent disruption of parallel work**: `git checkout <branch>` discards other agents' unstaged changes. Restrict agents from committing (safer) or re-apply from output summary (faster).
+- **Subagent recovery after session break**: On resume: `git status`, `git diff --stat`, `go build ./...`, then commit.
 
 ## 50. VS Code Auto-Open File on Workspace Start
 
@@ -338,13 +349,24 @@ On resume: `git status`, `git diff --stat`, `go build ./...`, then commit. Subag
 **Context:** Ensuring every new project gets CLAUDE.md requires multiple safety nets.
 **Fix:** Three layers: (1) `git init.templateDir` auto-copies starter, (2) shell helper for intentional workflow, (3) SessionStart hook detects missing CLAUDE.md.
 
-## 73. Three-Stream Redirect for VS Code CLI in PowerShell Scripts
+## 73. Windows Shell Interop Workarounds (Consolidated Reference)
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
+**Consolidates:** AP#75, AP#76 (archived)
 
 **Category:** platform-workaround
-**Context:** `code --list-extensions` in PowerShell opens `code-stdin-*` tabs. Redirecting only stdout/stderr is NOT sufficient.
-**Fix:** Redirect ALL THREE streams. `-RedirectStandardInput` to empty temp file feeds EOF immediately, preventing VS Code from reading parent stdin.
+
+### Three-stream redirect for VS Code CLI
+
+`code --list-extensions` in PowerShell opens `code-stdin-*` tabs. Redirect ALL THREE streams -- `-RedirectStandardInput` to empty temp file feeds EOF immediately, preventing VS Code from reading parent stdin.
+
+### Start-Job timeout for hanging commands
+
+Windows Store Python aliases hang forever. `command -v` resolves them as valid but `& py --version` blocks. Wrap in `Start-Job` + `Wait-Job -Timeout 5`. Stop and remove job if timeout.
+
+### PowerShell temp file from MSYS bash
+
+Inline PowerShell from MSYS bash breaks with `$env:PATH`, special chars. Write temp `.ps1` file using single-quoted heredoc (`'PSEOF'`), execute with `powershell.exe -NoProfile -File /tmp/cmd.ps1 2>&1`.
 
 ## 74. Iterative Bootstrap Debugging on New Machines
 
@@ -353,22 +375,6 @@ On resume: `git status`, `git diff --stat`, `go build ./...`, then commit. Subag
 **Category:** workflow-pattern
 **Context:** First-time bootstrap surfaces cascading issues. Each phase may expose issues invisible until prior phases complete.
 **Fix:** Run end-to-end, capture full output, fix ALL failures in single pass. Multiple failures may share root cause (e.g., PATH staleness).
-
-## 75. Start-Job Timeout for Commands That Might Hang
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** platform-workaround
-**Context:** Windows Store Python aliases hang forever. `command -v` resolves them as valid but `& py --version` blocks.
-**Fix:** Wrap in `Start-Job` + `Wait-Job -Timeout 5`. Stop and remove job if timeout. 5s catches hangs while allowing slow tools.
-
-## 76. PowerShell Temp File for Complex Commands from MSYS Bash
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** platform-workaround
-**Context:** Inline PowerShell from MSYS bash breaks with `$env:PATH`, special chars. `cmd.exe /c` swallows output.
-**Fix:** Write temp `.ps1` file using single-quoted heredoc (`'PSEOF'`), execute with `powershell.exe -NoProfile -File /tmp/cmd.ps1 2>&1`.
 
 ## 77. Small Wave Without Subagent for Focused Changes
 
@@ -476,7 +482,7 @@ On resume: `git status`, `git diff --stat`, `go build ./...`, then commit. Subag
 - **formatters**: v2 moved `gofmt`/`goimports` from `linters:` to `formatters: enable:` top-level key.
 - **gosimple**: merged into `staticcheck` in v2. Remove from linters list.
 
-**See also:** KG#65 (silent config failure), KG#66 (v7 action schema enforcement).
+**See also:** KG#65 (config requirements + v7 schema enforcement).
 
 ## 91. go run for Pinned Tool Versions
 
@@ -485,38 +491,6 @@ On resume: `git status`, `git diff --stat`, `go build ./...`, then commit. Subag
 **Category:** workflow-pattern
 **Context:** `go install ...@latest` creates version drift, PATH issues on Windows MSYS, and risks surprise breakage.
 **Fix:** Use `go run github.com/.../tool@vX.Y.Z` in Makefiles and hooks. Exact version, no install, no PATH issues.
-
-## 92. DevKit Scaffolding Must Include Executable Templates
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** process-pattern
-**Context:** Profiles describing WHAT but no HOW scaffolding leads to manual CI infrastructure creation and preventable failures.
-**Fix:** Include ready-to-copy templates: pre-push hook, golangci-lint config, Makefile, CI workflow.
-
-## 93. Advisory Rules Without Enforcement Are Ignored Under Pressure
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** process-pattern
-**Context:** Advisory-only rules are skipped under time pressure. Agents repeat known mistakes.
-**Fix:** Enforcement tiers: Tier 0 immutable, Tier 1 governed, Tier 2 learned with periodic review. Pre-commit verification must be mandatory ("must" not "should").
-
-## 94. Autolearn Must Validate Before Writing Rules
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** process-pattern
-**Context:** Unvalidated learnings become permanent rules cascading to all projects. A workaround could weaken guardrails.
-**Fix:** Five-stage pipeline: evidence check, core principle alignment, best practices review, conflict check, risk classification. Dangerous patterns ("skip", "bypass", "suppress") always trigger human review.
-
-## 95. Fix-Forward Replaces Pre-Existing Error Classification
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** process-pattern
-**Context:** "Pre-existing" classification had no follow-through. Errors noted and ignored indefinitely.
-**Fix:** Fix-forward: (1) fix inline <5 min, (2) can't fix? file GitHub issue, (3) systemic? update DevKit gap. Never acceptable: "noted as pre-existing, moving on."
 
 ## 96. Interactive Q&A Then Background Agent for Human-Dependent Issues
 
@@ -558,14 +532,6 @@ On resume: `git status`, `git diff --stat`, `go build ./...`, then commit. Subag
 **Context:** "Self-check" phrasing in CI checklist treated as advisory. Agents skip golangci-lint.
 **Fix:** "Step 4, NOT optional, fix ALL" language. Agent compliance depends on enforcement language, not just rule presence.
 
-## 108. Phased Research-Gate Workflow for New Projects
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** process-pattern
-**Context:** Flat issue backlogs lead to underresearched designs and no validation checkpoints.
-**Fix:** Structure as: Research issues -> Implementation issues -> Gate issue (checklist). Forces thinking before coding at every stage.
-
 ## 110. Docker Desktop Extension Marketplace Submission Checklist
 
 **Added:** 2026-03-02 | **Source:** Runbooks, RunNotes | **Status:** active
@@ -575,29 +541,24 @@ On resume: `git status`, `git diff --stat`, `go build ./...`, then commit. Subag
 **Fix:** Checklist: (1) Dockerfile labels (screenshots JSON, changelog HTML, additional-urls), (2) .hadolint.yaml ignores DL3048/DL3045, (3) multi-arch (amd64+arm64), (4) `docker extension validate`, (5) submit via docker/extensions-submissions.
 **See also:** KG#77
 
-## 111. MUI Tooltip Requires Span Wrapper for Disabled Buttons
+## 111. React Compiler and MUI Interaction Patterns (Consolidated Reference)
 
-**Added:** 2026-03-02 | **Source:** RunNotes | **Status:** active
-
-**Category:** frontend-pattern
-**Context:** MUI `<Tooltip>` on disabled `<IconButton>` never shows -- disabled elements don't fire mouse events.
-**Fix:** Wrap disabled button in `<span>`. Applies to any disabled interactive element inside Tooltip.
-
-## 112. useRef Guard to Prevent useEffect Re-Trigger Loops
-
-**Added:** 2026-03-02 | **Source:** RunNotes | **Status:** active
+**Added:** 2026-03-02 | **Source:** Multiple | **Status:** active
+**Consolidates:** AP#112, AP#114 (archived)
 
 **Category:** frontend-pattern
-**Context:** useEffect detecting stale data triggers state updates, which re-trigger the same effect infinitely.
-**Fix:** Use `useRef(false)` flag. Set `true` after first run. Reset only on intentional user actions (e.g., manual refresh).
 
-## 114. React Callback Ref for MUI Popper Anchors (React Compiler Compliance)
+### MUI Tooltip on disabled elements
 
-**Added:** 2026-03-02 | **Source:** Runbooks | **Status:** active
+MUI `<Tooltip>` on disabled `<IconButton>` never shows -- disabled elements don't fire mouse events. Wrap disabled button in `<span>`. Applies to any disabled interactive element inside Tooltip.
 
-**Category:** frontend-pattern
-**Context:** MUI Popper needs `anchorEl` during render. `useRef` + `ref.current` triggers React Compiler's refs rule.
-**Fix:** Use callback ref with `useState`: `const [anchorEl, setAnchorEl] = useState(null)` then `<Button ref={setAnchorEl}>`. See also KG#6.
+### useRef guard for useEffect loops
+
+useEffect detecting stale data triggers state updates, which re-trigger the same effect infinitely. Use `useRef(false)` flag. Set `true` after first run. Reset only on intentional user actions.
+
+### Callback ref for Popper anchors
+
+MUI Popper needs `anchorEl` during render. `useRef` + `ref.current` triggers React Compiler's refs rule. Use callback ref with `useState`: `const [anchorEl, setAnchorEl] = useState(null)` then `<Button ref={setAnchorEl}>`. See also KG#6.
 
 ## 117. Cross-Project Compliance Audit via Parallel Independent-Repo Agents
 
@@ -636,9 +597,9 @@ On resume: `git status`, `git diff --stat`, `go build ./...`, then commit. Subag
 **Added:** 2026-03-08 | **Source:** DevKit | **Status:** active
 
 **Category:** process-pattern
-**Context:** Documentation, skill lists, CI coverage, and setup scripts drift from reality over time without automated validation.
-**Fix:** Run a structured Explore subagent audit periodically covering 10 dimensions: docs-vs-reality counts, skill routing completeness, agent template coverage, rules file metadata accuracy, CI job gaps, setup script completeness, project template freshness, hook coverage, sync manifest integrity, cross-reference completeness.
-**See also:** AP#47 (check existing assets before scoping issues), AP#83 (sprint scope reduction via exploration), AP#85 (roadmap drift)
+**Context:** Documentation, skill lists, CI coverage, and setup scripts drift from reality without automated validation.
+**Fix:** Run structured Explore subagent audit periodically covering 10 dimensions: docs accuracy, skill routing, agent templates, rules metadata, CI jobs, setup scripts, project templates, hooks, sync manifest, cross-references.
+**See also:** AP#47, AP#83, AP#85
 
 ## 122. Python UTF-8 I/O on Windows for Unicode-Heavy Scripts
 
@@ -646,31 +607,17 @@ On resume: `git status`, `git diff --stat`, `go build ./...`, then commit. Subag
 **Consolidates:** AP#11, AP#109 (archived)
 
 **Category:** platform-workaround
-**Context:** Python on Windows defaults to cp1252 encoding. Any script that processes
-Unicode content (GitHub issue bodies, em-dashes, smart quotes, etc.) crashes
-with `UnicodeEncodeError`. This applies to any Python script, including jq replacements
-(use Python `json` + `urllib.request` instead of `jq` on Windows MSYS).
-For regex-heavy scripts, write a standalone `.py` file and call from a thin bash wrapper.
-**Fix:** Apply a three-layer fix -- all three layers are required:
-
-1. In the calling bash script: `export PYTHONIOENCODING=utf-8`
-2. At the top of the Python script:
-   `if hasattr(sys.stdout, "reconfigure"): sys.stdout.reconfigure(encoding="utf-8")`
-3. In every `subprocess.run` call: pass `encoding="utf-8"` explicitly
-
-The env var (layer 1) covers the outer process stdout/stderr. The reconfigure call
-(layer 2) is the preferred way to switch an already-open stream; the `hasattr` guard
-keeps it safe on Python < 3.7. `subprocess.run` (layer 3) opens a new stream and
-ignores PYTHONIOENCODING, so it needs its own `encoding=` argument.
+**Context:** Python on Windows defaults to cp1252 encoding. Scripts processing Unicode (em-dashes, smart quotes) crash with `UnicodeEncodeError`. Use Python `json` + `urllib.request` instead of `jq` on Windows MSYS. For regex-heavy scripts, write standalone `.py` file called from bash wrapper.
+**Fix:** Three-layer fix (all required): (1) bash: `export PYTHONIOENCODING=utf-8`, (2) Python top: `if hasattr(sys.stdout, "reconfigure"): sys.stdout.reconfigure(encoding="utf-8")`, (3) every `subprocess.run`: pass `encoding="utf-8"`. Each layer covers a different stream surface.
 
 ## 123. PSScriptAnalyzer Brownfield Onboarding -- Audit Before First CI Run
 
 **Added:** 2026-03-09 | **Source:** DevKit | **Status:** active
 
 **Category:** ci-config
-**Context:** Adding PSScriptAnalyzer CI to an existing repo surfaces pre-existing violations iteratively across multiple CI cycles. Each run reveals different failures.
-**Fix:** Run PSScriptAnalyzer locally against all scripts and resolve or exclude ALL violations in a single pass before pushing CI integration. Create `PSScriptAnalyzerSettings.psd1` with justified exclusions. Common brownfield exclusions: PSAvoidUsingWriteHost, PSUseShouldProcessForStateChangingFunctions, PSReviewUnusedParameter, PSUseSingularNouns, PSAvoidAssignmentToAutomaticVariable, PSUseUsingScopeModifierInNewRunspaces, PSAvoidUsingPlainTextForPassword, PSUseBOMForUnicodeEncodedFile.
-**See also:** KG#112 (Invoke-ScriptAnalyzer -Include invalid parameter), AP#84 (mandatory lint step language)
+**Context:** Adding PSScriptAnalyzer CI to an existing repo surfaces pre-existing violations iteratively.
+**Fix:** Run PSScriptAnalyzer locally against ALL scripts, resolve or exclude violations in a single pass before pushing CI. Create `PSScriptAnalyzerSettings.psd1` with justified exclusions.
+**See also:** KG#104 (PowerShell tool gotchas), AP#84
 
 ## 124. Pre-Sprint Human-Label Audit for Mislabeled Issues
 

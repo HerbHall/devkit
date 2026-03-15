@@ -408,3 +408,217 @@ gh issue create --milestone takes title, not number. Merged into KG#107 (gh CLI 
 ## KG#109 (archived 2026-03-14, consolidated into KG#62)
 
 GitHub REST API returns CRLF in issue body text fields. Merged into KG#62 (Windows CRLF Breaks Tool String Matching).
+
+## Archived 2026-03-15: Rules compaction (batch ingest + consolidation)
+
+### Low-value or unreferenced entries
+
+## KG#2 (archived 2026-03-15)
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** archived-2026-03-15
+
+**Platform:** GitHub
+**Fix:** `gh pr merge --admin` bypasses protection when you're the only maintainer.
+
+## KG#5 (archived 2026-03-15)
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** archived-2026-03-15
+
+**Platform:** Go (all)
+**Issue:** Changing `for _, v := range slice` to `for i := range slice` -- easy to miss `v` references deeper in the loop body.
+**Fix:** Search the entire loop body for the old variable name. Replace ALL occurrences with `slice[i]`.
+
+## KG#11 (archived 2026-03-15)
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** archived-2026-03-15
+
+**Platform:** All (curl, fetch)
+**Issue:** GitHub REST API requires a `User-Agent` header. Requests without it return empty or 403.
+**Fix:** Always include `User-Agent: <app-name>` in GitHub API requests.
+
+## KG#14 (archived 2026-03-15)
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** archived-2026-03-15
+
+**Platform:** Go (all)
+**Issue:** `if obj.Field == nil || obj.Field.Sub == 0` with logging that accesses `obj.Field.X` panics when `obj.Field` is nil.
+**Fix:** Split into two separate `if` blocks -- check nil first, then check the field.
+
+## KG#15 (archived 2026-03-15)
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** archived-2026-03-15
+
+**Platform:** Git (all)
+**Issue:** After squash-merge, `git branch --merged main` won't list the branch (different hashes).
+**Fix:** Use `git branch -D` (force delete). Verify safety with `git remote prune origin` first.
+
+## KG#16 (archived 2026-03-15)
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** archived-2026-03-15
+
+**Platform:** GitHub
+**Issue:** `Closes #1, #2, #3` only auto-closes #1. GitHub requires the keyword before each number.
+**Fix:** Use `Closes #1, Closes #2, Closes #3` or one per line.
+
+## KG#37 (archived 2026-03-15)
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** archived-2026-03-15
+
+**Platform:** Windows (VS Code)
+**Issue:** `rm -rf` fails on directories VS Code has open as workspace roots. File watcher holds handles.
+**Fix:** Remove contents first, then reload VS Code with updated workspace config. Or close VS Code first.
+
+## KG#38 (archived 2026-03-15)
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** archived-2026-03-15
+
+**Platform:** Playwright (all)
+**Issue:** `getByLabel('Password')` matches both the input and companion toggle button.
+**Fix:** Use `page.locator('#password')` to target by ID instead.
+
+## KG#47 (archived 2026-03-15)
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** archived-2026-03-15
+
+**Platform:** PowerShell 7+
+**Issue:** `[Mandatory] [string[]]` validates each element. Empty strings `''` fail validation.
+**Fix:** Add `[AllowEmptyString()]` alongside `[Mandatory]`.
+
+## KG#48 (archived 2026-03-15)
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** archived-2026-03-15
+
+**Platform:** Windows (Hyper-V)
+**Issue:** Returns `$false` when Hyper-V is already active (hypervisor claimed VT-x).
+**Fix:** Use Hyper-V state as fallback: `if ($virtCheck.Met -or $hyperVMet) { # confirmed }`.
+
+## KG#49 (archived 2026-03-15)
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** archived-2026-03-15
+
+**Platform:** PowerShell (all)
+**Issue:** `Get-ChildItem` skips dotfiles (hidden on Windows). Filter `credentials*` won't match `.credentials*`.
+**Fix:** Use `-Force` flag AND add separate `.credentials*` filter.
+
+## KG#54 (archived 2026-03-15)
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** archived-2026-03-15
+
+**Platform:** PowerShell 7+ / GitHub
+
+### param() must be first executable statement
+
+**Issue:** `Set-StrictMode` before `param()` causes confusing error.
+**Fix:** Only comments and `#Requires` before `param()`.
+
+### Branch protection requires pre-existing CI check names
+
+**Issue:** `required_status_checks.contexts` must reference jobs that have already run.
+**Fix:** Merge CI workflow first, verify job names in Actions tab, then apply protection.
+
+## KG#56 (archived 2026-03-15)
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** archived-2026-03-15
+
+**Platform:** Claude Code (Windows)
+**Issue:** Subagent adds deps to `package.json` but can't run `pnpm install`. CI fails with `ERR_PNPM_OUTDATED_LOCKFILE`.
+**Fix:** Run `pnpm install` after merging subagent changes to update lockfile.
+
+## KG#72 (archived 2026-03-15)
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** archived-2026-03-15
+
+**Platform:** React / ESLint
+**Issue:** This rule does NOT support `// eslint-disable-next-line`. Adding it produces "Unused directive".
+**Fix:** Config-level override only: `"react-hooks/set-state-in-effect": "warn"` in `eslint.config.js`.
+
+## KG#73 (archived 2026-03-15)
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** archived-2026-03-15
+
+**Platform:** npm / React
+**Issue:** ESLint 10.x breaks `eslint-plugin-react-hooks` which requires `eslint@^9`.
+**Fix:** Pin: `npm install --save-dev eslint@^9 @eslint/js@^9`.
+
+## KG#79 (archived 2026-03-15)
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** archived-2026-03-15
+
+**Platform:** GitHub
+**Issue:** Repo secrets are under Settings > Secrets and variables > Actions (expandable submenu).
+**Fix:** Use CLI: `gh secret set SECRETNAME`. `gh secret list` to verify.
+
+## KG#80 (archived 2026-03-15)
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** archived-2026-03-15
+
+**Platform:** PowerShell 7+
+**Issue:** Under StrictMode, accessing nonexistent property on PSCustomObject throws -- even in conditionals.
+**Fix:** Use `$obj.PSObject.Properties.Match('prop').Count -gt 0`. Does NOT affect hashtables.
+
+## KG#86 (archived 2026-03-15)
+
+**Added:** 2026-03-02 | **Source:** DevKit | **Status:** archived-2026-03-15
+
+**Platform:** Bash (all, especially CI)
+**Issue:** `grep -c` outputs "0" AND exits code 1. `$(grep -c ... || echo "0")` captures "0\n0", breaking arithmetic.
+**Fix:** Use `|| true` instead of `|| echo "0"`.
+
+## KG#100 (archived 2026-03-15)
+
+**Added:** 2026-03-07 | **Source:** DevKit | **Status:** archived-2026-03-15
+
+**Platform:** Claude Code (all)
+**Issue:** After completing a multi-step task, CC displays a pasted large input block as text rather than executing it. Context saturation at task boundaries.
+**Fix:** Kill session and open fresh. Do NOT attempt multiple `?` prompts -- if it fails twice, session is unrecoverable.
+**Prevention:** Keep handoff prompts under 40 lines. Run `/rules-compact` if rules files approach 40k.
+
+## KG#139 (archived 2026-03-15)
+
+**Added:** 2026-03-15 | **Source:** Synapset | **Status:** archived-2026-03-15
+
+**Platform:** Go (all)
+**Issue:** WASM-based SQLite driver has single linear memory space. Concurrent goroutine access causes `panic: wasm error: out of bounds memory access`.
+**Fix:** Use `sync.Mutex` or `*sql.DB` with `SetMaxOpenConns(1)`. Alternative: switch to CGO-based driver (`mattn/go-sqlite3`) which supports SQLite threading modes.
+
+### Consolidation victims (2026-03-15)
+
+## KG#7 (archived 2026-03-15, consolidated into KG#6)
+
+React Compiler Lint: Recursive useCallback Self-Reference. Merged into KG#6 (React Compiler Lint: Refs During Render).
+
+## KG#13 (archived 2026-03-15, consolidated into KG#12)
+
+Swagger Drift After Any Handler/Model Change. Merged into KG#12 (Swagger Cross-Platform Drift).
+
+## KG#66 (archived 2026-03-15, consolidated into KG#65)
+
+golangci-lint-action v7 Runs config verify (Schema Enforcement). Merged into KG#65 (golangci-lint v2 Config and Schema).
+
+## KG#67 (archived 2026-03-15, consolidated into KG#111)
+
+Agent-Generated Markdown Tables: Pipes in Cells and Missing Columns. Merged into KG#111 (Markdown Editing Gotchas).
+
+## KG#112 (archived 2026-03-15, consolidated into KG#104)
+
+Invoke-ScriptAnalyzer Has No -Include Parameter. Merged into KG#104 (PowerShell Tool and Variable Gotchas).
+
+## KG#113 (archived 2026-03-15, consolidated into KG#104)
+
+PowerShell $args Is an Automatic Variable. Merged into KG#104 (PowerShell Tool and Variable Gotchas).
+
+## KG#124 (archived 2026-03-15, consolidated into KG#123)
+
+Gitea PR Merge After Rebase Needs Pause. Merged into KG#123 (Gitea API and Actions Gotchas).
+
+## KG#130 (archived 2026-03-15, consolidated into KG#25)
+
+git worktree Operations Can Flip core.bare=true. Merged into KG#25 (Parallel Background Agents Share Working Tree).
+
+## KG#137 (archived 2026-03-15, consolidated into KG#127)
+
+sqlite-vec vec0 Virtual Tables Do Not Support UPDATE. Merged into KG#127 (sqlite-vec Virtual Table Gotchas).
+
+## KG#138 (archived 2026-03-15, consolidated into KG#123)
+
+Gitea Reserves GITEA_ Prefix for Actions Secret Names. Merged into KG#123 (Gitea API and Actions Gotchas).
