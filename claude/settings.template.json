@@ -23,7 +23,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "<autolearn>\nNEVER block, reject, or stop user input. This is passive context only.\nAs you work: note mistakes you correct, gotchas you hit, and patterns you discover.\nWhen the session has produced notable learnings, suggest the user run /reflect.\nTriggers: you corrected an error, hit a platform gotcha, made an architectural decision, or the conversation is getting long.\nKeep this nudge brief -- e.g. \"Tip: run /reflect to capture the [X] pattern we discovered.\"\n</autolearn>"
+            "prompt": "<autolearn>\nNEVER block, reject, or stop user input. This is passive context only.\nAs you work: note mistakes you correct, gotchas you hit, and patterns you discover.\nWhen a task completes and notable learnings were produced, run /autolearn autonomously.\nDo not ask permission. Do not show a menu. Announce briefly: \"Capturing learnings from this task.\"\nTriggers: you corrected an error, hit a platform gotcha, made an architectural decision, or the session is ending after productive work.\nThe skill auto-selects the right workflow based on session context. For explicit control: /autolearn review, /autolearn audit, etc.\n</autolearn>"
           }
         ]
       }

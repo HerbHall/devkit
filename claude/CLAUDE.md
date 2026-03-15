@@ -82,17 +82,20 @@ When spawning subagents, include the [CORE] block from
 
 ## Autolearn
 
-Proactively suggest the user run `/autolearn` when any of these occur:
+Run `/autolearn` autonomously when any of these occur:
 
 - You corrected a mistake or changed approach mid-task
 - A platform-specific gotcha or environment issue was encountered
 - A significant architectural or design decision was made
-- The conversation is getting long (many tool calls, multi-step work)
-- Before the user ends a productive session
+- The session is ending after productive multi-step work
 
-Keep the suggestion brief and specific:
-"Tip: run `/autolearn` to capture [what was learned]."
-Do NOT run /autolearn automatically -- always let the user trigger it.
+Run it at **task completion boundaries**, not mid-task. Announce briefly:
+`"Capturing learnings from this task."` -- then proceed.
+
+The skill auto-selects the appropriate workflow (quick-reflect, session-review,
+update-knowledge, skill-improvement, or audit-rules) based on session context.
+No menu, no user input needed. For explicit control, use args:
+`/autolearn review`, `/autolearn audit`, etc.
 
 ## Environment
 
