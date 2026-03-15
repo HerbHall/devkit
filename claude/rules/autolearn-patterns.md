@@ -130,6 +130,8 @@ Structure as: Research issues -> Implementation issues -> Gate issue (checklist)
 - **noctx**: `db.Exec()` without context -> use `ExecContext`, `QueryContext`, `QueryRowContext`
 - **errcheck** (resp.Body.Close): direct `_ = resp.Body.Close()`, deferred `defer func() { _ = resp.Body.Close() }()`
 - **gosec G704** (SSRF): trusted-base-URL clients -> `//nolint:gosec // G704: URL is from trusted baseURL config`
+- **gosec G202** (SQL concat): parameterized WHERE builders with static clauses flagged -> `//nolint:gosec // G202: clauses are static, user input is parameterized`
+- **gosec G115** (integer overflow): `uint64(stat.Bsize)` on syscall.Statfs_t flagged -> extract to named var with `//nolint:gosec // G115: Bsize is always positive`
 
 ## 20. staticcheck SA4023: Concrete Type Assigned to Interface Is Never Nil
 

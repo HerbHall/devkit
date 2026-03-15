@@ -1,7 +1,7 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 60
+entry_count: 61
 last_updated: "2026-03-15"
 ---
 
@@ -646,3 +646,11 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Issue:** Stale API keys in env vars (e.g., expired `OPENAI_API_KEY`) silently override intended provider selection. Local process picks up stale key instead of configured provider.
 **Fix:** Remove env vars immediately when a service subscription expires. Audit: `[Environment]::GetEnvironmentVariable('VAR', 'User')` on Windows.
 **See also:** KG#120 (fine-grained PAT shadows gh keyring)
+
+## 143. stdout fsync EINVAL on Linux
+
+**Added:** 2026-03-15 | **Source:** Samverk | **Status:** active
+
+**Platform:** Linux (Go / zap)
+**Issue:** `/dev/stdout` returns EINVAL for `fsync()`. Any zap `WriteSyncer` calling `Sync()` on `os.Stdout` fails in Linux CI.
+**Fix:** Make `Sync()` best-effort for stdout: `_ = f.Sync()` instead of `return f.Sync()`.

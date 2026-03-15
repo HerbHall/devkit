@@ -1,6 +1,6 @@
 ---
 phase: execution
-updated: 2026-03-14T20:00:00Z
+updated: 2026-03-15T23:00:00Z
 updated_by: claude-code
 managed_by: samverk
 ---
@@ -15,7 +15,7 @@ Active maintenance and execution. AI tooling methodology, Claude Code configurat
 ## What Is Running
 
 - Symlinked rules loaded by all Claude Code sessions via ~/.claude/
-- 21 skills, 7 agents, 11 rules files, 150 patterns (AP: 74, KG: 76)
+- 21 skills, 7 agents, 11 rules files, 128 active patterns (AP: 67, KG: 61)
 - SessionStart hook for context injection
 - Credentials migrated to PowerShell SecretStore vault (HomeLabVault)
 
@@ -29,13 +29,11 @@ Active maintenance and execution. AI tooling methodology, Claude Code configurat
 
 ## Recently Completed
 
-- **v2.3.0 release** -- rules compaction, Synapset integration, MCP research, 16 new patterns
-- Rules compaction: AP 42k->35k, KG 50k->30k (PR #295)
-- Synapset integration: dual-store autolearn, [SYNAPSET] checklist block (PR #313)
-- MCP lazy-loading research + feature request anthropics/claude-code#34471 (PR #305)
-- Autolearn batches: 16 new entries from 11 issues (PRs #296, #308)
-- Tool selection guide, cross-ref verification in /rules-compact (PRs #300, #311)
-- 71 stale branches cleaned, doc counts fixed
+- **v2.4.0 release** -- autonomous autolearn routing (PR #322)
+- Autolearn batch ingest: 15 issues -> 14 KG + 3 AP + 1 WP entries (PR #329)
+- Rules compaction: KG 44k->35k (90->60), AP 38k->35k (77->67) (PR #331)
+- Synapset integration verified working (3 pools, dual-store operational)
+- v2.3.0: Synapset backend, MCP research, cross-ref verification
 
 ## Related Projects
 
