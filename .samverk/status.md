@@ -15,7 +15,7 @@ Active maintenance and execution. AI tooling methodology, Claude Code configurat
 ## What Is Running
 
 - Symlinked rules loaded by all Claude Code sessions via ~/.claude/
-- 21 skills, 7 agents, 11 rules files, 140 patterns (AP: 72, KG: 68)
+- 21 skills, 7 agents, 11 rules files, 150 patterns (AP: 74, KG: 76)
 - SessionStart hook for context injection
 - Credentials migrated to PowerShell SecretStore vault (HomeLabVault)
 
@@ -25,17 +25,17 @@ Active maintenance and execution. AI tooling methodology, Claude Code configurat
 
 ## Queued
 
-- Synapset consumer integration -- when Synapset MVP ships, migrate autolearn backend from flat markdown to Synapset vector memory (140 entries post-compaction). See Synapset project for implementation status.
-- MCP lazy-loading gateway feasibility research (#293)
+- Synapset deep migration -- evaluate replacing rules file reads with `search_memory` calls (semantic > keyword matching). Current: dual-store (rules files + Synapset)
 
 ## Recently Completed
 
+- **v2.3.0 release** -- rules compaction, Synapset integration, MCP research, 16 new patterns
 - Rules compaction: AP 42k->35k, KG 50k->30k (PR #295)
-- Autolearn batch: 6 new entries from #287-#291 (PR #296)
-- Tool selection guide added as rules file
-- Stale README/CLAUDE.md pattern counts fixed (PR #286)
-- Synapset status update (PR #294)
-- Gitea forge support in new-project.ps1 (PR #285)
+- Synapset integration: dual-store autolearn, [SYNAPSET] checklist block (PR #313)
+- MCP lazy-loading research + feature request anthropics/claude-code#34471 (PR #305)
+- Autolearn batches: 16 new entries from 11 issues (PRs #296, #308)
+- Tool selection guide, cross-ref verification in /rules-compact (PRs #300, #311)
+- 71 stale branches cleaned, doc counts fixed
 
 ## Related Projects
 

@@ -1,33 +1,37 @@
 # Changelog
 
-## Unreleased
+## v2.3.0 -- 2026-03-14
+
+Rules compaction, Synapset integration, and MCP research.
 
 ### Added
 
-- **Release standardization templates** (ADR-0015): release-please config, manifest, workflow, and git-cliff templates in `project-templates/`
-- **ADR-0015**: Documents the decision to standardize on release-please + git-cliff + VERSION file across all projects
-
-## v2.3.0 -- 2026-03-01
-
-Rules reconciliation, drift detection, and project settings enforcement.
-
-### Added
-
-- **Rules reconciliation** (PR #140): Imported 44 orphaned entries from local copies back to devkit (22 AP, 17 KG, 5 WP)
-- **Rules drift detection** (PR #141): `devkit_drift_check()` in SessionStart.sh warns when local and devkit entry counts diverge; `/devkit-sync status` includes drift report
-- **Project settings enforcement** (PR #145): Three-layer mechanism ensures all projects have `.claude/settings.json` -- git template, Kit 3 scaffolder, and SessionStart.sh detection
-- **Git template settings.json** (PR #145): `git-templates/.claude/settings.json` auto-deploys on `git init`
+- **Rules compaction** (PR #295): AP 42k->35k, KG 50k->30k -- archived 29 stale entries, consolidated 9 clusters, trimmed 27 entries
+- **Synapset integration** (PR #313): Semantic vector memory backend for autolearn -- `store_memory`/`search_memory` in dual-store workflows, [SYNAPSET] checklist block, pool strategy documentation
+- **Tool selection guide** (PR #300): New rules file `claude/rules/tool-selection-guide.md` -- proactive decision tree for GitHub, web research, file ops, Go dev, shell scripting, and knowledge tools
+- **MCP lazy-loading research** (PR #305): Feasibility assessment for custom MCP gateway -- verdict: wait (ToolSearch provides ~85% context reduction). Feature request filed: anthropics/claude-code#34471
+- **Cross-reference verification** (PR #311): Step 8 in `/rules-compact` skill catches stale AP/KG cross-references after archiving
+- **Autolearn entries** (PRs #296, #308): 16 new patterns and gotchas from 11 issues -- worktree isolation (AP#127), go:embed cache (KG#125), Tailscale Funnel (KG#126), Cloudflare Email Routing (AP#126), sqlite-vec dimensions (KG#127), and more
+- **Release standardization templates** (ADR-0015): release-please config, manifest, workflow, and git-cliff templates
+- **Rules reconciliation** (PR #140): Imported 44 orphaned entries from local copies back to devkit
+- **Rules drift detection** (PR #141): `devkit_drift_check()` in SessionStart.sh
+- **Project settings enforcement** (PR #145): Three-layer mechanism for `.claude/settings.json`
+- **Gitea forge support** (PR #285): `-Gitea` switch in new-project.ps1, forge-aware scaffolding
 
 ### Fixed
 
-- **sync.ps1 StrictMode crash** (PR #142): `PSObject.Properties.Match()` for safe property existence checks under `Set-StrictMode -Version Latest`
-- **sync.ps1 Read-Host null** (PR #144): Null guard prevents crash when `Read-Host` returns null in non-interactive mode
-- **Known gotcha KG#80** (PR #144): Documented PowerShell StrictMode + PSCustomObject property access gotcha
+- **Stale doc counts** (PR #286): README and CLAUDE.md pattern counts updated
+- **credentials.ps1 StrictMode** (PR #283): Removed Set-StrictMode from dot-sourced lib (KG#114)
+- **sync.ps1 StrictMode crash** (PR #142): `PSObject.Properties.Match()` for safe property checks
+- **sync.ps1 Read-Host null** (PR #144): Null guard for non-interactive mode
 
 ### Changed
 
-- Rules entry counts: autolearn-patterns 76 -> 98, known-gotchas 62 -> 80, workflow-preferences 11 -> 16
-- `/devkit-sync verify` now checks `.claude/settings.json` presence across all projects
+- Rules files: 10 -> 11 (added tool-selection-guide.md)
+- Pattern counts: 170+ -> 150 (post-compaction: AP 74, KG 76)
+- Autolearn workflows now dual-store to MCP Memory + Synapset
+- 71 stale remote branches cleaned up
+- `/devkit-sync verify` checks `.claude/settings.json` presence
 
 ## v2.2.0 -- 2026-02-28
 
