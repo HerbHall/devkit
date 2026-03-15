@@ -403,3 +403,91 @@ if err != nil {
 **Category:** platform-workaround
 **Context:** `jq` unavailable on Windows MSYS. Python's `json` + `urllib.request` modules provide equivalent functionality.
 **Fix:** Use inline Python for JSON operations. Combine with Windows Python path detection (KG#8). UTF-8 I/O fix now documented in AP#122.
+
+## Archived 2026-03-15: Rules compaction (governance + React + Windows consolidation)
+
+### Superseded entry
+
+## 27. golangci-lint bodyclose with websocket.Dial (removed from active 2026-03-15)
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** superseded-by-KG17
+
+Previously retained as stub in active file. Fully removed. See KG#17 for the consolidated entry.
+
+### Consolidation victims: DevKit governance pipeline (merged into AP#18)
+
+## 92. DevKit Scaffolding Must Include Executable Templates
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** consolidated-into-AP18
+
+**Category:** process-pattern
+**Context:** Profiles describing WHAT but no HOW scaffolding leads to manual CI infrastructure creation and preventable failures.
+**Fix:** Include ready-to-copy templates: pre-push hook, golangci-lint config, Makefile, CI workflow.
+
+## 93. Advisory Rules Without Enforcement Are Ignored Under Pressure
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** consolidated-into-AP18
+
+**Category:** process-pattern
+**Context:** Advisory-only rules are skipped under time pressure. Agents repeat known mistakes.
+**Fix:** Enforcement tiers: Tier 0 immutable, Tier 1 governed, Tier 2 learned with periodic review. Pre-commit verification must be mandatory ("must" not "should").
+
+## 94. Autolearn Must Validate Before Writing Rules
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** consolidated-into-AP18
+
+**Category:** process-pattern
+**Context:** Unvalidated learnings become permanent rules cascading to all projects. A workaround could weaken guardrails.
+**Fix:** Five-stage pipeline: evidence check, core principle alignment, best practices review, conflict check, risk classification. Dangerous patterns ("skip", "bypass", "suppress") always trigger human review.
+
+## 95. Fix-Forward Replaces Pre-Existing Error Classification
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** consolidated-into-AP18
+
+**Category:** process-pattern
+**Context:** "Pre-existing" classification had no follow-through. Errors noted and ignored indefinitely.
+**Fix:** Fix-forward: (1) fix inline <5 min, (2) can't fix? file GitHub issue, (3) systemic? update DevKit gap. Never acceptable: "noted as pre-existing, moving on."
+
+## 108. Phased Research-Gate Workflow for New Projects
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** consolidated-into-AP18
+
+**Category:** process-pattern
+**Context:** Flat issue backlogs lead to underresearched designs and no validation checkpoints.
+**Fix:** Structure as: Research issues -> Implementation issues -> Gate issue (checklist). Forces thinking before coding at every stage.
+
+### Consolidation victims: React Compiler and MUI patterns (merged into AP#111)
+
+## 112. useRef Guard to Prevent useEffect Re-Trigger Loops
+
+**Added:** 2026-03-02 | **Source:** RunNotes | **Status:** consolidated-into-AP111
+
+**Category:** frontend-pattern
+**Context:** useEffect detecting stale data triggers state updates, which re-trigger the same effect infinitely.
+**Fix:** Use `useRef(false)` flag. Set `true` after first run. Reset only on intentional user actions (e.g., manual refresh).
+
+## 114. React Callback Ref for MUI Popper Anchors (React Compiler Compliance)
+
+**Added:** 2026-03-02 | **Source:** Runbooks | **Status:** consolidated-into-AP111
+
+**Category:** frontend-pattern
+**Context:** MUI Popper needs `anchorEl` during render. `useRef` + `ref.current` triggers React Compiler's refs rule.
+**Fix:** Use callback ref with `useState`: `const [anchorEl, setAnchorEl] = useState(null)` then `<Button ref={setAnchorEl}>`. See also KG#6.
+
+### Consolidation victims: Windows shell interop (merged into AP#73)
+
+## 75. Start-Job Timeout for Commands That Might Hang
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** consolidated-into-AP73
+
+**Category:** platform-workaround
+**Context:** Windows Store Python aliases hang forever. `command -v` resolves them as valid but `& py --version` blocks.
+**Fix:** Wrap in `Start-Job` + `Wait-Job -Timeout 5`. Stop and remove job if timeout. 5s catches hangs while allowing slow tools.
+
+## 76. PowerShell Temp File for Complex Commands from MSYS Bash
+
+**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** consolidated-into-AP73
+
+**Category:** platform-workaround
+**Context:** Inline PowerShell from MSYS bash breaks with `$env:PATH`, special chars. `cmd.exe /c` swallows output.
+**Fix:** Write temp `.ps1` file using single-quoted heredoc (`'PSEOF'`), execute with `powershell.exe -NoProfile -File /tmp/cmd.ps1 2>&1`.

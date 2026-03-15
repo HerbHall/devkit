@@ -1,7 +1,7 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 90
+entry_count: 60
 last_updated: "2026-03-15"
 ---
 
@@ -16,21 +16,6 @@ Platform-specific issues, tool quirks, and surprising behaviors discovered throu
 **Platform:** Windows (MSYS_NT)
 **Issue:** MSYS bash auto-translates Unix-style paths to Windows paths. Paths starting with `/c/` become `C:\`.
 **Fix:** Use `MSYS_NO_PATHCONV=1` prefix or double-slash `//` to prevent translation.
-
-## 2. GitHub Branch Protection Requires --admin for Merge
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Platform:** GitHub
-**Fix:** `gh pr merge --admin` bypasses protection when you're the only maintainer.
-
-## 5. Incomplete Range Variable Replacement in Loop Refactoring
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Platform:** Go (all)
-**Issue:** Changing `for _, v := range slice` to `for i := range slice` -- easy to miss `v` references deeper in the loop body.
-**Fix:** Search the entire loop body for the old variable name. Replace ALL occurrences with `slice[i]`.
 
 ## 6. React Compiler Lint: Refs During Render (Consolidated Reference)
 
@@ -48,11 +33,8 @@ Platform-specific issues, tool quirks, and surprising behaviors discovered throu
 **Issue:** MUI `Popper`/`Popover` needs `anchorEl` during render. Using `useRef` + `ref.current` triggers the refs rule.
 **Fix:** Use callback ref with `useState`: `const [anchorEl, setAnchorEl] = useState(null)` then `<Button ref={setAnchorEl}>`.
 
-## 7. React Compiler Lint: Recursive useCallback Self-Reference
+### Recursive useCallback self-reference
 
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Platform:** React 19+ / ESLint react-hooks/immutability rule
 **Issue:** Recursive `useCallback` (e.g., `connect()` calling itself in `onclose`) triggers "Cannot access variable before it is declared".
 **Fix:** Store in a ref: `const connectRef = useRef<() => void>()` and call `connectRef.current?.()` for recursion.
 
@@ -63,14 +45,6 @@ Platform-specific issues, tool quirks, and surprising behaviors discovered throu
 **Platform:** Windows (MSYS_NT)
 **Issue:** `python3`/`python`/`py` resolve to Windows Store alias stubs. `command -v` reports them as found.
 **Fix:** Check with `"$p" --version` (not `command -v`). Include explicit Windows paths in the search loop.
-
-## 11. GitHub API Returns Empty Without User-Agent Header
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Platform:** All (curl, fetch)
-**Issue:** GitHub REST API requires a `User-Agent` header. Requests without it return empty or 403.
-**Fix:** Always include `User-Agent: <app-name>` in GitHub API requests.
 
 ## 12. Swagger Cross-Platform Drift (Consolidated Reference)
 
@@ -94,37 +68,10 @@ Platform-specific issues, tool quirks, and surprising behaviors discovered throu
 **Issue:** Perl regex stripping `x-enum-descriptions` can join adjacent lines.
 **Fix:** Verify YAML integrity after stripping. Consider using yq instead.
 
-## 13. Swagger Drift After Any Handler/Model Change
+### Any handler/model change requires swag init
 
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Platform:** Go (swaggo/swag)
 **Issue:** ANY change to Go types in swagger-annotated handlers requires regenerating the swagger spec.
 **Fix:** Always run `swag init` (or `make swagger`) after modifying handlers/structs. Commit regenerated files alongside Go changes.
-
-## 14. Go Nil Guard: Split Chained Nil Checks Into Separate Blocks
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Platform:** Go (all)
-**Issue:** `if obj.Field == nil || obj.Field.Sub == 0` with logging that accesses `obj.Field.X` panics when `obj.Field` is nil.
-**Fix:** Split into two separate `if` blocks -- check nil first, then check the field.
-
-## 15. Squash-Merged Branches Don't Appear in `git branch --merged`
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Platform:** Git (all)
-**Issue:** After squash-merge, `git branch --merged main` won't list the branch (different hashes).
-**Fix:** Use `git branch -D` (force delete). Verify safety with `git remote prune origin` first.
-
-## 16. GitHub `Closes #N` Comma Syntax Only Closes First Issue
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Platform:** GitHub
-**Issue:** `Closes #1, #2, #3` only auto-closes #1. GitHub requires the keyword before each number.
-**Fix:** Use `Closes #1, Closes #2, Closes #3` or one per line.
 
 ## 17. websocket.Dial Response Body Must Be Closed
 
@@ -176,7 +123,8 @@ Platform-specific issues, tool quirks, and surprising behaviors discovered throu
 
 All parallel agents write to the same working directory. Sort into branches via stage/stash/pop after agents complete.
 
-**Key scenarios:** (1) `git checkout` destroys other agents' unstaged tracked files. (2) `go build` compiles untracked files from other agents -- stash before pushing. (3) Stash during running agents is unsafe -- commit one agent's files first.
+**Key scenarios:** (1) `git checkout` destroys other agents' unstaged tracked files. (2) `go build` compiles untracked files from other agents -- stash before pushing. (3) Stash during running agents is unsafe -- commit one agent's files first. (4) Multiple `git worktree add`/`remove` operations (especially with parallel CC sessions) can flip `core.bare = true` in `.git/config` -- fix with `git config core.bare false`; detect with `git worktree list` showing `(bare)`.
+**See also:** AP#127
 
 ## 26. Sequential Same-File PR Merge Requires Rebase Between Each
 
@@ -218,46 +166,6 @@ All parallel agents write to the same working directory. Sort into branches via 
 **Issue:** `go test -race` fails without CGO. Race detector is implemented in C.
 **Fix:** Run `go test` locally without `-race`. Rely on CI Linux runners for race detection.
 
-## 37. VS Code Locks Workspace Root Directories
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Platform:** Windows (VS Code)
-**Issue:** `rm -rf` fails on directories VS Code has open as workspace roots. File watcher holds handles.
-**Fix:** Remove contents first, then reload VS Code with updated workspace config. Or close VS Code first.
-
-## 38. Playwright getByLabel Resolves Multiple Elements with Toggle Buttons
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Platform:** Playwright (all)
-**Issue:** `getByLabel('Password')` matches both the input and companion toggle button.
-**Fix:** Use `page.locator('#password')` to target by ID instead.
-
-## 47. PowerShell [Mandatory] Validates Each Element in String Arrays
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Platform:** PowerShell 7+
-**Issue:** `[Mandatory] [string[]]` validates each element. Empty strings `''` fail validation.
-**Fix:** Add `[AllowEmptyString()]` alongside `[Mandatory]`.
-
-## 48. Win32_Processor.VirtualizationFirmwareEnabled False When Hypervisor Running
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Platform:** Windows (Hyper-V)
-**Issue:** Returns `$false` when Hyper-V is already active (hypervisor claimed VT-x).
-**Fix:** Use Hyper-V state as fallback: `if ($virtCheck.Met -or $hyperVMet) { # confirmed }`.
-
-## 49. PowerShell Get-ChildItem Misses Dotfiles Without -Force
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Platform:** PowerShell (all)
-**Issue:** `Get-ChildItem` skips dotfiles (hidden on Windows). Filter `credentials*` won't match `.credentials*`.
-**Fix:** Use `-Force` flag AND add separate `.credentials*` filter.
-
 ## 50. Winget Installation Gotchas (Consolidated Reference)
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
@@ -273,30 +181,6 @@ All parallel agents write to the same working directory. Sort into branches via 
 
 **Issue:** Winget-installed tools update registry PATH but current session has old PATH.
 **Fix:** Refresh: `$env:PATH = [Environment]::GetEnvironmentVariable('PATH', 'Machine') + ';' + [Environment]::GetEnvironmentVariable('PATH', 'User')`.
-
-## 54. PowerShell param() and CI Ordering (Consolidated Reference)
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Platform:** PowerShell 7+ / GitHub
-
-### param() must be first executable statement
-
-**Issue:** `Set-StrictMode` before `param()` causes confusing error.
-**Fix:** Only comments and `#Requires` before `param()`.
-
-### Branch protection requires pre-existing CI check names
-
-**Issue:** `required_status_checks.contexts` must reference jobs that have already run.
-**Fix:** Merge CI workflow first, verify job names in Actions tab, then apply protection.
-
-## 56. Subagent pnpm-lock.yaml Drift When Node.js Unavailable
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Platform:** Claude Code (Windows)
-**Issue:** Subagent adds deps to `package.json` but can't run `pnpm install`. CI fails with `ERR_PNPM_OUTDATED_LOCKFILE`.
-**Fix:** Run `pnpm install` after merging subagent changes to update lockfile.
 
 ## 61. Claude Code Settings Scope and Gitignore (Consolidated Reference)
 
@@ -328,45 +212,21 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 
 **Universal fix:** Normalize `\r\n` to `\n` before any string processing on Windows.
 
-## 65. golangci-lint v2 Config Requirements
+## 65. golangci-lint v2 Config and Schema (Consolidated Reference)
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
-**Platform:** Go (all)
+**Platform:** Go (all) / GitHub Actions
+
+### version field required
+
 **Issue:** v1 configs lack `version: "2"` field. v2 exits with "unsupported version" error. Build/test pass fine.
 **Fix:** Add `version: "2"` as first field. Update module path to `.../v2/cmd/golangci-lint`. Use devkit template `project-templates/golangci.yml`.
 
-## 66. golangci-lint-action v7 Runs config verify (Schema Enforcement)
+### Action v7 enforces strict schema
 
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Platform:** GitHub Actions
 **Issue:** v7 enforces strict JSON schema. v2.1 config keys fail with v2.10 schema. `linters-settings:` moved under `linters: settings:`. `issues: exclude-rules:` moved to `linters: exclusions: rules:`.
 **Fix:** Migrate config to v2.10 schema. Use `@v7` (not `@v6`) for golangci-lint v2. Default binary mode (not `goinstall`).
-
-## 67. Agent-Generated Markdown Tables: Pipes in Cells and Missing Columns
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Platform:** All (markdownlint)
-**Issue:** Agent markdown tables have MD056 errors: pipes in code spans parsed as separators, or missing columns.
-**Fix:** Run `npx markdownlint-cli2` on agent `.md` files. Use `&#124;` for pipes in cells. Verify column counts.
-
-## 72. ESLint react-hooks/set-state-in-effect Cannot Be Inline-Disabled
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Platform:** React / ESLint
-**Issue:** This rule does NOT support `// eslint-disable-next-line`. Adding it produces "Unused directive".
-**Fix:** Config-level override only: `"react-hooks/set-state-in-effect": "warn"` in `eslint.config.js`.
-
-## 73. ESLint 10 Breaks react-hooks Plugin Peer Dependency
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Platform:** npm / React
-**Issue:** ESLint 10.x breaks `eslint-plugin-react-hooks` which requires `eslint@^9`.
-**Fix:** Pin: `npm install --save-dev eslint@^9 @eslint/js@^9`.
 
 ## 74. gh repo edit Lacks --disable-* Flags
 
@@ -390,30 +250,6 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 - **Multi-arch:** Must build `linux/amd64` + `linux/arm64` via `docker buildx`.
 - **MUI v5:** `@docker/docker-mui-theme` pins v5. Use `InputProps` not `slotProps.input`.
 - **Update after rebuild:** Use `docker extension install` (not `update`) -- tracks by digest.
-
-## 79. GitHub Secrets UI Is Buried Under Expandable Sidebar
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Platform:** GitHub
-**Issue:** Repo secrets are under Settings > Secrets and variables > Actions (expandable submenu).
-**Fix:** Use CLI: `gh secret set SECRETNAME`. `gh secret list` to verify.
-
-## 80. PowerShell StrictMode Throws on Nonexistent Property Access
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Platform:** PowerShell 7+
-**Issue:** Under StrictMode, accessing nonexistent property on PSCustomObject throws -- even in conditionals.
-**Fix:** Use `$obj.PSObject.Properties.Match('prop').Count -gt 0`. Does NOT affect hashtables.
-
-## 86. grep -c With || echo "0" Doubles Output on No Match
-
-**Added:** 2026-03-02 | **Source:** DevKit | **Status:** active
-
-**Platform:** Bash (all, especially CI)
-**Issue:** `grep -c` outputs "0" AND exits code 1. `$(grep -c ... || echo "0")` captures "0\n0", breaking arithmetic.
-**Fix:** Use `|| true` instead of `|| echo "0"`.
 
 ## 87. Vitest Cannot Resolve Browser-Only npm Package Exports
 
@@ -516,16 +352,7 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Issue:** Copilot sub-PRs target the feature branch, not `main`. After squash-merge, merging these lands commits on a dead branch.
 **Fix:** Check target first: `gh pr view <number> --json baseRefName,state`. If base is not `main`, apply fixes manually on a new branch.
 
-## 100. Large Input Block Ignored at Task Transition (Variant B Stall)
-
-**Added:** 2026-03-07 | **Source:** DevKit | **Status:** active
-
-**Platform:** Claude Code (all)
-**Issue:** After completing a multi-step task, CC displays a pasted large input block as text rather than executing it. Context saturation at task boundaries.
-**Fix:** Kill session and open fresh. Do NOT attempt multiple `?` prompts -- if it fails twice, session is unrecoverable.
-**Prevention:** Keep handoff prompts under 40 lines. Run `/rules-compact` if rules files approach 40k.
-
-## 104. PowerShell Output Capture Gotchas (Consolidated Reference)
+## 104. PowerShell Tool and Variable Gotchas (Consolidated Reference)
 
 **Added:** 2026-03-08 | **Source:** DevKit | **Status:** active
 
@@ -540,6 +367,16 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 
 **Issue:** `& command 2>&1 | Out-String` merges stderr into stdout. Parsing line-by-line produces garbage entries.
 **Fix:** Redirect stderr to a temp file: `$out = & command 2>$tmpErr | Out-String`. Check `$LASTEXITCODE` and read `$tmpErr` on failure.
+
+### Invoke-ScriptAnalyzer has no -Include parameter
+
+**Issue:** `-Include` parameter does not exist. Copilot and LLMs commonly generate this invalid syntax.
+**Fix:** Use `Get-ChildItem -Recurse -Filter '*.ps1'` to collect files, then pipe each to `Invoke-ScriptAnalyzer`.
+
+### $args is an automatic variable
+
+**Issue:** Using `$args` as a local variable triggers `PSAvoidAssignmentToAutomaticVariable`.
+**Fix:** Rename to `$cmdArgs`, `$labelArgs`, `$cliArgs`, or any non-reserved name. Other automatic variables: `$error`, `$input`, `$matches`, `$myinvocation`, `$psboundparameters`, `$pscmdlet`, `$psscriptroot`.
 
 ## 107. gh CLI Parameter Gotchas (Consolidated Reference)
 
@@ -586,30 +423,18 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Issue:** Inserting mid-list without renumbering subsequent items triggers MD029.
 **Fix:** Update every item number from insertion point to end in a single edit.
 
-## 112. Invoke-ScriptAnalyzer Has No -Include Parameter
+### Pipes in table cells parsed as column separators
 
-**Added:** 2026-03-09 | **Source:** DevKit | **Status:** active
-
-**Platform:** PowerShell / PSScriptAnalyzer
-**Issue:** `-Include` parameter does not exist. Copilot and LLMs commonly generate this invalid syntax.
-**Fix:** Use `Get-ChildItem -Recurse -Filter '*.ps1'` to collect files, then pipe each to `Invoke-ScriptAnalyzer`.
-
-## 113. PowerShell $args Is an Automatic Variable
-
-**Added:** 2026-03-09 | **Source:** DevKit | **Status:** active
-
-**Platform:** PowerShell (all)
-**Issue:** `$args` is a PowerShell automatic variable containing the unbound parameters for the current function or script. Using it as a local variable name (e.g., `$args = @('label', 'create', ...)`) triggers `PSAvoidAssignmentToAutomaticVariable`. PSScriptAnalyzer flags it as an error.
-**Fix:** Rename to `$cmdArgs`, `$labelArgs`, `$cliArgs`, or any non-reserved name. Full list of automatic variables: `$args`, `$error`, `$input`, `$matches`, `$myinvocation`, `$ofs`, `$profile`, `$psboundparameters`, `$pscmdlet`, `$psscriptroot`, etc.
-**See also:** KG#104 (PSUseDeclaredVarsMoreThanAssignments -- related PSScriptAnalyzer surface)
+**Issue:** Agent markdown tables have MD056 errors: pipes in code spans parsed as separators, or missing columns.
+**Fix:** Run `npx markdownlint-cli2` on agent `.md` files. Use `&#124;` for pipes in cells. Verify column counts.
 
 ## 114. Set-StrictMode in Dot-Sourced PS Lib Pollutes Caller Scope
 
 **Added:** 2026-03-09 | **Source:** DevKit | **Status:** active
 
 **Platform:** PowerShell (all)
-**Issue:** `Set-StrictMode -Version Latest` at the top level of a dot-sourced `.ps1` lib file (`. "$PSScriptRoot\lib\foo.ps1"`) propagates to the calling script's scope and all subsequently dot-sourced files. This silently tightens rules in callers that didn't opt in and can cause unexpected runtime errors.
-**Fix:** Do NOT put `Set-StrictMode` in dot-sourced library files. Set it only in the entry-point script (`setup.ps1`, `new-project.ps1`, etc.) that owns its own execution context.
+**Issue:** `Set-StrictMode -Version Latest` at the top level of a dot-sourced `.ps1` lib file propagates to the calling script's scope and all subsequently dot-sourced files.
+**Fix:** Do NOT put `Set-StrictMode` in dot-sourced library files. Set it only in the entry-point script that owns its own execution context.
 
 ## 115. TypeScript API Interface Phantom Field Drift from Go Backend
 
@@ -678,21 +503,26 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Issue:** Account API tokens fail on `/memberships` (error 10001) and `/user/tokens/verify` (error 9109). Wrangler calls `/memberships` on startup and fails with "Unable to authenticate request."
 **Fix:** Set `CLOUDFLARE_ACCOUNT_ID` env var alongside Account API token. Wrangler skips memberships lookup when account ID is explicit. User API tokens work without this workaround.
 
-## 123. Gitea API Token from Git Credential Manager
+## 123. Gitea API and Actions Gotchas (Consolidated Reference)
 
 **Added:** 2026-03-14 | **Source:** Synapset | **Status:** active
 
 **Platform:** Gitea / Git (all)
+
+### API token from Git Credential Manager
+
 **Issue:** When `tea` CLI is unavailable, need Gitea token for API calls.
 **Fix:** Extract from git credential manager: `git credential fill <<< 'protocol=https\nhost=gitea.example.com' | grep password`. Use with `Authorization: token` header. Gitea REST API is largely GitHub-compatible.
 
-## 124. Gitea PR Merge After Rebase Needs Pause
+### PR merge after rebase needs pause
 
-**Added:** 2026-03-14 | **Source:** Synapset | **Status:** active
-
-**Platform:** Gitea
 **Issue:** After force-pushing a rebased branch, Gitea's merge API may reject immediately with "not mergeable" while it recalculates merge status.
 **Fix:** Add a brief pause (2-3 seconds) between force-push and merge API call. Check mergeable status before merging.
+
+### GITEA_ prefix reserved for secret names
+
+**Issue:** Creating a secret starting with `GITEA_` via API returns `{"message":"invalid secret name"}`. Undocumented.
+**Fix:** Use a different prefix (e.g., `CI_GITEA_TOKEN` instead of `GITEA_TOKEN`). Workflows referencing `secrets.GITEA_TOKEN` silently get empty values.
 
 ## 125. go:embed Cache Misses Embedded File Changes
 
@@ -711,13 +541,21 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Issue:** Funnel returns "Forbidden: invalid Host header" when accessed from a device within the same tailnet. Intra-tailnet traffic bypasses Funnel's public ingress path via WireGuard. External clients work fine.
 **Fix:** Use Cloudflare Tunnel instead of Tailscale Funnel for universal access (both internal and external clients).
 
-## 127. sqlite-vec vec0 Dimension Must Match Embedding Provider
+## 127. sqlite-vec Virtual Table Gotchas (Consolidated Reference)
 
 **Added:** 2026-03-14 | **Source:** Synapset | **Status:** active
 
 **Platform:** SQLite / sqlite-vec
+
+### Dimension must match embedding provider
+
 **Issue:** vec0 virtual table dimension (`float[N]`) is fixed at CREATE time. Hardcoding 1536 (OpenAI) but using Ollama (768) at runtime causes "Dimension mismatch" on insert.
 **Fix:** Pass dims from embedding provider at DB init time. Don't use const schema strings for vec0 -- make dimension configurable.
+
+### No UPDATE support
+
+**Issue:** `vec0` virtual tables do NOT support SQL UPDATE. Attempting to update an embedding in-place fails silently or errors.
+**Fix:** DELETE old row then INSERT new one. Wrap batch re-embedding in a transaction.
 
 ## 128. Claude Code User-Scope MCP Config Location Is ~/.claude.json
 
@@ -734,15 +572,6 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Platform:** Claude Code (Linux)
 **Issue:** `claude --dangerously-skip-permissions` exits with error when running as root/sudo. Blocks headless agent use in systemd services running as root.
 **Fix:** Run Claude Code as a non-root service user. Create a dedicated user with shell access.
-
-## 130. git worktree Operations Can Flip core.bare=true
-
-**Added:** 2026-03-15 | **Source:** Samverk | **Status:** active
-
-**Platform:** Git (all)
-**Issue:** Multiple `git worktree add`/`remove` operations (especially with parallel CC sessions) can flip `core.bare = true` in the main repo's `.git/config`. All normal git operations fail.
-**Fix:** `git -C <repo> config core.bare false`. Detection: `git worktree list` shows main as `(bare)`.
-**See also:** KG#25, AP#127
 
 ## 131. git init Defaults to master on CI Runners
 
@@ -792,31 +621,6 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Issue:** SPA catch-all route (`/ -> spaHandler`) intercepts paths not explicitly registered for all HTTP methods. Registering only `POST /mcp` causes GET/DELETE to fall through to SPA, returning HTML instead of JSON.
 **Fix:** Register without method prefix: `mux.Handle("/mcp", handler)` when the handler routes methods internally.
 **See also:** KG#28 (Go 1.22+ route pattern panic)
-
-## 137. sqlite-vec vec0 Virtual Tables Do Not Support UPDATE
-
-**Added:** 2026-03-15 | **Source:** Synapset | **Status:** active
-
-**Platform:** SQLite / sqlite-vec
-**Issue:** `vec0` virtual tables do NOT support SQL UPDATE. Attempting to update an embedding in-place fails silently or errors.
-**Fix:** DELETE old row then INSERT new one. Wrap batch re-embedding in a transaction.
-**See also:** KG#127 (vec0 dimension mismatch)
-
-## 138. Gitea Reserves GITEA_ Prefix for Actions Secret Names
-
-**Added:** 2026-03-15 | **Source:** Synapset | **Status:** active
-
-**Platform:** Gitea Actions
-**Issue:** Creating a secret starting with `GITEA_` via API returns `{"message":"invalid secret name"}`. Undocumented.
-**Fix:** Use a different prefix (e.g., `CI_GITEA_TOKEN` instead of `GITEA_TOKEN`). Workflows referencing `secrets.GITEA_TOKEN` silently get empty values.
-
-## 139. ncruces/go-sqlite3 WASM Driver Is Not Goroutine-Safe
-
-**Added:** 2026-03-15 | **Source:** Synapset | **Status:** active
-
-**Platform:** Go (all)
-**Issue:** WASM-based SQLite driver has single linear memory space. Concurrent goroutine access causes `panic: wasm error: out of bounds memory access`.
-**Fix:** Use `sync.Mutex` or `*sql.DB` with `SetMaxOpenConns(1)`. Alternative: switch to CGO-based driver (`mattn/go-sqlite3`) which supports SQLite threading modes.
 
 ## 140. nologin Shell Masks Real Errors for Service Users
 
