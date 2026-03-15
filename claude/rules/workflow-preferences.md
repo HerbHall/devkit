@@ -149,3 +149,11 @@ When working in a project context (e.g., Samverk), do NOT directly edit files in
 - Include enough detail to reproduce/implement the fix
 - The fix gets implemented when actively working in that project's context
 - This prevents projects from becoming coupled and keeps sessions focused
+
+## 17. Cross-Project Agent Boundary Protocol
+
+When running parallel CC agents (one per project) in separate VS Code windows:
+
+- **Read** across projects is always OK
+- **Write** requires explicit user direction
+- Three modes: (1) Issue (default) -- create in target repo, (2) Handoff -- provide summary for user to relay, (3) Direct access -- only when user confirms other agent is free

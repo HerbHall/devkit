@@ -1,8 +1,8 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 76
-last_updated: "2026-03-14"
+entry_count: 90
+last_updated: "2026-03-15"
 ---
 
 # Known Gotchas
@@ -557,6 +557,11 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Issue:** `gh issue create --milestone 5` fails -- CLI expects the milestone TITLE, not its number.
 **Fix:** Pass title directly: `gh issue create --milestone "Gitea Migration"`. Note: REST API (`-F milestone=5`) does accept numbers.
 
+### No milestone subcommand
+
+**Issue:** `gh milestone` does not exist. Must use `gh api` directly.
+**Fix:** Create: `gh api repos/OWNER/REPO/milestones -X POST -f title=...`. List: `gh api repos/OWNER/REPO/milestones --jq '.[] | {number, title}'`. Assign: `gh api repos/OWNER/REPO/issues/N -X PATCH -F milestone=M`.
+
 ## 110. GitHub Actions New CI Job Uses Base Branch Workflow, Not PR Branch
 
 **Added:** 2026-03-09 | **Source:** DevKit | **Status:** active
@@ -696,6 +701,7 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Platform:** Go (all)
 **Issue:** Go build cache doesn't detect changes to `go:embed` files when Go source hasn't changed. Embedded SPA files (`web/dist/` -> `internal/server/static/`) stay stale after frontend rebuild, causing deployed binary to serve old JS bundles.
 **Fix:** Always use `make build` or `make redeploy` for projects with embedded SPAs. Consider `go build -a` or touching a Go source file after SPA rebuild to bust cache.
+**Deploy:** Ensure deploy scripts rebuild the SPA before `go build`. Skipping frontend build silently serves stale JS bundles baked in at compile time.
 
 ## 126. Tailscale Funnel Rejects Host Header from Within Tailnet
 
@@ -720,3 +726,119 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Platform:** Claude Code (all)
 **Issue:** User-scope MCP servers go in `~/.claude.json`, NOT `~/.claude/.mcp.json` or `~/.claude/settings.json`. Easy to put config in the wrong file.
 **Fix:** Use `claude mcp add --transport http <name> <url> --scope user`. HTTP servers need `"type": "http"` in the JSON config.
+
+## 129. Claude Code --dangerously-skip-permissions Blocked as Root
+
+**Added:** 2026-03-15 | **Source:** Samverk | **Status:** active
+
+**Platform:** Claude Code (Linux)
+**Issue:** `claude --dangerously-skip-permissions` exits with error when running as root/sudo. Blocks headless agent use in systemd services running as root.
+**Fix:** Run Claude Code as a non-root service user. Create a dedicated user with shell access.
+
+## 130. git worktree Operations Can Flip core.bare=true
+
+**Added:** 2026-03-15 | **Source:** Samverk | **Status:** active
+
+**Platform:** Git (all)
+**Issue:** Multiple `git worktree add`/`remove` operations (especially with parallel CC sessions) can flip `core.bare = true` in the main repo's `.git/config`. All normal git operations fail.
+**Fix:** `git -C <repo> config core.bare false`. Detection: `git worktree list` shows main as `(bare)`.
+**See also:** KG#25, AP#127
+
+## 131. git init Defaults to master on CI Runners
+
+**Added:** 2026-03-15 | **Source:** Samverk | **Status:** active
+
+**Platform:** GitHub Actions (Ubuntu)
+**Issue:** `git init` on CI runners defaults to `master`, not `main`. Tests referencing `origin/main` fail on CI but pass locally.
+**Fix:** Always use `git init --initial-branch=main` for bare repos, `git checkout -b main` after init for working repos in test helpers.
+
+## 132. systemd ProtectSystem=strict Blocks Worktree in /tmp
+
+**Added:** 2026-03-15 | **Source:** Samverk | **Status:** active
+
+**Platform:** Linux (systemd)
+**Issue:** `ProtectSystem=strict` makes `/tmp` read-only, blocking `git worktree add` for agent isolation.
+**Fix:** Use `ProtectSystem=full` with `ReadWritePaths=/tmp /var/lib/<service>`. Add `PrivateTmp=no` and `ProtectHome=no` for agents needing home directory access.
+
+## 133. LXC Unprivileged Container Resize Requires Stop
+
+**Added:** 2026-03-15 | **Source:** Samverk | **Status:** active
+
+**Platform:** Proxmox / LXC
+**Issue:** `resize2fs` cannot run inside unprivileged container (device not accessible) or from host while running (device busy). Proxmox config does NOT auto-update after manual LVM resize.
+**Fix:** `pct stop NNN` -> `e2fsck -f -y` -> `resize2fs` -> `pct start NNN` (~10s downtime). Manually edit `/etc/pve/lxc/NNN.conf` to update `size=XG`.
+
+## 134. Dispatcher Restart Requires SIGKILL with In-Flight Subprocesses
+
+**Added:** 2026-03-15 | **Source:** Samverk | **Status:** active
+
+**Platform:** Linux (systemd)
+**Issue:** `systemctl restart` hangs in `deactivating (stop-sigterm)` when claude CLI subprocesses have active network connections and don't respond to SIGTERM.
+**Fix:** `systemctl kill <service> --signal=SIGKILL` then `systemctl start`. Consider `TimeoutStopSec=30` in unit file.
+
+## 135. MCP Streamable HTTP Requires GET for SSE + OAuth 2.1 for Claude Mobile
+
+**Added:** 2026-03-15 | **Source:** Samverk | **Status:** active
+
+**Platform:** MCP (all)
+**Issue:** (1) MCP spec requires endpoint to handle both POST (messages) and GET (SSE streams). Claude mobile sends GET. (2) Claude.ai Custom Connectors require OAuth 2.1 flow via `/.well-known/oauth-authorization-server`.
+**Fix:** Register handler without method prefix (go-sdk `StreamableHTTPHandler` handles all methods). Implement OAuth 2.1 discovery endpoint for Custom Connectors.
+
+## 136. SPA Catch-All Swallows Co-Hosted API Routes in Go ServeMux
+
+**Added:** 2026-03-15 | **Source:** Samverk | **Status:** active
+
+**Platform:** Go 1.22+ (ServeMux)
+**Issue:** SPA catch-all route (`/ -> spaHandler`) intercepts paths not explicitly registered for all HTTP methods. Registering only `POST /mcp` causes GET/DELETE to fall through to SPA, returning HTML instead of JSON.
+**Fix:** Register without method prefix: `mux.Handle("/mcp", handler)` when the handler routes methods internally.
+**See also:** KG#28 (Go 1.22+ route pattern panic)
+
+## 137. sqlite-vec vec0 Virtual Tables Do Not Support UPDATE
+
+**Added:** 2026-03-15 | **Source:** Synapset | **Status:** active
+
+**Platform:** SQLite / sqlite-vec
+**Issue:** `vec0` virtual tables do NOT support SQL UPDATE. Attempting to update an embedding in-place fails silently or errors.
+**Fix:** DELETE old row then INSERT new one. Wrap batch re-embedding in a transaction.
+**See also:** KG#127 (vec0 dimension mismatch)
+
+## 138. Gitea Reserves GITEA_ Prefix for Actions Secret Names
+
+**Added:** 2026-03-15 | **Source:** Synapset | **Status:** active
+
+**Platform:** Gitea Actions
+**Issue:** Creating a secret starting with `GITEA_` via API returns `{"message":"invalid secret name"}`. Undocumented.
+**Fix:** Use a different prefix (e.g., `CI_GITEA_TOKEN` instead of `GITEA_TOKEN`). Workflows referencing `secrets.GITEA_TOKEN` silently get empty values.
+
+## 139. ncruces/go-sqlite3 WASM Driver Is Not Goroutine-Safe
+
+**Added:** 2026-03-15 | **Source:** Synapset | **Status:** active
+
+**Platform:** Go (all)
+**Issue:** WASM-based SQLite driver has single linear memory space. Concurrent goroutine access causes `panic: wasm error: out of bounds memory access`.
+**Fix:** Use `sync.Mutex` or `*sql.DB` with `SetMaxOpenConns(1)`. Alternative: switch to CGO-based driver (`mattn/go-sqlite3`) which supports SQLite threading modes.
+
+## 140. nologin Shell Masks Real Errors for Service Users
+
+**Added:** 2026-03-15 | **Source:** Samverk | **Status:** active
+
+**Platform:** Linux (all)
+**Issue:** Service users with `/usr/sbin/nologin` show "This account is currently not available" for ALL `su - user` commands. Masks the real error.
+**Fix:** Use `su -s /bin/bash user` to override shell, or `usermod -s /bin/bash user` permanently.
+
+## 141. SQLite BUSY with Two-Process Sharing Without WAL
+
+**Added:** 2026-03-15 | **Source:** Samverk | **Status:** active
+
+**Platform:** SQLite (all)
+**Issue:** Two systemd services sharing the same SQLite DB without WAL mode cause SQLITE_BUSY. Writes from one process are silently lost.
+**Fix:** Enable WAL mode (`PRAGMA journal_mode=WAL`) and set busy timeout (`PRAGMA busy_timeout=5000`) at connection open time.
+
+## 142. Stale Env Var Cross-Service Provider Confusion
+
+**Added:** 2026-03-15 | **Source:** Samverk | **Status:** active
+
+**Platform:** All (AI services)
+**Issue:** Stale API keys in env vars (e.g., expired `OPENAI_API_KEY`) silently override intended provider selection. Local process picks up stale key instead of configured provider.
+**Fix:** Remove env vars immediately when a service subscription expires. Audit: `[Environment]::GetEnvironmentVariable('VAR', 'User')` on Windows.
+**See also:** KG#120 (fine-grained PAT shadows gh keyring)
