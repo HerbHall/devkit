@@ -36,8 +36,8 @@ The existing `SessionStart.sh` hook performs five functions:
 The current `UserPromptSubmit` hook uses the regex
 `^(?!/)(?!\d{1,2}$)` to skip slash commands and bare numeric menu
 selections (KG#10). It fires a `type: "prompt"` hook that passively
-monitors for autolearn opportunities and suggests `/autolearn` when
-notable patterns are discovered.
+monitors for autolearn opportunities and runs `/autolearn` autonomously
+when notable patterns are discovered.
 
 ### Known Gotchas
 
@@ -223,8 +223,8 @@ the session ends.
 
 - **Reflect reminder** -- inject a brief reminder to run `/autolearn`
   if the session involved substantial work. This complements the
-  autolearn pattern in CLAUDE.md that asks Claude to suggest
-  `/autolearn` proactively.
+  autolearn pattern in CLAUDE.md that instructs Claude to run
+  `/autolearn` autonomously at task completion boundaries.
 
 - **Uncommitted changes warning** -- run `git status` and warn if
   there are uncommitted changes that might be lost.
