@@ -79,7 +79,11 @@ Track validation results for the session summary.
 
 ### 5. Store New Entities
 
-Create entities for all NEW findings that passed validation:
+Store in **both** MCP Memory and Synapset for each finding that passed validation.
+
+**MCP Memory (knowledge graph):**
+
+Create entities for NEW findings:
 
 ```text
 create_entities: [
@@ -96,6 +100,17 @@ add_observations: [
   ...
 ]
 ```
+
+**Synapset (semantic vector memory):**
+
+If Synapset MCP tools are available, also store each HIGH-confidence finding:
+
+```text
+store_memory(pool: "devkit", text: "<description>",
+  metadata: { source: "<project>", category: "<type>", confidence: "HIGH", date: "YYYY-MM-DD" })
+```
+
+Use pool `devkit` for cross-project learnings. Use project name as pool for project-specific. If Synapset unavailable, skip -- MCP Memory is sufficient.
 
 ### 6. Create Relations
 
