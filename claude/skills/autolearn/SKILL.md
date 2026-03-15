@@ -56,36 +56,53 @@ This prevents projects from modifying symlinked rules files directly. Symlinks p
 - references/validation-pipeline.md -- Five-stage validation gate for proposed rules
 </references>
 
-<intake>
-**reflect triggered.** What would you like to reflect on?
-
-1. **Quick reflect** -- Fast end-of-task assessment (what worked, what didn't, store key learnings)
-2. **Session review** -- Comprehensive session retrospective with full MCP Memory sync
-3. **Update knowledge** -- Merge accumulated learnings into rules files
-4. **Skill improvement** -- Analyze past mistakes and improve existing skills/agents
-5. **Audit rules** -- Health check: stale entries, missing metadata, duplicates, cross-references
-
-Type a number, keyword, or **skip** to dismiss.
-
-> Note: This skill blocks on user input. If triggered unintentionally,
-> type **skip** or **dismiss** to cancel.
-</intake>
-
 <routing>
-| Response | Workflow |
-|----------|----------|
-| 1, "quick reflect", "fast reflect", "brief reflect" | workflows/quick-reflect.md |
-| 2, "session review", "comprehensive review", "full review" | workflows/session-review.md |
-| 3, "update knowledge", "merge rules", "update rules" | workflows/update-knowledge.md |
-| 4, "skill improvement", "improve skills", "improve agents" | workflows/skill-improvement.md |
-| 5, "audit rules", "rules health", "stale rules" | workflows/audit-rules.md |
 
-If the user types **skip** or **dismiss**, briefly confirm cancellation (e.g., "reflect cancelled.") and end the skill without running any workflow.
+This skill runs **autonomously** -- no menu, no user input required. It selects
+the appropriate workflow based on args (if provided) or session context analysis.
 
-If the input does not clearly match any option above and is not "skip" or "dismiss", respond:
-"reflect was triggered but your input didn't match a workflow. Options: 1-5 (listed above). Type **skip** to dismiss."
+## Arg-Based Routing (explicit)
 
-**After reading the workflow, follow it exactly.**
+When invoked with an argument (`/autolearn <arg>`), route directly:
+
+| Arg | Workflow |
+|-----|----------|
+| `reflect` | workflows/quick-reflect.md |
+| `review` | workflows/session-review.md |
+| `update` | workflows/update-knowledge.md |
+| `improve` | workflows/skill-improvement.md |
+| `audit` | workflows/audit-rules.md |
+
+## Context-Based Routing (no args)
+
+When invoked without args (bare `/autolearn` or triggered autonomously after
+a task), analyze the session to select the best workflow:
+
+| Session Signal | Workflow | Rationale |
+|---------------|----------|-----------|
+| Short session, 1-2 tasks, few corrections | `quick-reflect` | Fast capture, minimal overhead |
+| Long session, multiple tasks, several corrections/gotchas | `session-review` | Comprehensive extraction justified |
+| Many MCP Memory entries not yet in rules files (DevKit context) | `update-knowledge` | Rules files need sync |
+| Recurring mistakes across session (same error type 2+ times) | `skill-improvement` | Systemic fix needed |
+| No specific learnings but rules files are stale (DevKit context) | `audit-rules` | Maintenance opportunity |
+
+**Default**: If signals are ambiguous, use `quick-reflect`. It is the lightest
+workflow and always appropriate.
+
+## Autonomous Trigger Guidelines
+
+This skill may be triggered autonomously (not just by `/autolearn`) when:
+
+- A task completes and corrections, gotchas, or notable patterns were encountered
+- The session is ending (user signals they are done or conversation is long)
+- A significant architectural decision was made with rationale worth preserving
+
+When running autonomously, announce briefly what you are doing:
+`"Capturing learnings from this task."` -- then proceed with the workflow.
+Do not ask for permission. Do not show a menu.
+
+**After selecting and reading the workflow, follow it exactly.**
+
 </routing>
 
 <tool_restrictions>
