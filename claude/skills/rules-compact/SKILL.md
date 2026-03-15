@@ -63,6 +63,8 @@ For each stale entry:
 1. Copy the full entry text to `claude/rules/archive/<filename>`
 2. Add under a dated header: `## Archived YYYY-MM-DD: Rules compaction`
 3. Remove the entry from the active file
+4. If Synapset MCP is available, store the archived entry for long-tail search:
+   `store_memory(pool: "devkit", content: "<archived entry>", category: "general", tags: "archived,<entry_id>", summary: "<title> (archived)")`
 
 ## Step 4: Deduplicate
 

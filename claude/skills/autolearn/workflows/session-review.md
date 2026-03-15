@@ -112,6 +112,16 @@ store_memory(pool: "devkit", text: "<description>",
 
 Use pool `devkit` for cross-project learnings. Use project name as pool for project-specific. If Synapset unavailable, skip -- MCP Memory is sufficient.
 
+**Batch ingest sync:** When adding entries to Tier 2 rules files (AP/KG) during this session -- whether from session learnings or issue ingestion -- also store each new entry in Synapset:
+
+```text
+store_memory(pool: "devkit", content: "<full entry text including title, context, and fix>",
+  category: "<pattern|gotcha|correction>", source: "<project>",
+  tags: "<entry_id>,<category>", summary: "<entry title>")
+```
+
+This ensures the Synapset corpus stays in sync with rules files. Without this step, batch-ingested entries are invisible to semantic search.
+
 ### 6. Create Relations
 
 Link learnings to their context:
