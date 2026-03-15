@@ -52,9 +52,9 @@ If a match exists, plan to add an observation instead of creating a new entity.
 
 ### 5. Store Learnings
 
-For each HIGH-confidence finding:
+For each HIGH-confidence finding, store in **both** MCP Memory and Synapset:
 
-**If new entity needed:**
+**MCP Memory (knowledge graph):**
 
 ```text
 create_entities: [{
@@ -64,24 +64,18 @@ create_entities: [{
 }]
 ```
 
-**If existing entity found:**
+If existing entity found, use `add_observations` instead. Create relations with `create_relations` if applicable.
+
+**Synapset (semantic vector memory):**
+
+If Synapset MCP tools are available, also store in the appropriate pool:
 
 ```text
-add_observations: [{
-  entityName: "<existing-name>",
-  contents: ["[YYYY-MM-DD] (source: <project>) (confidence: HIGH) Additional context: <description>"]
-}]
+store_memory(pool: "devkit", text: "<description of the learning>",
+  metadata: { source: "<project>", category: "<type>", confidence: "HIGH", date: "YYYY-MM-DD" })
 ```
 
-**Create relations if applicable:**
-
-```text
-create_relations: [{
-  from: "<learning-name>",
-  to: "<project-name>",
-  relationType: "DISCOVERED_IN"
-}]
-```
+Use pool `devkit` for cross-project learnings. Use the project name as pool for project-specific learnings. If Synapset tools are not available, skip -- MCP Memory is sufficient.
 
 ### 6. Scope Assessment and Rules Update
 

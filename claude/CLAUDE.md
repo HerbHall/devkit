@@ -121,6 +121,17 @@ Use these MCP-provided tools proactively when relevant:
 
 ### Knowledge & Memory
 
+- **Synapset**: Semantic vector memory across sessions and projects
+  - `store_memory` -- store a learning with embedding (pool: `devkit`
+    for cross-project, project name for project-specific)
+  - `search_memory` -- semantic search in a pool (returns ranked
+    matches by relevance, not just keyword hits)
+  - `search_all` -- cross-pool search for patterns that span projects
+  - `list_pools` / `list_memories` / `delete_memory` -- manage pools
+  - Endpoint: `https://synapset.herbhall.net/mcp` (Streamable HTTP,
+    POST only -- GET hangs by design)
+  - Use for autolearn storage, pre-task pattern lookup, and
+    cross-project knowledge retrieval
 - **Memory**: Persistent knowledge graph across sessions
   - `create_entities` / `create_relations` for project knowledge,
     decisions, patterns
@@ -220,6 +231,8 @@ Discover and add new MCP servers at runtime:
 ### Best Practices
 
 - Check Context7 before writing code using external libraries
+- Search Synapset (`search_memory`, pool: `devkit`) before starting
+  tasks to find relevant patterns and gotchas
 - Store important project decisions in Memory knowledge graph
 - Use Sequential Thinking for complex debugging or architecture
 - Use MCP_DOCKER GitHub tools for cross-repo searches and bulk

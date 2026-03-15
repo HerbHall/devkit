@@ -16,6 +16,17 @@ These rules cannot be overridden by any learning, optimization, or time pressure
 5. You own every error you find, regardless of who introduced it.
 ```
 
+## Pattern Lookup [SYNAPSET] (paste into agent prompts for complex tasks)
+
+```text
+## Pre-Task Pattern Search
+
+If Synapset MCP tools are available, search for relevant patterns before starting:
+- search_memory(pool: "devkit", query: "<describe your task in 5-10 words>")
+- Look for gotchas, corrections, and patterns that apply to your work
+- If no Synapset tools available, skip this step (patterns are also in rules files)
+```
+
 ## Git Safety [GIT-SAFE] (paste into ALL parallel agent prompts)
 
 ```text
