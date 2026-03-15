@@ -1,8 +1,8 @@
 ---
 description: Learned patterns from past sessions. Read when encountering similar situations.
 tier: 2
-entry_count: 74
-last_updated: "2026-03-14"
+entry_count: 77
+last_updated: "2026-03-15"
 ---
 
 # Learned Patterns
@@ -705,3 +705,27 @@ ignores PYTHONIOENCODING, so it needs its own `encoding=` argument.
 **Context:** Using `isolation: "worktree"` in Agent tool calls gives each parallel agent a fully isolated git copy. No shared working tree conflicts (solves KG#25). Each agent commits to its own branch in its own worktree.
 **Fix:** Use `isolation: "worktree"` for parallel code-gen agents. Merge via API after all complete. Proven: 3 waves x 2 agents = 7 total agents, all CI-clean first pass. Supersedes stash/pop workflow from AP#48 for new work.
 **See also:** KG#25 (parallel agents share working tree), AP#48 (legacy stash/pop approach)
+
+## 128. Safe Deploy Pattern with Idle-Wait Gate for Background Workers
+
+**Added:** 2026-03-15 | **Source:** Samverk | **Status:** active
+
+**Category:** process-pattern
+**Context:** Deploying systems with background workers (dispatchers, agent pools, job queues) must not blindly stop services.
+**Fix:** Five-step pattern: (1) check metrics API for active workers and queue depth, (2) stop task-intake (dispatcher) to prevent new claims, (3) poll until in-flight tasks drain (configurable timeout, e.g., 10min), (4) stop serving process and swap binary, (5) restart and verify health.
+
+## 129. Claude Code Credentials Backup Restoration
+
+**Added:** 2026-03-15 | **Source:** Samverk | **Status:** active
+
+**Category:** tooling
+**Context:** `~/.claude/.credentials.json.bak` may contain valid OAuth tokens after auth issues.
+**Fix:** Copy `.credentials.json.bak` to `.credentials.json` to restore auth without interactive login. Check token validity after restore.
+
+## 130. Dispatcher Overnight Queue Pattern
+
+**Added:** 2026-03-15 | **Source:** Samverk | **Status:** active
+
+**Category:** workflow-pattern
+**Context:** Automated issue processing via agent dispatcher needs routing and failure handling.
+**Fix:** Label issues `status:queued` for overnight processing. Route short issues to triage/haiku. Mark hung issues `status:needs-human` to stop retries.
