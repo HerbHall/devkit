@@ -15,7 +15,7 @@ Active maintenance and execution. AI tooling methodology, Claude Code configurat
 ## What Is Running
 
 - Symlinked rules loaded by all Claude Code sessions via ~/.claude/
-- 21 skills, 7 agents, 11 rules files, 128 active patterns (AP: 67, KG: 61)
+- 22 skills, 7 agents, 11 rules files, 128 active patterns (AP: 67, KG: 61)
 - SessionStart hook for context injection
 - Credentials migrated to PowerShell SecretStore vault (HomeLabVault)
 
@@ -25,13 +25,14 @@ Active maintenance and execution. AI tooling methodology, Claude Code configurat
 
 ## Queued
 
-- Synapset deep migration -- evaluate replacing rules file reads with `search_memory` calls (semantic > keyword matching). Current: dual-store (rules files + Synapset)
+- Sync batch-ingested entries to Synapset pool (#333) -- closes coverage gap found during deep migration evaluation
 
 ## Recently Completed
 
 - **v2.4.0 release** -- autonomous autolearn routing (PR #322)
 - Autolearn batch ingest: 15 issues -> 14 KG + 3 AP + 1 WP entries (PR #329)
 - Rules compaction: KG 44k->35k (90->60), AP 38k->35k (77->67) (PR #331)
+- Synapset deep migration evaluated: full migration not viable, dual-store is the target architecture
 - Synapset integration verified working (3 pools, dual-store operational)
 - v2.3.0: Synapset backend, MCP research, cross-ref verification
 

@@ -32,7 +32,7 @@ Setup creates symlinks from `~/.claude/` to the DevKit clone (or copies files in
 | Component | Count | Location |
 |-----------|-------|----------|
 | Rules (auto-loaded every session) | 11 files | `claude/rules/` |
-| Skills (invoke with `/skill-name`) | 21 skills | `claude/skills/` |
+| Skills (invoke with `/skill-name`) | 22 skills | `claude/skills/` |
 | Agent templates | 7 agents | `claude/agents/` |
 | SessionStart hook | 1 | `claude/hooks/` |
 | Setup scripts (PowerShell + legacy bash) | 7+3 | `setup/` + `setup/legacy/` |
@@ -61,7 +61,7 @@ See [Settings Strategy](docs/settings-strategy.md) for the two-layer permission 
 
 | Directory | Purpose |
 |-----------|---------|
-| `claude/` | Global Claude Code config — CLAUDE.md, 11 rules files (150 patterns), 21 skills, 7 agent templates, hooks |
+| `claude/` | Global Claude Code config — CLAUDE.md, 11 rules files (150 patterns), 22 skills, 7 agent templates, hooks |
 | `devspace/` | Workspace shared configs — .editorconfig, .markdownlint.json, VS Code fragments |
 | `docs/` | Human-readable guides — architecture decisions, profile format spec |
 | `machine/` | Machine state snapshots — VS Code extensions, tool versions |
@@ -251,6 +251,7 @@ Claude.ai Chat uses a separate skill store - install via Settings > Skills in th
 |-------|---------|---------|
 | autolearn | Session learning capture and reflection | Code |
 | quality-control | CI verification and PR health checks | Code |
+| metrics | Effectiveness measurement and rework analysis | Code |
 | manage-github-issues | Issue generation, audit, and triage | Code |
 | requirements-generator | Requirements.md creation | Code/Chat |
 | setup-github-actions | CI/CD workflow generation | Code |
