@@ -102,6 +102,16 @@ autolearn-patterns.md: 45k / 80 entries -> 32k / 55 entries (29% reduction)
 known-gotchas.md: 38k / 82 entries -> 33k / 70 entries (13% reduction)
 ```
 
+## Step 8: Verify cross-references
+
+After archiving or consolidating, cross-references between AP and KG files may point to archived entries. Check for stale references:
+
+1. Collect all entry numbers that were archived or consolidated in this compaction
+2. Grep both active files for references to those numbers (e.g., `grep -n "AP#N[^0-9]" claude/rules/known-gotchas.md` for each archived AP entry N, and vice versa for KG entries)
+3. For each stale reference found, either update to point to the surviving consolidated entry, append "(archived)" to indicate the target was intentionally archived, or remove the reference if no longer relevant
+
+Report any fixes made. This step prevents cross-reference drift (see MCP Memory entity `cross-reference-drift-after-compaction`).
+
 </workflow>
 
 <success_criteria>
@@ -112,5 +122,6 @@ known-gotchas.md: 38k / 82 entries -> 33k / 70 entries (13% reduction)
 - [ ] YAML frontmatter `entry_count` updated
 - [ ] markdownlint passes on all modified files
 - [ ] Before/after report shown to user
+- [ ] No stale cross-references between AP and KG files (Step 8 verified)
 
 </success_criteria>
