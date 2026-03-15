@@ -1,5 +1,16 @@
 # Changelog
 
+## v2.4.0 -- 2026-03-15
+
+Autonomous autolearn -- removes manual menu and runs learnings capture automatically.
+
+### Changed
+
+- **Autolearn autonomous routing** (PR #322): Removed blocking 5-option intake menu from `/autolearn`. Skill now auto-selects the appropriate workflow (quick-reflect, session-review, update-knowledge, skill-improvement, audit-rules) based on session context analysis. Supports explicit args: `/autolearn review`, `/autolearn audit`, etc.
+- **Autolearn runs autonomously**: CLAUDE.md updated from "suggest the user run /autolearn" to "run /autolearn autonomously at task completion boundaries." No user intervention required.
+- **Hook text updated**: UserPromptSubmit hook instructs autonomous execution instead of passive suggestions. Both template and live settings updated.
+- **Stale doc references fixed**: `docs/hook-expansion-research.md` updated to reflect autonomous model
+
 ## v2.3.0 -- 2026-03-14
 
 Rules compaction, Synapset integration, and MCP research.
