@@ -54,3 +54,9 @@ If the input does not clearly match any option above and is not "skip" or "dismi
 - Bash (gh, git, ls, cat, grep, cp, mkdir)
 
 </tool_restrictions>
+
+<usage_recording>
+
+After selecting a workflow, record the invocation per `claude/shared/record-usage.md`.
+
+</usage_recording>

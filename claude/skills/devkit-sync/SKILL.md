@@ -72,3 +72,9 @@ If the input does not clearly match any option above and is not "skip" or "dismi
 - Read, Edit, Write (for config files)
 - Glob, Grep (for file discovery)
 </tool_restrictions>
+
+<usage_recording>
+
+After selecting a workflow, record the invocation per `claude/shared/record-usage.md`.
+
+</usage_recording>

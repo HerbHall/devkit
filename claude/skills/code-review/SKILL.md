@@ -121,3 +121,9 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 - If the review-code agent is unavailable, notify the user — do not silently skip review
 - Trivial commits (typo, comment, version bump only) may bypass with
   `chore(no-review): <reason>` commit type per `review-policy.md`
+
+<usage_recording>
+
+After selecting a workflow, record the invocation per `claude/shared/record-usage.md`.
+
+</usage_recording>
