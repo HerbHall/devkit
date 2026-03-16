@@ -36,6 +36,9 @@ history.jsonl
 plugins/cache/
 plugins/marketplaces/
 
+# Generated metrics output (root-level only, not claude/skills/metrics/)
+/metrics/
+
 # Node.js
 node_modules/
 

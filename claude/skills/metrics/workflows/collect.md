@@ -34,4 +34,12 @@ After collection, show:
 - Number of PRs collected
 - Any errors encountered
 
-Then suggest: "Run `/metrics dashboard` to view the results."
+Then generate the visual dashboard:
+
+```bash
+python3 scripts/generate-dashboard.py --db "C:/Users/herbh/databases/claude.db"
+```
+
+This creates `metrics/dashboard.html` -- open in a browser for charts and tables.
+
+Then suggest: "Run `/metrics dashboard` for CLI output, or open `metrics/dashboard.html` in a browser."
