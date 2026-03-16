@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS conformance_scores (
 CREATE INDEX IF NOT EXISTS idx_conformance_repo ON conformance_scores(repo);
 CREATE INDEX IF NOT EXISTS idx_conformance_date ON conformance_scores(audit_date);
 
--- Pattern application events: when a KG/AP entry prevented or caught an issue
+-- Pattern application events: when a KG/AP/SYN entry prevented or caught an issue
 CREATE TABLE IF NOT EXISTS pattern_events (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     entry_id TEXT NOT NULL,
@@ -47,7 +47,8 @@ CREATE TABLE IF NOT EXISTS pattern_events (
     event_type TEXT NOT NULL,
     project TEXT,
     session_date TEXT NOT NULL,
-    description TEXT
+    description TEXT,
+    source TEXT DEFAULT 'rules-file'
 );
 
 CREATE INDEX IF NOT EXISTS idx_pattern_entry ON pattern_events(entry_id);

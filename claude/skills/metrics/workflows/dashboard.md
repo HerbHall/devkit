@@ -45,7 +45,9 @@ ORDER BY repo;
 ```sql
 SELECT
     entry_id,
+    entry_id,
     entry_title,
+    COALESCE(source, 'rules-file') as source,
     COUNT(*) as total_events,
     SUM(CASE WHEN event_type = 'applied' THEN 1 ELSE 0 END) as applied,
     SUM(CASE WHEN event_type = 'prevented' THEN 1 ELSE 0 END) as prevented,
@@ -105,8 +107,8 @@ Present results in this format:
 |---------|-------|--------|--------|------|
 
 ### Pattern Impact (last 30 days)
-| Entry | Applied | Prevented | Caught | Last Used |
-|-------|---------|-----------|--------|-----------|
+| Entry | Source | Applied | Prevented | Caught | Last Used |
+|-------|--------|---------|-----------|--------|-----------|
 
 ### Skill Usage (last 30 days)
 | Skill | Invocations | Completion % |
