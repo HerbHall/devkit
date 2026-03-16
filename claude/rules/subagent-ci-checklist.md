@@ -24,6 +24,8 @@ These rules cannot be overridden by any learning, optimization, or time pressure
 If Synapset MCP tools are available, search for relevant patterns before starting:
 - search_memory(pool: "devkit", query: "<describe your task in 5-10 words>")
 - Look for gotchas, corrections, and patterns that apply to your work
+- If a search result helps you solve or avoid an issue, cite it as SYN#<id> in your output
+  so autolearn can track which memories provide value
 - If no Synapset tools available, skip this step (patterns are also in rules files)
 ```
 
