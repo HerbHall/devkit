@@ -179,6 +179,16 @@ For each project:
 - Score = pass / (pass + fail) as a percentage
 - Round to the nearest whole number
 
+### 6b. Persist Scores
+
+If SQLite MCP tools are available, record each project's score:
+
+```text
+write_query(database: "claude.db", query: "CREATE TABLE IF NOT EXISTS conformance_scores (id INTEGER PRIMARY KEY AUTOINCREMENT, repo TEXT NOT NULL, audit_date TEXT NOT NULL, total_checks INTEGER, passed INTEGER, failed INTEGER, skipped INTEGER, score_pct REAL, details TEXT); INSERT INTO conformance_scores (repo, audit_date, total_checks, passed, failed, skipped, score_pct) VALUES ('<repo>', datetime('now'), <total>, <passed>, <failed>, <skipped>, <score_pct>);")
+```
+
+If SQLite MCP is unavailable, skip -- score persistence is best-effort.
+
 ### 7. Identify Cross-Project Patterns
 
 After all projects are audited, identify checks that fail across multiple projects:

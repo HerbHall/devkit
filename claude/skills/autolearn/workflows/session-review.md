@@ -133,6 +133,19 @@ write_query(database: "claude.db", query: "CREATE TABLE IF NOT EXISTS pattern_ev
 
 If SQLite MCP is unavailable, skip -- pattern recording is best-effort.
 
+### 5c. Record Autolearn Velocity
+
+For each learning stored in this session, record its lifecycle stage using SQLite MCP. This tracks the pipeline: discovered -> issue_created -> ingested -> applied.
+
+```text
+write_query(database: "claude.db", query: "CREATE TABLE IF NOT EXISTS autolearn_events (id INTEGER PRIMARY KEY AUTOINCREMENT, event_type TEXT NOT NULL, entry_id TEXT, source_project TEXT, event_date TEXT NOT NULL, issue_number INTEGER, description TEXT); INSERT INTO autolearn_events (event_type, entry_id, source_project, event_date, description) VALUES ('<discovered|issue_created|ingested|applied>', '<AP#N or KG#N>', '<project>', datetime('now'), '<brief note>');"
+)
+```
+
+Event types: `discovered` (new pattern found), `issue_created` (DevKit issue filed), `ingested` (added to rules files), `applied` (pattern used to prevent/catch an issue).
+
+If SQLite MCP is unavailable, skip -- velocity tracking is best-effort.
+
 ### 6. Create Relations
 
 Link learnings to their context:
