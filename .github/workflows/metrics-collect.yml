@@ -4,9 +4,14 @@ on:
   schedule:
     - cron: '0 6 * * 1'  # Every Monday at 06:00 UTC
   workflow_dispatch:      # Manual trigger
+  push:
+    branches: [main]
+    paths:
+      - 'claude/rules/**'
+      - 'scripts/generate-dashboard.py'
 
 permissions:
-  contents: read
+  contents: write
   actions: read
   pull-requests: read
 
@@ -17,12 +22,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
       - name: Collect PR metrics for all repos
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           mkdir -p ~/databases
-          # Install sqlite3 (available by default on ubuntu-latest)
 
           # Run collection for DevKit itself
           bash scripts/collect-pr-metrics.sh --repo HerbHall/devkit --days 30 --db ~/databases/claude.db
@@ -33,6 +42,22 @@ jobs:
             > metrics-summary.json || echo "[]" > metrics-summary.json
 
           cat metrics-summary.json
+
+      - name: Generate dashboard
+        run: |
+          python scripts/generate-dashboard.py --db ~/databases/claude.db --output metrics/dashboard.html
+
+      - name: Commit updated dashboard
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add metrics/dashboard.html
+          if git diff --cached --quiet; then
+            echo "No dashboard changes to commit"
+          else
+            git commit -m "chore(metrics): auto-regenerate dashboard [skip ci]"
+            git push
+          fi
 
       - name: Upload metrics artifact
         uses: actions/upload-artifact@v4
