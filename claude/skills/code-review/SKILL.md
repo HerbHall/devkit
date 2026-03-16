@@ -124,6 +124,6 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 
 <usage_recording>
 
-After selecting a workflow, record the invocation per `_shared/record-usage.md`.
+After selecting a workflow, record the invocation per `claude/shared/record-usage.md`.
 
 </usage_recording>

@@ -57,6 +57,6 @@ If the input does not clearly match any option above and is not "skip" or "dismi
 
 <usage_recording>
 
-After selecting a workflow, record the invocation per `_shared/record-usage.md`.
+After selecting a workflow, record the invocation per `claude/shared/record-usage.md`.
 
 </usage_recording>

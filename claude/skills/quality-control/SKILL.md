@@ -242,6 +242,6 @@ A successful quality control run produces:
 
 <usage_recording>
 
-After selecting a workflow, record the invocation per `_shared/record-usage.md`.
+After selecting a workflow, record the invocation per `claude/shared/record-usage.md`.
 
 </usage_recording>
