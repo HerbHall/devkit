@@ -23,7 +23,18 @@ done
 
 # Ensure database and schema exist
 mkdir -p "$(dirname "$DB")"
-sqlite3 "$DB" < "$SCRIPT_DIR/metrics-init.sql" 2>/dev/null || true
+# Try sqlite3 first, fall back to Python for MSYS/Windows compatibility
+if command -v sqlite3 >/dev/null 2>&1; then
+    sqlite3 "$DB" < "$SCRIPT_DIR/metrics-init.sql" 2>/dev/null || true
+else
+    python3 -c "
+import sqlite3
+conn = sqlite3.connect('$DB')
+with open('$SCRIPT_DIR/metrics-init.sql') as f:
+    conn.executescript(f.read())
+conn.close()
+" 2>/dev/null || true
+fi
 
 # Discover repos or use specified one
 if [[ -n "$TARGET_REPO" ]]; then
