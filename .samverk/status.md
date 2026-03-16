@@ -15,7 +15,7 @@ Active maintenance and execution. AI tooling methodology, Claude Code configurat
 ## What Is Running
 
 - Symlinked rules loaded by all Claude Code sessions via ~/.claude/
-- 22 skills, 7 agents, 11 rules files, 128 active patterns (AP: 67, KG: 61)
+- 22 skills, 7 agents, 11 rules files, 130 active patterns (AP: 67, KG: 63)
 - SessionStart hook for context injection
 - Credentials migrated to PowerShell SecretStore vault (HomeLabVault)
 

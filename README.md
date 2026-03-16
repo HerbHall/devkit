@@ -61,7 +61,7 @@ See [Settings Strategy](docs/settings-strategy.md) for the two-layer permission 
 
 | Directory | Purpose |
 |-----------|---------|
-| `claude/` | Global Claude Code config — CLAUDE.md, 11 rules files (150 patterns), 22 skills, 7 agent templates, hooks |
+| `claude/` | Global Claude Code config — CLAUDE.md, 11 rules files (130 patterns), 22 skills, 7 agent templates, hooks |
 | `devspace/` | Workspace shared configs — .editorconfig, .markdownlint.json, VS Code fragments |
 | `docs/` | Human-readable guides — architecture decisions, profile format spec |
 | `machine/` | Machine state snapshots — VS Code extensions, tool versions |
@@ -232,11 +232,11 @@ With symlinks active, changes flow automatically:
 | File | Entries | Purpose |
 |------|---------|---------|
 | `agent-team-coordination.md` | - | Multi-agent team coordination rules and anti-patterns |
-| `autolearn-patterns.md` | 75 | Learned patterns: lint fixes, CI config, architecture, testing |
+| `autolearn-patterns.md` | 67 | Learned patterns: lint fixes, CI config, architecture, testing |
 | `compaction-recovery.md` | - | Context compaction recovery rules and loop detection |
 | `core-principles.md` | 10 | Immutable core principles (Tier 0) |
 | `error-policy.md` | - | Zero-tolerance error policy and fix-forward workflow (Tier 1) |
-| `known-gotchas.md` | 95 | Platform issues: Windows, GitHub, Go, React, Docker |
+| `known-gotchas.md` | 63 | Platform issues: Windows, GitHub, Go, React, Docker |
 | `markdown-style.md` | - | Markdownlint conventions |
 | `review-policy.md` | - | Independent review policy: mandatory triggers and scope |
 | `subagent-ci-checklist.md` | - | Pre-commit CI validation checklists |
