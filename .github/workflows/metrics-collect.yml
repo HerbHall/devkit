@@ -1,0 +1,42 @@
+name: Weekly Metrics Collection
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'  # Every Monday at 06:00 UTC
+  workflow_dispatch:      # Manual trigger
+
+permissions:
+  contents: read
+  actions: read
+  pull-requests: read
+
+jobs:
+  collect:
+    name: Collect PR metrics
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Collect PR metrics for all repos
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p ~/databases
+          # Install sqlite3 (available by default on ubuntu-latest)
+
+          # Run collection for DevKit itself
+          bash scripts/collect-pr-metrics.sh --repo HerbHall/devkit --days 30 --db ~/databases/claude.db
+
+          # Export summary as JSON artifact
+          sqlite3 ~/databases/claude.db -json \
+            "SELECT repo, COUNT(*) as prs, ROUND(AVG(push_count),1) as avg_pushes, ROUND(100.0*SUM(ci_first_pass)/COUNT(*),0) as first_pass_pct, SUM(fix_push_cycles) as fix_cycles FROM pr_metrics WHERE merged_at >= date('now','-30 days') GROUP BY repo;" \
+            > metrics-summary.json || echo "[]" > metrics-summary.json
+
+          cat metrics-summary.json
+
+      - name: Upload metrics artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: metrics-${{ github.run_number }}
+          path: metrics-summary.json
+          retention-days: 90
