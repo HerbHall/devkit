@@ -328,3 +328,13 @@ Manual: 18
 
 Run `/conformance-audit fix` to auto-fix applicable gaps.
 ```
+
+### 8. Persist Score
+
+If SQLite MCP tools (`write_query`) are available, record the conformance score for trend tracking:
+
+```text
+write_query(database: "claude.db", query: "CREATE TABLE IF NOT EXISTS conformance_scores (id INTEGER PRIMARY KEY AUTOINCREMENT, repo TEXT NOT NULL, audit_date TEXT NOT NULL, total_checks INTEGER, passed INTEGER, failed INTEGER, skipped INTEGER, score_pct REAL, details TEXT); INSERT INTO conformance_scores (repo, audit_date, total_checks, passed, failed, skipped, score_pct) VALUES ('<repo>', datetime('now'), <total>, <passed>, <failed>, <skipped>, <score_pct>);")
+```
+
+If SQLite MCP is unavailable, skip -- score persistence is best-effort.
