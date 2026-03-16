@@ -1,7 +1,7 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 65
+entry_count: 66
 last_updated: "2026-03-16"
 ---
 
@@ -524,6 +524,11 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Issue:** Creating a secret starting with `GITEA_` via API returns `{"message":"invalid secret name"}`. Undocumented.
 **Fix:** Use a different prefix (e.g., `CI_GITEA_TOKEN` instead of `GITEA_TOKEN`). Workflows referencing `secrets.GITEA_TOKEN` silently get empty values.
 
+### Merge API returns empty body, not JSON
+
+**Issue:** Gitea merge PR endpoint returns empty body (not JSON) on success. Returns HTTP 405 when PR is already merged. Scripts expecting JSON crash on both cases.
+**Fix:** Check HTTP status code first (200 = success, 405 = already merged). Don't parse response body as JSON.
+
 ## 125. go:embed Cache Misses Embedded File Changes
 
 **Added:** 2026-03-14 | **Source:** Samverk | **Status:** active
@@ -686,3 +691,11 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Platform:** Windows (Ollama)
 **Issue:** Setting `OLLAMA_HOST=0.0.0.0` as a Windows User env var doesn't take effect until Ollama app is fully restarted. `Start-Process` from a shell without the new env inherits the old value.
 **Fix:** Kill all `ollama` processes and relaunch from a context with refreshed env. On Windows: `Stop-Process -Name ollama -Force`, refresh env, then relaunch.
+
+## 148. Trivy Binary Accumulation Fills Disk on Host-Mode Gitea Runners
+
+**Added:** 2026-03-16 | **Source:** Synapset | **Status:** active
+
+**Platform:** Gitea Actions / act_runner (host mode)
+**Issue:** `security.yml` downloads trivy (155MB) to `/tmp` per run, never cleans up. On host-mode act_runners, 15+ runs accumulates 2.3GB of stale binaries. Disk full causes `actions/checkout@v4` to fail silently in 0 seconds.
+**Fix:** Add `if: always()` cleanup step to remove trivy temp files after each run. For host-mode runners, consider a cron job to sweep `/tmp/trivy*` periodically.
