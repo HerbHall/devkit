@@ -1,7 +1,7 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 63
+entry_count: 65
 last_updated: "2026-03-16"
 ---
 
@@ -670,3 +670,19 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Platform:** Gitea
 **Issue:** Gitea `PATCH /repos/{owner}/{repo}/issues/{index}` with `assignees` field returns 403 if the user is not a repo collaborator. GitHub silently ignores invalid assignees.
 **Fix:** Wrap assignment in best-effort try/catch. Log warning but don't fail the workflow.
+
+## 146. Ollama Models Overwrite CLAUDE.md Instead of Following Issue Instructions
+
+**Added:** 2026-03-16 | **Source:** Samverk | **Status:** active
+
+**Platform:** Ollama / Claude Code dispatcher
+**Issue:** Ollama models (qwen3-coder:30b, qwen2.5-coder:14b) complete dispatcher tasks but produce wrong output -- overwrite CLAUDE.md with hallucinated content instead of implementing the actual issue. Agent prompt format is tuned for Claude CLI tool-use and doesn't transfer to raw chat completions.
+**Fix:** Don't use Ollama models for code-gen tasks that require file navigation via tools. Restrict to triage, labeling, and text-only tasks. Validate agent output before merging.
+
+## 147. Ollama on Windows Requires Full Process Restart After OLLAMA_HOST Env Change
+
+**Added:** 2026-03-16 | **Source:** Samverk | **Status:** active
+
+**Platform:** Windows (Ollama)
+**Issue:** Setting `OLLAMA_HOST=0.0.0.0` as a Windows User env var doesn't take effect until Ollama app is fully restarted. `Start-Process` from a shell without the new env inherits the old value.
+**Fix:** Kill all `ollama` processes and relaunch from a context with refreshed env. On Windows: `Stop-Process -Name ollama -Force`, refresh env, then relaunch.
