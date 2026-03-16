@@ -165,3 +165,12 @@ done
 echo ""
 echo "Done. $TOTAL_PRS PRs processed across ${#REPOS[@]} repo(s)."
 echo "Database: $DB"
+
+# Regenerate dashboard if generator exists
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+GENERATOR="$SCRIPT_DIR/generate-dashboard.py"
+if [[ -f "$GENERATOR" ]]; then
+    echo ""
+    echo "Regenerating dashboard..."
+    python3 "$GENERATOR" --db "$DB" || python "$GENERATOR" --db "$DB" || echo "Dashboard generation skipped (Python not available)"
+fi

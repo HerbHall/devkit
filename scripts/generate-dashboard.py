@@ -1,20 +1,23 @@
 #!/usr/bin/env python3
 """Generate DevKit Effectiveness Dashboard as a standalone HTML file.
 
-Reads metrics from ~/databases/claude.db and produces dashboard.html
-with embedded Chart.js visualizations.
+Reads metrics from ~/databases/claude.db and rules files from claude/rules/,
+producing a unified dashboard with embedded Chart.js visualizations.
 
 Usage:
-    python scripts/generate-dashboard.py [--db PATH] [--output PATH]
+    python scripts/generate-dashboard.py [--db PATH] [--output PATH] [--devspace PATH]
 
 Defaults:
-    --db      ~/databases/claude.db
-    --output  metrics/dashboard.html
+    --db       ~/databases/claude.db
+    --output   metrics/dashboard.html
+    --devspace D:/DevSpace
 """
 
 import argparse
+import glob
 import json
 import os
+import re
 import sqlite3
 import sys
 from datetime import datetime, timedelta
@@ -115,6 +118,19 @@ def get_autolearn_pipeline(conn, days=30):
     """)
 
 
+def get_autolearn_velocity(conn):
+    """Weekly autolearn discovery and ingestion rates for the last 8 weeks."""
+    return query(conn, """
+        SELECT strftime('%Y-W%W', event_date) as week,
+            SUM(CASE WHEN event_type = 'discovered' THEN 1 ELSE 0 END) as discovered,
+            SUM(CASE WHEN event_type = 'ingested' THEN 1 ELSE 0 END) as ingested,
+            SUM(CASE WHEN event_type = 'applied' THEN 1 ELSE 0 END) as applied
+        FROM autolearn_events
+        WHERE event_date >= date('now', '-56 days')
+        GROUP BY week ORDER BY week
+    """)
+
+
 def get_totals(conn):
     row = query(conn, "SELECT COUNT(*) as total FROM pr_metrics")
     pr_total = row[0]["total"] if row else 0
@@ -132,6 +148,71 @@ def get_totals(conn):
     }
 
 
+def get_rules_stats(rules_dir):
+    """Parse frontmatter from rules files to get entry counts and dates."""
+    stats = []
+    total_entries = 0
+    for filepath in sorted(glob.glob(os.path.join(rules_dir, "*.md"))):
+        name = os.path.basename(filepath)
+        entry_count = 0
+        last_updated = ""
+        try:
+            with open(filepath, "r", encoding="utf-8") as f:
+                content = f.read(2000)
+            fm_match = re.search(r"^---\s*\n(.*?)\n---", content, re.DOTALL)
+            if fm_match:
+                fm = fm_match.group(1)
+                ec = re.search(r"entry_count:\s*(\d+)", fm)
+                if ec:
+                    entry_count = int(ec.group(1))
+                lu = re.search(r'last_updated:\s*"?([^"\n]+)"?', fm)
+                if lu:
+                    last_updated = lu.group(1).strip()
+        except (OSError, UnicodeDecodeError):
+            pass
+        total_entries += entry_count
+        stats.append({
+            "file": name,
+            "entry_count": entry_count,
+            "last_updated": last_updated
+        })
+    return stats, total_entries
+
+
+def get_cross_project_coverage(devspace_path):
+    """Scan DevSpace repos for .claude/ directory presence."""
+    coverage = []
+    if not os.path.isdir(devspace_path):
+        return coverage
+    for item in sorted(os.listdir(devspace_path)):
+        project_dir = os.path.join(devspace_path, item)
+        if not os.path.isdir(project_dir):
+            continue
+        if item.startswith(".") or item in ("research", "archive"):
+            continue
+        git_dir = os.path.join(project_dir, ".git")
+        if not os.path.exists(git_dir):
+            continue
+        has_claude = os.path.isdir(os.path.join(project_dir, ".claude"))
+        has_claude_md = os.path.isfile(os.path.join(project_dir, "CLAUDE.md"))
+        coverage.append({
+            "project": item,
+            "has_claude_dir": has_claude,
+            "has_claude_md": has_claude_md,
+        })
+    return coverage
+
+
+def get_version():
+    """Read version from VERSION file."""
+    version_file = os.path.join(os.path.dirname(__file__), "..", "VERSION")
+    try:
+        with open(version_file, "r") as f:
+            return f.read().strip()
+    except OSError:
+        return "dev"
+
+
 def generate_html(data):
     rework = data["rework"]
     trend = data["trend"]
@@ -140,7 +221,12 @@ def generate_html(data):
     skills = data["skills"]
     conformance = data["conformance"]
     pipeline = data["pipeline"]
+    velocity = data["velocity"]
     totals = data["totals"]
+    rules_stats = data["rules_stats"]
+    total_rules = data["total_rules"]
+    coverage = data["coverage"]
+    version = data["version"]
     generated = data["generated"]
 
     # Prepare chart data
@@ -157,6 +243,10 @@ def generate_html(data):
 
     skill_labels = json.dumps([s["skill_name"] for s in skills])
     skill_counts = json.dumps([s["invocations"] for s in skills])
+
+    velocity_labels = json.dumps([v["week"] for v in velocity])
+    velocity_discovered = json.dumps([v["discovered"] for v in velocity])
+    velocity_ingested = json.dumps([v["ingested"] for v in velocity])
 
     # Build tables
     rework_rows = ""
@@ -195,23 +285,65 @@ def generate_html(data):
     for p in pipeline:
         pipeline_rows += f"<tr><td>{p['event_type']}</td><td>{p['count']}</td></tr>"
 
+    rules_rows = ""
+    for r in rules_stats:
+        if r["entry_count"] > 0:
+            rules_rows += f"""<tr>
+                <td>{r['file']}</td>
+                <td>{r['entry_count']}</td>
+                <td>{r['last_updated']}</td>
+            </tr>"""
+
+    coverage_rows = ""
+    for c in coverage:
+        claude_dir = '<span class="good">Yes</span>' if c["has_claude_dir"] else '<span class="bad">No</span>'
+        claude_md = '<span class="good">Yes</span>' if c["has_claude_md"] else '<span class="bad">No</span>'
+        coverage_rows += f"""<tr>
+            <td>{c['project']}</td>
+            <td>{claude_dir}</td>
+            <td>{claude_md}</td>
+        </tr>"""
+    coverage_total = len(coverage)
+    coverage_with_rules = sum(1 for c in coverage if c["has_claude_dir"])
+
     return f"""<!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>DevKit Effectiveness Dashboard</title>
+<title>DevKit Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <style>
-  :root {{ --bg: #0d1117; --card: #161b22; --border: #30363d; --text: #e6edf3;
-           --muted: #8b949e; --good: #3fb950; --warn: #d29922; --bad: #f85149;
-           --accent: #58a6ff; }}
+  [data-theme="dark"] {{
+    --bg: #0d1117; --card: #161b22; --border: #30363d; --text: #e6edf3;
+    --muted: #8b949e; --good: #3fb950; --warn: #d29922; --bad: #f85149;
+    --accent: #58a6ff; --header-bg: #010409;
+  }}
+  [data-theme="light"] {{
+    --bg: #f6f8fa; --card: #ffffff; --border: #d0d7de; --text: #1f2328;
+    --muted: #656d76; --good: #1a7f37; --warn: #9a6700; --bad: #cf222e;
+    --accent: #0969da; --header-bg: #ffffff;
+  }}
   * {{ margin: 0; padding: 0; box-sizing: border-box; }}
   body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          background: var(--bg); color: var(--text); padding: 24px; }}
-  h1 {{ font-size: 1.5rem; margin-bottom: 8px; }}
+          background: var(--bg); color: var(--text); }}
+  .header {{ background: var(--header-bg); border-bottom: 1px solid var(--border);
+             padding: 16px 24px; display: flex; align-items: center;
+             justify-content: space-between; flex-wrap: wrap; gap: 12px; }}
+  .header-left {{ display: flex; align-items: center; gap: 16px; }}
+  .header h1 {{ font-size: 1.3rem; font-weight: 700; letter-spacing: 0.5px; }}
+  .header .version {{ background: var(--accent); color: #fff; font-size: 0.7rem;
+                      padding: 2px 8px; border-radius: 12px; font-weight: 600; }}
+  .header-right {{ display: flex; align-items: center; gap: 16px; }}
+  .cross-link {{ color: var(--accent); text-decoration: none; font-size: 0.85rem;
+                 font-weight: 500; }}
+  .cross-link:hover {{ text-decoration: underline; }}
+  .theme-toggle {{ background: var(--card); border: 1px solid var(--border);
+                   border-radius: 6px; padding: 4px 10px; cursor: pointer;
+                   color: var(--text); font-size: 0.8rem; }}
+  .content {{ padding: 24px; }}
   .subtitle {{ color: var(--muted); margin-bottom: 24px; font-size: 0.85rem; }}
-  .stats {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  .stats {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
             gap: 16px; margin-bottom: 24px; }}
   .stat {{ background: var(--card); border: 1px solid var(--border); border-radius: 8px;
            padding: 16px; text-align: center; }}
@@ -231,17 +363,45 @@ def generate_html(data):
   .bad {{ color: var(--bad); font-weight: 600; }}
   canvas {{ max-height: 250px; }}
   .empty {{ color: var(--muted); font-style: italic; padding: 16px; }}
+  @media (max-width: 600px) {{
+    .grid {{ grid-template-columns: 1fr; }}
+    .header {{ flex-direction: column; align-items: flex-start; }}
+  }}
 </style>
 </head>
 <body>
-<h1>DevKit Effectiveness Dashboard</h1>
-<p class="subtitle">Generated {generated} | Data from ~/databases/claude.db</p>
+<div class="header">
+  <div class="header-left">
+    <h1>DEVKIT DASHBOARD</h1>
+    <span class="version">v{version}</span>
+  </div>
+  <div class="header-right">
+    <a class="cross-link" href="https://samverk.herbhall.net/metrics" target="_blank">Samverk</a>
+    <a class="cross-link" href="https://synapset.herbhall.net/dashboard" target="_blank">Synapset</a>
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark theme">Toggle Theme</button>
+  </div>
+</div>
+
+<div class="content">
+<p class="subtitle">Generated {generated} | {total_rules} active patterns across {len([r for r in rules_stats if r['entry_count'] > 0])} rules files</p>
 
 <div class="stats">
   <div class="stat"><div class="stat-value">{totals['repos']}</div><div class="stat-label">Repos Tracked</div></div>
   <div class="stat"><div class="stat-value">{totals['prs']}</div><div class="stat-label">PRs Collected</div></div>
+  <div class="stat"><div class="stat-value">{total_rules}</div><div class="stat-label">Active Patterns</div></div>
   <div class="stat"><div class="stat-value">{totals['patterns']}</div><div class="stat-label">Pattern Events</div></div>
-  <div class="stat"><div class="stat-value">{totals['skills']}</div><div class="stat-label">Skill Invocations</div></div>
+  <div class="stat"><div class="stat-value">{coverage_with_rules}/{coverage_total}</div><div class="stat-label">Projects with Rules</div></div>
+</div>
+
+<div class="grid">
+  <div class="card">
+    <h2>Rules File Stats</h2>
+    {"<table><thead><tr><th>File</th><th>Entries</th><th>Last Updated</th></tr></thead><tbody>" + rules_rows + "</tbody></table>" if rules_rows else "<p class='empty'>No rules files found</p>"}
+  </div>
+  <div class="card">
+    <h2>Cross-Project Coverage</h2>
+    {"<table><thead><tr><th>Project</th><th>.claude/</th><th>CLAUDE.md</th></tr></thead><tbody>" + coverage_rows + "</tbody></table>" if coverage_rows else "<p class='empty'>No projects found</p>"}
+  </div>
 </div>
 
 <div class="grid">
@@ -250,8 +410,19 @@ def generate_html(data):
     {"<canvas id='trendChart'></canvas>" if trend else "<p class='empty'>No trend data yet</p>"}
   </div>
   <div class="card">
+    <h2>Autolearn Velocity (Last 8 Weeks)</h2>
+    {"<canvas id='velocityChart'></canvas>" if velocity else "<p class='empty'>No autolearn events yet</p>"}
+  </div>
+</div>
+
+<div class="grid">
+  <div class="card">
     <h2>First-Pass Rate by Project (Last 30 Days)</h2>
     {"<canvas id='projectChart'></canvas>" if rework else "<p class='empty'>Run /metrics collect first</p>"}
+  </div>
+  <div class="card">
+    <h2>Pattern Source Breakdown</h2>
+    {"<canvas id='sourceChart'></canvas>" if source_breakdown else "<p class='empty'>No data</p>"}
   </div>
 </div>
 
@@ -268,34 +439,42 @@ def generate_html(data):
 
 <div class="grid">
   <div class="card">
-    <h2>Pattern Source Breakdown</h2>
-    {"<canvas id='sourceChart'></canvas>" if source_breakdown else "<p class='empty'>No data</p>"}
-  </div>
-  <div class="card">
     <h2>Skill Usage (Last 30 Days)</h2>
     {"<canvas id='skillChart'></canvas>" if skills else "<p class='empty'>No skill usage recorded yet</p>"}
   </div>
-</div>
-
-<div class="grid">
   <div class="card">
     <h2>Conformance Scores (Latest)</h2>
     {"<table><thead><tr><th>Project</th><th>Score</th><th>Passed</th><th>Failed</th><th>Date</th></tr></thead><tbody>" + conformance_rows + "</tbody></table>" if conformance else "<p class='empty'>Run /conformance-audit first</p>"}
   </div>
+</div>
+
+<div class="grid">
   <div class="card">
     <h2>Autolearn Pipeline (Last 30 Days)</h2>
     {"<table><thead><tr><th>Stage</th><th>Count</th></tr></thead><tbody>" + pipeline_rows + "</tbody></table>" if pipeline else "<p class='empty'>No autolearn events yet</p>"}
   </div>
 </div>
 
+</div>
+
 <script>
-const chartDefaults = {{
-    color: '#e6edf3',
-    borderColor: '#30363d',
-    font: {{ family: '-apple-system, sans-serif' }}
-}};
-Chart.defaults.color = '#8b949e';
-Chart.defaults.borderColor = '#30363d';
+Chart.defaults.color = getComputedStyle(document.documentElement).getPropertyValue('--muted').trim() || '#8b949e';
+Chart.defaults.borderColor = getComputedStyle(document.documentElement).getPropertyValue('--border').trim() || '#30363d';
+
+function toggleTheme() {{
+    const html = document.documentElement;
+    const current = html.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', next);
+    localStorage.setItem('devkit-theme', next);
+    Chart.defaults.color = getComputedStyle(html).getPropertyValue('--muted').trim();
+    Chart.defaults.borderColor = getComputedStyle(html).getPropertyValue('--border').trim();
+    Chart.instances.forEach(c => c.update());
+}}
+(function() {{
+    const saved = localStorage.getItem('devkit-theme');
+    if (saved) document.documentElement.setAttribute('data-theme', saved);
+}})();
 
 {'// Trend chart' if trend else ''}
 {f"""
@@ -326,6 +505,28 @@ new Chart(document.getElementById('trendChart'), {{
     }}
 }});
 """ if trend else ''}
+
+{f"""
+new Chart(document.getElementById('velocityChart'), {{
+    type: 'bar',
+    data: {{
+        labels: {velocity_labels},
+        datasets: [{{
+            label: 'Discovered',
+            data: {velocity_discovered},
+            backgroundColor: '#58a6ff'
+        }}, {{
+            label: 'Ingested',
+            data: {velocity_ingested},
+            backgroundColor: '#3fb950'
+        }}]
+    }},
+    options: {{
+        responsive: true,
+        scales: {{ y: {{ beginAtZero: true }} }}
+    }}
+}});
+""" if velocity else ''}
 
 {f"""
 new Chart(document.getElementById('projectChart'), {{
@@ -380,6 +581,7 @@ def main():
     home = os.path.expanduser("~")
     parser.add_argument("--db", default=os.path.join(home, "databases", "claude.db"))
     parser.add_argument("--output", default="metrics/dashboard.html")
+    parser.add_argument("--devspace", default="D:/DevSpace")
     args = parser.parse_args()
 
     db_path = args.db
@@ -394,6 +596,13 @@ def main():
 
     conn = sqlite3.connect(db_path)
 
+    # Resolve rules directory relative to this script
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    rules_dir = os.path.join(script_dir, "..", "claude", "rules")
+    rules_stats, total_rules = get_rules_stats(rules_dir)
+
+    coverage = get_cross_project_coverage(args.devspace)
+
     data = {
         "rework": get_rework_by_project(conn),
         "trend": get_rework_trend(conn),
@@ -402,7 +611,12 @@ def main():
         "skills": get_skill_usage(conn),
         "conformance": get_conformance(conn),
         "pipeline": get_autolearn_pipeline(conn),
+        "velocity": get_autolearn_velocity(conn),
         "totals": get_totals(conn),
+        "rules_stats": rules_stats,
+        "total_rules": total_rules,
+        "coverage": coverage,
+        "version": get_version(),
         "generated": datetime.now().strftime("%Y-%m-%d %H:%M"),
     }
 
@@ -415,7 +629,8 @@ def main():
     output.write_text(html, encoding="utf-8")
     print(f"Dashboard generated: {output}")
     print(f"  PRs: {data['totals']['prs']} | Repos: {data['totals']['repos']} | "
-          f"Pattern events: {data['totals']['patterns']} | Skill invocations: {data['totals']['skills']}")
+          f"Patterns: {total_rules} active | "
+          f"Coverage: {sum(1 for c in coverage if c['has_claude_dir'])}/{len(coverage)} projects")
 
 
 if __name__ == "__main__":
