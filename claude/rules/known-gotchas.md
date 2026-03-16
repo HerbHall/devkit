@@ -1,8 +1,8 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 61
-last_updated: "2026-03-15"
+entry_count: 63
+last_updated: "2026-03-16"
 ---
 
 # Known Gotchas
@@ -654,3 +654,19 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Platform:** Linux (Go / zap)
 **Issue:** `/dev/stdout` returns EINVAL for `fsync()`. Any zap `WriteSyncer` calling `Sync()` on `os.Stdout` fails in Linux CI.
 **Fix:** Make `Sync()` best-effort for stdout: `_ = f.Sync()` instead of `return f.Sync()`.
+
+## 144. SQLite PRAGMA Only Applies to One Pooled Connection
+
+**Added:** 2026-03-16 | **Source:** Samverk | **Status:** active
+
+**Platform:** Go (all SQLite drivers)
+**Issue:** `PRAGMA journal_mode=WAL` and `PRAGMA busy_timeout` run after `sql.Open` only affect one connection in the pool. Other connections use defaults.
+**Fix:** Use DSN query params instead: `file:path.db?_journal_mode=WAL&_busy_timeout=5000`. Or set via `db.SetMaxOpenConns(1)` for single-connection pools.
+
+## 145. Gitea Assign API Requires Repo Collaborator
+
+**Added:** 2026-03-16 | **Source:** Samverk | **Status:** active
+
+**Platform:** Gitea
+**Issue:** Gitea `PATCH /repos/{owner}/{repo}/issues/{index}` with `assignees` field returns 403 if the user is not a repo collaborator. GitHub silently ignores invalid assignees.
+**Fix:** Wrap assignment in best-effort try/catch. Log warning but don't fail the workflow.
