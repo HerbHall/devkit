@@ -239,3 +239,9 @@ A successful quality control run produces:
 - [ ] Summary report of actions taken and remaining issues
 - [ ] Any unresolvable issues reported to user with recommendations
 </success_criteria>
+
+<usage_recording>
+
+After selecting a workflow, record the invocation per `_shared/record-usage.md`.
+
+</usage_recording>

@@ -122,6 +122,17 @@ store_memory(pool: "devkit", content: "<full entry text including title, context
 
 This ensures the Synapset corpus stays in sync with rules files. Without this step, batch-ingested entries are invisible to semantic search.
 
+### 5b. Record Pattern Applications
+
+Scan the conversation for references to existing AP# or KG# entries that were actively used to solve a problem or avoid a mistake. For each, record a pattern application event using SQLite MCP:
+
+```text
+write_query(database: "claude.db", query: "CREATE TABLE IF NOT EXISTS pattern_events (id INTEGER PRIMARY KEY AUTOINCREMENT, entry_id TEXT NOT NULL, entry_title TEXT, event_type TEXT NOT NULL, project TEXT, session_date TEXT NOT NULL, description TEXT); INSERT INTO pattern_events (entry_id, entry_title, event_type, project, session_date, description) VALUES ('<AP#N or KG#N>', '<title>', '<prevented|caught|applied>', '<project>', datetime('now'), '<brief note>');"
+)
+```
+
+If SQLite MCP is unavailable, skip -- pattern recording is best-effort.
+
 ### 6. Create Relations
 
 Link learnings to their context:

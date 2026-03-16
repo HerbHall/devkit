@@ -298,5 +298,16 @@ if [ "$missing_settings" = true ]; then
     echo "  Copy from DevKit: cp <devkit>/project-templates/settings.json .claude/settings.json"
 fi
 
+# --- Session event recording (best-effort, silent on failure) ---
+_devkit_record_session() {
+  local project db
+  project="$(basename "$PWD")"
+  db="$HOME/databases/claude.db"
+  [ -f "$db" ] || return 0
+  command -v sqlite3 >/dev/null 2>&1 || return 0
+  sqlite3 "$db" "CREATE TABLE IF NOT EXISTS session_events (id INTEGER PRIMARY KEY AUTOINCREMENT, project TEXT, event_type TEXT, event_date TEXT); INSERT INTO session_events (project, event_type, event_date) VALUES ('$project', 'start', datetime('now'));" 2>/dev/null || true
+}
+_devkit_record_session
+
 echo ""
 exit 0

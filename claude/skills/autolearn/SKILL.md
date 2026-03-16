@@ -111,3 +111,9 @@ Do not ask for permission. Do not show a menu.
 - File tools: Read, Edit, Write (for rules files only)
 - Glob, Grep (for searching existing rules/skills)
 </tool_restrictions>
+
+<usage_recording>
+
+After selecting a workflow, record the invocation per `_shared/record-usage.md`.
+
+</usage_recording>
