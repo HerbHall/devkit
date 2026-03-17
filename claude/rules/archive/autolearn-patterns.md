@@ -315,3 +315,39 @@ Synapset: pool=devkit, ID=565
 
 PowerShell Temp File for Complex Commands from MSYS Bash.
 Synapset: pool=devkit, ID=565
+
+## Archived 2026-03-17: Rules compaction (approaching 40k limit)
+
+### Moved to parent consolidated entries
+
+## AP#106 (archived 2026-03-17, consolidated into AP#84)
+
+Mandatory lint step language eliminates fix-push cycles.
+Consolidated into AP#84 (lint enforcement subsection). No Synapset ID -- content preserved in parent entry.
+
+## AP#131 (archived 2026-03-17, consolidated into AP#127)
+
+Merge interface-changing PRs first to avoid cascading conflicts.
+Consolidated into AP#127 (worktree merge subsection). No Synapset ID -- content preserved in parent entry.
+
+## AP#135 (archived 2026-03-17, consolidated into AP#127)
+
+Worktree sequential merge pattern for shared-file branches.
+Consolidated into AP#127 (worktree merge subsection). No Synapset ID -- content preserved in parent entry.
+
+### Fully archived (stored in Synapset)
+
+## AP#128 (archived 2026-03-17)
+
+Safe deploy pattern with idle-wait gate for background workers (Samverk-specific).
+Synapset: pool=devkit, ID=600
+
+## AP#129 (archived 2026-03-17)
+
+Claude Code credentials backup restoration -- copy .credentials.json.bak to restore OAuth.
+Synapset: pool=devkit, ID=601
+
+## AP#130 (archived 2026-03-17)
+
+Dispatcher overnight queue pattern -- label queued, route to haiku, mark hung as needs-human.
+Synapset: pool=devkit, ID=602

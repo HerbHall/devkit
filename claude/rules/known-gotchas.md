@@ -1,7 +1,7 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 63
+entry_count: 52
 last_updated: "2026-03-17"
 ---
 
@@ -125,6 +125,27 @@ All parallel agents write to the same working directory. Sort into branches via 
 
 **Key scenarios:** (1) `git checkout` destroys other agents' unstaged tracked files. (2) `go build` compiles untracked files from other agents -- stash before pushing. (3) Stash during running agents is unsafe -- commit one agent's files first. (4) Multiple `git worktree add`/`remove` operations (especially with parallel CC sessions) can flip `core.bare = true` in `.git/config` -- fix with `git config core.bare false`; detect with `git worktree list` showing `(bare)`.
 **See also:** AP#127
+
+### Worktrees cause markdownlint hangs on node_modules (was KG#117)
+
+**Issue:** Agent worktrees (`.claude/worktrees/`) create full repo copies including `web/node_modules/`. Markdownlint's `**/*.md` scans them -- 800+ files, 14k+ errors, hangs pre-push hook for 30+ minutes.
+**Fix:** Add `**/.claude` and `**/node_modules` to markdownlint exclusion patterns (not just root-level). Clean up with `rm -rf .claude/worktrees && git worktree prune`.
+**See also:** KG#91 (nested node_modules not excluded by root pattern)
+
+### Parallel git push triggers concurrent pre-push hooks (was KG#118)
+
+**Issue:** Two concurrent `git push` commands trigger two parallel pre-push hooks sharing the same working directory, causing contention and hangs.
+**Fix:** Always push sequentially. When using `isolation: "worktree"`, push one at a time after agents complete.
+
+### Worktree isolation agents can commit to wrong branch (was KG#149)
+
+**Issue:** Parallel agents with `isolation: "worktree"` can commit to the wrong branch. Both agents' commits end up on one branch while the other has none.
+**Fix:** Verify branch assignments after parallel worktree agents complete. Recovery: cherry-pick each commit onto fresh branches from main, then create PRs.
+
+### git checkout blocked by worktree holding branch (was KG#157)
+
+**Issue:** `git checkout <branch>` fails with "already used by worktree" when the branch is checked out in any worktree (including agent worktrees).
+**Fix:** Run `git worktree remove <path> --force` before checking out in the main tree. Prune worktrees after parallel agents complete.
 
 ## 26. Sequential Same-File PR Merge Requires Rebase Between Each
 
@@ -259,14 +280,6 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Issue:** Packages with only `browser` field (no `main`/`exports`) fail in Vitest's Node.js resolution.
 **Fix:** Add `resolve.alias` in `vitest.config.ts` pointing to the package's dist entry file. See also KG#77 (Docker extension-specific case).
 
-## 88. .NET WPF Projects Fail dotnet restore on Linux CI
-
-**Added:** 2026-03-02 | **Source:** IPScan | **Status:** active
-
-**Platform:** .NET / GitHub Actions (Ubuntu)
-**Issue:** `dotnet restore` on solution with WPF projects fails on Ubuntu with `NETSDK1100`.
-**Fix:** Scope all `dotnet` commands to individual cross-platform .csproj files, not the .sln.
-
 ## 89. go get Does Not Resolve All Transitive Dependencies
 
 **Added:** 2026-03-02 | **Source:** Samverk | **Status:** active
@@ -274,14 +287,6 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Platform:** Go (all)
 **Issue:** `go get` doesn't always resolve all transitive dependencies into `go.sum`. Build may fail after.
 **Fix:** Always run `go mod tidy` after `go get`.
-
-## 90. release-please node Type Requires package.json at Repo Root
-
-**Added:** 2026-03-03 | **Source:** Runbooks | **Status:** active
-
-**Platform:** GitHub Actions / release-please
-**Issue:** `node` release type requires `package.json` at repo root. Subdirectory layouts fail silently.
-**Fix:** Use `simple` release type with `VERSION` file. Template: `project-templates/release-please-config.json`. Use `# x-release-please-version` in Dockerfiles for auto-bump.
 
 ## 91. markdownlint-cli2 Nested node_modules Not Excluded by Root Pattern
 
@@ -452,24 +457,6 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Issue:** Wrapping task execution with `context.WithTimeout` cancels ALL downstream operations when timeout fires -- including session status updates, failure comments, and cost recording.
 **Fix:** Create a separate `cleanupCtx := context.Background()` BEFORE timeout wrapping. Pass it to the runner for cleanup/persistence paths. Use timeout-wrapped ctx only for the provider call itself.
 
-## 117. Claude Code Worktrees Cause markdownlint Hangs on node_modules
-
-**Added:** 2026-03-14 | **Source:** Samverk | **Status:** active
-
-**Platform:** Claude Code (all)
-**Issue:** Agent worktrees (`.claude/worktrees/`) create full repo copies including `web/node_modules/`. Markdownlint's `**/*.md` scans them -- 800+ files, 14k+ errors, hangs pre-push hook for 30+ minutes.
-**Fix:** Add `**/.claude` and `**/node_modules` to markdownlint exclusion patterns (not just root-level). Clean up with `rm -rf .claude/worktrees && git worktree prune`.
-**See also:** KG#91 (nested node_modules not excluded by root pattern)
-
-## 118. Parallel git push Triggers Concurrent Pre-Push Hooks
-
-**Added:** 2026-03-14 | **Source:** Samverk | **Status:** active
-
-**Platform:** Git (all)
-**Issue:** Two concurrent `git push` commands (from parallel agents or background tasks) trigger two parallel pre-push hooks sharing the same working directory, causing contention and hangs.
-**Fix:** Always push sequentially. When using parallel agents with `isolation: "worktree"`, push one at a time after agents complete.
-**See also:** KG#25 (parallel agents share working tree)
-
 ## 119. Always html.EscapeString Server-Injected Values in HTML
 
 **Added:** 2026-03-14 | **Source:** Samverk | **Status:** active
@@ -529,6 +516,16 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Issue:** Gitea merge PR endpoint returns empty body (not JSON) on success. Returns HTTP 405 when PR is already merged. Scripts expecting JSON crash on both cases.
 **Fix:** Check HTTP status code first (200 = success, 405 = already merged). Don't parse response body as JSON.
 
+### API calls via Cloudflare tunnel fail -- use internal URL (was KG#160)
+
+**Issue:** Gitea REST API calls via the Cloudflare tunnel URL fail with "token is required" because the tunnel strips the `Authorization` header.
+**Fix:** Use the internal URL (e.g., `http://192.168.1.160:3000`) for all Gitea API calls. Token extraction: `printf 'protocol=https\nhost=gitea.example.com\n' | git credential fill | grep password`
+
+### Samverk MCP handler init gated on GitHub env vars (was KG#161)
+
+**Issue:** Samverk MCP handler init is gated on `GITHUB_TOKEN + SAMVERK_GITHUB_OWNER + SAMVERK_GITHUB_REPO` all being set. If any is missing, all MCP routes and server.yaml projects are skipped -- even Gitea-only projects.
+**Fix:** Set env vars to a non-colliding bootstrap project (e.g., `herbhall/devkit`) to keep the handler alive when migrating to Gitea. Proper fix: decouple Gitea project registry from GitHub init gate.
+
 ## 125. go:embed Cache Misses Embedded File Changes
 
 **Added:** 2026-03-14 | **Source:** Samverk | **Status:** active
@@ -562,15 +559,6 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Issue:** SPA catch-all route (`/ -> spaHandler`) intercepts paths not explicitly registered for all HTTP methods. Registering only `POST /mcp` causes GET/DELETE to fall through to SPA, returning HTML instead of JSON.
 **Fix:** Register without method prefix: `mux.Handle("/mcp", handler)` when the handler routes methods internally.
 **See also:** KG#28 (Go 1.22+ route pattern panic)
-
-## 149. Worktree Isolation Agents Can Commit to Wrong Branch
-
-**Added:** 2026-03-17 | **Source:** DevKit | **Status:** active
-
-**Platform:** Claude Code (all)
-**Issue:** Parallel agents with `isolation: "worktree"` can commit to the wrong branch. Both agents' commits end up on one branch while the other branch has no unique commits. Root cause likely related to worktree sharing the same remote origin.
-**Fix:** Verify branch assignments after parallel worktree agents complete. Recovery: cherry-pick each commit onto fresh branches from main, then create PRs from the fixed branches.
-**See also:** KG#25 (parallel agents share working tree), AP#127 (worktree isolation pattern)
 
 ## 150. Go MCP SDK Rejects Non-Localhost Host Headers Behind Reverse Proxy
 
@@ -607,15 +595,6 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Issue:** Automated cherry-pick/rebase conflict resolution scripts that "keep both sides" can break code when the `=======` marker falls inside a function body. Naive marker removal produces functions missing closing `}` and `)`.
 **Fix:** Always compile-check after automated conflict resolution. Better approach: use a fresh worktree agent to rebuild changes cleanly on current main instead of manual conflict resolution.
 
-## 154. Gitea actcache Grows Unbounded and Fills Disk
-
-**Added:** 2026-03-17 | **Source:** Synapset | **Status:** active
-
-**Platform:** Gitea Actions / act_runner (host mode)
-**Issue:** Gitea Actions runner actcache at `/home/git/.cache/actcache/cache` grows ~650MB per CI run with no automatic eviction. Combined with trivy temp files and Go build cache, disk fills completely. Gitea returns "database or disk is full" on merge API calls.
-**Fix:** Periodic cleanup via cron: `find /home/git/.cache/actcache/cache -maxdepth 1 -mtime +7 -exec rm -rf {} +`. Also clean `/tmp/tmp.*` and Go build cache.
-**See also:** trivy binary accumulation (archived, same root cause)
-
 ## 155. stdio MCP Servers Hang Indefinitely When Unavailable
 
 **Added:** 2026-03-17 | **Source:** Samverk | **Status:** active
@@ -631,51 +610,3 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Platform:** DevKit CI (lint.yml)
 **Issue:** The metadata validator (`Validate rule metadata` job) scans all text for `KG#N` and `AP#N` patterns and checks for matching `## N.` entries in the target file. References in descriptive prose (e.g., "archived as KG#148") trigger validation failures if the entry was archived. Additionally, extra pipe-separated fields on `**Added:**` lines (e.g., `| **Researched:** 2026-03-17`) break status parsing because the validator expects exactly 3 fields: Added, Source, Status.
 **Fix:** When referencing archived entries, omit the `KG#`/`AP#` prefix (use descriptive text instead). Never add extra pipe fields to `**Added:**` lines.
-
-## 157. git checkout Blocked by Worktree Holding Branch
-
-**Added:** 2026-03-17 | **Source:** Synapset | **Status:** active
-
-**Platform:** Git (all)
-**Issue:** `git checkout <branch>` fails with "already used by worktree" when the branch is checked out in any worktree (including agent worktrees). Blocks post-agent branch operations like applying lint fixes.
-**Fix:** Run `git worktree remove <path> --force` before checking out the branch in the main tree. After parallel worktree agents complete, prune worktrees before branch operations.
-**See also:** KG#25 (parallel agents share working tree), KG#117 (worktree markdownlint hangs)
-
-## 158. Gitea Runner Stops on Gitea Service Restart (systemd Requires)
-
-**Added:** 2026-03-17 | **Source:** Samverk | **Status:** active
-
-**Platform:** Gitea Actions / act_runner (systemd)
-**Issue:** Gitea Actions runner (`act_runner`) systemd service has `Requires=gitea.service`. When Gitea restarts (e.g., during upgrade), the runner stops and does NOT auto-restart despite `Restart=always`. systemd `Requires=` stops dependent units when the required unit stops.
-**Fix:** Manually restart `gitea-runner` after Gitea upgrade/restart. Consider changing to `Wants=` for a softer dependency that allows independent restart.
-
-## 159. Gitea Dump Permission Denied When Backup Dir Owned by Root
-
-**Added:** 2026-03-17 | **Source:** Samverk | **Status:** active
-
-**Platform:** Gitea (all)
-**Issue:** `gitea dump` runs as the `git` user but the backup directory is owned by root, causing permission denied errors.
-**Fix:** Backup script must: (1) `chown` backup dir to `git:git`, (2) `chown` log file to `git:git`, (3) run as root but `su` to git user for the dump command itself.
-
-## 160. Gitea API Requires Internal URL -- Cloudflare Tunnel Strips Auth
-
-**Added:** 2026-03-17 | **Source:** Synapset | **Status:** active
-
-**Platform:** Gitea / Cloudflare Tunnel
-**Issue:** Gitea REST API calls via the Cloudflare tunnel URL (`gitea.herbhall.net`) fail with "token is required" because the tunnel strips or rejects the `Authorization` header.
-**Fix:** Use the internal URL (`http://192.168.1.160:3000`) for all Gitea API calls. Token can be extracted from git credential manager:
-
-```bash
-printf 'protocol=https\nhost=gitea.herbhall.net\n' | git credential fill | grep password
-```
-
-Discovered while setting `CI_GITEA_TOKEN` secret for semantic-release on Synapset repo.
-**See also:** KG#123 (Gitea API and Actions Gotchas)
-
-## 161. Samverk MCP Handler Init Gated on GitHub Env Vars
-
-**Added:** 2026-03-17 | **Source:** Samverk | **Status:** active
-
-**Platform:** Samverk MCP server
-**Issue:** Samverk MCP handler init in `cmd/samverk/main.go` is gated on `GITHUB_TOKEN + SAMVERK_GITHUB_OWNER + SAMVERK_GITHUB_REPO` all being set. If any is missing, the entire MCP handler, project registry, and all server.yaml projects are skipped -- even Gitea-only projects. The default project from env vars also collides with server.yaml entries of the same name when both use `samverk`.
-**Fix:** After GitHub-to-Gitea migration, set env vars to a non-colliding bootstrap project (e.g., `herbhall/devkit`) to keep the handler alive. Proper fix tracked in Gitea issue `samverk/samverk#38` (decouple Gitea projects from GitHub init gate).
