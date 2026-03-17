@@ -34,8 +34,8 @@ bash setup/legacy/verify.sh
 devkit/
 ├── claude/              - Claude Code config (rules, skills, agents, hooks)
 │   ├── CLAUDE.md        - Global instructions (installed to ~/.claude/)
-│   ├── rules/           - Auto-loaded pattern files (11 files, 121 patterns)
-│   ├── skills/          - Invokable skills (23 skills with workflow files)
+│   ├── rules/           - Auto-loaded pattern files (11 files, 123 patterns)
+│   ├── skills/          - Invokable skills (25 skills with workflow files)
 │   ├── agents/          - Agent templates (7 agents)
 │   └── hooks/           - SessionStart hook
 ├── devspace/            - Workspace shared configs (.editorconfig, VS Code)
