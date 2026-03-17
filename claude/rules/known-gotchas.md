@@ -613,7 +613,7 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Platform:** Gitea Actions / act_runner (host mode)
 **Issue:** Gitea Actions runner actcache at `/home/git/.cache/actcache/cache` grows ~650MB per CI run with no automatic eviction. Combined with trivy temp files and Go build cache, disk fills completely. Gitea returns "database or disk is full" on merge API calls.
 **Fix:** Periodic cleanup via cron: `find /home/git/.cache/actcache/cache -maxdepth 1 -mtime +7 -exec rm -rf {} +`. Also clean `/tmp/tmp.*` and Go build cache.
-**See also:** trivy binary accumulation (archived as KG#148, same root cause)
+**See also:** trivy binary accumulation (archived, same root cause)
 
 ## 155. stdio MCP Servers Hang Indefinitely When Unavailable
 
