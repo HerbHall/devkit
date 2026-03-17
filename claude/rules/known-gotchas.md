@@ -1,7 +1,7 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 61
+entry_count: 63
 last_updated: "2026-03-17"
 ---
 
@@ -656,3 +656,26 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Platform:** Gitea (all)
 **Issue:** `gitea dump` runs as the `git` user but the backup directory is owned by root, causing permission denied errors.
 **Fix:** Backup script must: (1) `chown` backup dir to `git:git`, (2) `chown` log file to `git:git`, (3) run as root but `su` to git user for the dump command itself.
+
+## 160. Gitea API Requires Internal URL -- Cloudflare Tunnel Strips Auth
+
+**Added:** 2026-03-17 | **Source:** Synapset | **Status:** active
+
+**Platform:** Gitea / Cloudflare Tunnel
+**Issue:** Gitea REST API calls via the Cloudflare tunnel URL (`gitea.herbhall.net`) fail with "token is required" because the tunnel strips or rejects the `Authorization` header.
+**Fix:** Use the internal URL (`http://192.168.1.160:3000`) for all Gitea API calls. Token can be extracted from git credential manager:
+
+```bash
+printf 'protocol=https\nhost=gitea.herbhall.net\n' | git credential fill | grep password
+```
+
+Discovered while setting `CI_GITEA_TOKEN` secret for semantic-release on Synapset repo.
+**See also:** KG#123 (Gitea API and Actions Gotchas)
+
+## 161. Samverk MCP Handler Init Gated on GitHub Env Vars
+
+**Added:** 2026-03-17 | **Source:** Samverk | **Status:** active
+
+**Platform:** Samverk MCP server
+**Issue:** Samverk MCP handler init in `cmd/samverk/main.go` is gated on `GITHUB_TOKEN + SAMVERK_GITHUB_OWNER + SAMVERK_GITHUB_REPO` all being set. If any is missing, the entire MCP handler, project registry, and all server.yaml projects are skipped -- even Gitea-only projects. The default project from env vars also collides with server.yaml entries of the same name when both use `samverk`.
+**Fix:** After GitHub-to-Gitea migration, set env vars to a non-colliding bootstrap project (e.g., `herbhall/devkit`) to keep the handler alive. Proper fix tracked in Gitea issue `samverk/samverk#38` (decouple Gitea projects from GitHub init gate).
