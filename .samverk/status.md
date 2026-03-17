@@ -29,16 +29,11 @@ Active maintenance and execution. AI tooling methodology, Claude Code configurat
 
 ## Recently Completed
 
-- **Synapset-backed compaction**: Compacted KG 38k->30k, 15 entries archived to Synapset with tombstones
+- **v2.5.0 release** (2026-03-17): Synapset-backed compaction, conformance check #20, archive recovery, hook expansion
+- **Synapset-backed compaction**: New archive architecture -- tombstone + Synapset ID (PRs #372-#380)
+- Legacy archive backfill: 51 entries stored in Synapset (SYN#515-565), archives converted to tombstone format
+- Release-please permissions fix: enabled PR creation, synced manifest to v2.4.0 (PR #382)
 - **Hook expansion Phase 1-2**: SessionStop, SubagentVerify, commit/push reminder, pre-commit, commit-msg (PRs #365-#369)
-- Cross-client Claude configuration guide (PR #358)
-- KG#135 fix: OAuth not required for Custom Connectors (PR #357)
-- Synapset skill with structured retrieval guide (PR #356)
-- Autolearn ingests: trivy cleanup, Gitea merge API, Ollama gotchas, SQLite PRAGMA (PRs #347-#355)
-- Metrics: HTML dashboard, Synapset tracking, weekly GH Action, conformance persistence (PRs #338-#352)
-- Synapset batch-ingest sync (PR #339) -- closes #333
-- Rules compaction: KG 44k->35k, AP 38k->35k (PR #331)
-- Autolearn batch ingest: 15 issues -> 14 KG + 3 AP + 1 WP entries (PR #329)
 - **v2.4.0 release** -- autonomous autolearn routing (PR #322)
 
 ## Related Projects
