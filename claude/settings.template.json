@@ -37,6 +37,16 @@
           }
         ]
       }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/hooks/SubagentVerify.sh"
+          }
+        ]
+      }
     ]
   },
   "enabledPlugins": {

@@ -33,7 +33,8 @@
       ],
       "hooks": [
         "claude/hooks/SessionStart.sh",
-        "claude/hooks/SessionStop.sh"
+        "claude/hooks/SessionStop.sh",
+        "claude/hooks/SubagentVerify.sh"
       ],
       "reference": [
         "profiles/",
