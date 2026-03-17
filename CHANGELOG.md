@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.6.0](https://github.com/HerbHall/devkit/compare/v2.5.0...v2.6.0) (2026-03-17)
+
+
+### Features
+
+* add Samverk MCP routing + fix KG[#152](https://github.com/HerbHall/devkit/issues/152) scope + [MCP-TOOLS] checklist ([#396](https://github.com/HerbHall/devkit/issues/396)) ([62aeace](https://github.com/HerbHall/devkit/commit/62aeaced4c96bc1e74f90664c0fb00624664ad0a))
+* add samverk-dispatch skill for dispatcher work protocol ([#398](https://github.com/HerbHall/devkit/issues/398)) ([d2732ff](https://github.com/HerbHall/devkit/commit/d2732ffeeff1b138c322095dbad06485fdb318e8))
+
+
+### Bug Fixes
+
+* errcheck file handles in GO-CI checklist + MCP hang prevention ([#391](https://github.com/HerbHall/devkit/issues/391)) ([4cb8b13](https://github.com/HerbHall/devkit/commit/4cb8b1391332bf4c705809a50bc5ec0a286fbf41))
+
 ## [2.5.0](https://github.com/HerbHall/devkit/compare/v2.4.0...v2.5.0) (2026-03-17)
 
 
