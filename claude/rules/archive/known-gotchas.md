@@ -525,3 +525,64 @@ Synapset: pool=devkit, ID=527
 
 Trivy binary accumulation fills disk on host-mode Gitea runners.
 Synapset: pool=devkit, ID=528
+
+## Archived 2026-03-17: Rules compaction (approaching 40k limit)
+
+### Moved to parent consolidated entries
+
+## KG#117 (archived 2026-03-17, consolidated into KG#25)
+
+Claude Code worktrees cause markdownlint hangs on node_modules.
+Consolidated into KG#25 (worktree subsection). No Synapset ID -- content preserved in parent entry.
+
+## KG#118 (archived 2026-03-17, consolidated into KG#25)
+
+Parallel git push triggers concurrent pre-push hooks.
+Consolidated into KG#25 (worktree subsection). No Synapset ID -- content preserved in parent entry.
+
+## KG#149 (archived 2026-03-17, consolidated into KG#25)
+
+Worktree isolation agents can commit to wrong branch.
+Consolidated into KG#25 (worktree subsection). No Synapset ID -- content preserved in parent entry.
+
+## KG#157 (archived 2026-03-17, consolidated into KG#25)
+
+git checkout blocked by worktree holding branch.
+Consolidated into KG#25 (worktree subsection). No Synapset ID -- content preserved in parent entry.
+
+## KG#160 (archived 2026-03-17, consolidated into KG#123)
+
+Gitea API requires internal URL -- Cloudflare tunnel strips auth.
+Consolidated into KG#123 (Gitea gotchas subsection). No Synapset ID -- content preserved in parent entry.
+
+## KG#161 (archived 2026-03-17, consolidated into KG#123)
+
+Samverk MCP handler init gated on GitHub env vars.
+Consolidated into KG#123 (Gitea gotchas subsection). No Synapset ID -- content preserved in parent entry.
+
+### Fully archived (stored in Synapset)
+
+## KG#88 (archived 2026-03-17)
+
+.NET WPF Projects Fail dotnet restore on Linux CI -- scope to .csproj not .sln.
+Synapset: pool=devkit, ID=595
+
+## KG#90 (archived 2026-03-17)
+
+release-please node type requires package.json at repo root -- use simple type instead.
+Synapset: pool=devkit, ID=596
+
+## KG#154 (archived 2026-03-17)
+
+Gitea actcache grows unbounded and fills disk -- periodic cron cleanup required.
+Synapset: pool=devkit, ID=597
+
+## KG#158 (archived 2026-03-17)
+
+Gitea runner stops on Gitea service restart due to systemd Requires= dependency.
+Synapset: pool=devkit, ID=598
+
+## KG#159 (archived 2026-03-17)
+
+Gitea dump permission denied when backup dir owned by root -- chown to git:git.
+Synapset: pool=devkit, ID=599

@@ -1,7 +1,7 @@
 ---
 description: Learned patterns from past sessions. Read when encountering similar situations.
 tier: 2
-entry_count: 72
+entry_count: 66
 last_updated: "2026-03-17"
 ---
 
@@ -434,13 +434,21 @@ Inline PowerShell from MSYS bash breaks with `$env:PATH`, special chars. Write t
 **Context:** Planned items may already be implemented. Planning without exploring leads to overscoped sprints.
 **Fix:** Launch Explore agent to check each deliverable against actual codebase before executing. Extends AP#47.
 
-## 84. Subagents Skip Lint Despite CI Checklist Warnings
+## 84. Lint Enforcement Language Must Be Mandatory, Not Advisory (Consolidated Reference)
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
 
 **Category:** correction
+
+### Subagents skip lint when phrasing is advisory (was AP#84)
+
 **Context:** "Watch for" phrasing in CI checklists is advisory. Agents skip `golangci-lint` and ship violations.
-**Fix:** Require running `golangci-lint run ./path/...` as mandatory numbered step, not "watch for" patterns.
+**Fix:** Require running `golangci-lint run ./path/...` as a mandatory numbered step, not a "watch for" pattern.
+
+### Mandatory language eliminates fix-push cycles (was AP#106)
+
+**Context:** "Self-check" phrasing in CI checklist treated as advisory. Agents skip golangci-lint.
+**Fix:** "Step 4, NOT optional, fix ALL" language. Agent compliance depends on enforcement language, not just rule presence.
 
 ## 85. Roadmap Drift: Verify Claims Against Source Code
 
@@ -525,14 +533,6 @@ Inline PowerShell from MSYS bash breaks with `$env:PATH`, special chars. Write t
 **Category:** workflow-pattern
 **Context:** Sprint achieved zero rework (all CI-green first pass) vs previous 1-3 fix-push cycles per PR.
 **Fix:** Key factors: (1) specific CI commands in prompts, (2) wave ordering respects deps, (3) read-before-write requirement, (4) single responsibility per agent.
-
-## 106. Mandatory Lint Step Language Eliminates Fix-Push Cycles
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** workflow-pattern
-**Context:** "Self-check" phrasing in CI checklist treated as advisory. Agents skip golangci-lint.
-**Fix:** "Step 4, NOT optional, fix ALL" language. Agent compliance depends on enforcement language, not just rule presence.
 
 ## 110. Docker Desktop Extension Marketplace Submission Checklist
 
@@ -653,40 +653,18 @@ MUI Popper needs `anchorEl` during render. `useRef` + `ref.current` triggers Rea
 **Category:** workflow-pattern
 **Context:** Using `isolation: "worktree"` in Agent tool calls gives each parallel agent a fully isolated git copy. No shared working tree conflicts (solves KG#25). Each agent commits to its own branch in its own worktree.
 **Fix:** Use `isolation: "worktree"` for parallel code-gen agents. Merge via API after all complete. Proven: 3 waves x 2 agents = 7 total agents, all CI-clean first pass. Supersedes stash/pop workflow from AP#48 for new work.
-**See also:** KG#25 (parallel agents share working tree), KG#149 (worktree branch collision), AP#48 (legacy stash/pop approach)
+**See also:** KG#25 (parallel agents share working tree), AP#48 (legacy stash/pop approach)
 
-## 128. Safe Deploy Pattern with Idle-Wait Gate for Background Workers
+### Merge interface-changing PRs first to avoid cascading conflicts (was AP#131)
 
-**Added:** 2026-03-15 | **Source:** Samverk | **Status:** active
+**Context:** Parallel PRs modifying a shared Go interface create cascading conflicts in mock implementations. Automated conflict scripts cannot resolve these correctly.
+**Fix:** Merge the interface-changing PR first, then rebase dependent PRs onto updated main. When conflicts arise on pushed PRs, spawn a fresh worktree agent to rebuild on current main.
+**See also:** AP#82 (rebase conflict resolution)
 
-**Category:** process-pattern
-**Context:** Deploying systems with background workers (dispatchers, agent pools, job queues) must not blindly stop services.
-**Fix:** Five-step pattern: (1) check metrics API for active workers and queue depth, (2) stop task-intake (dispatcher) to prevent new claims, (3) poll until in-flight tasks drain (configurable timeout, e.g., 10min), (4) stop serving process and swap binary, (5) restart and verify health.
+### Sequential merge for parallel agents modifying the same file (was AP#135)
 
-## 129. Claude Code Credentials Backup Restoration
-
-**Added:** 2026-03-15 | **Source:** Samverk | **Status:** active
-
-**Category:** tooling
-**Context:** `~/.claude/.credentials.json.bak` may contain valid OAuth tokens after auth issues.
-**Fix:** Copy `.credentials.json.bak` to `.credentials.json` to restore auth without interactive login. Check token validity after restore.
-
-## 130. Dispatcher Overnight Queue Pattern
-
-**Added:** 2026-03-15 | **Source:** Samverk | **Status:** active
-
-**Category:** workflow-pattern
-**Context:** Automated issue processing via agent dispatcher needs routing and failure handling.
-**Fix:** Label issues `status:queued` for overnight processing. Route short issues to triage/haiku. Mark hung issues `status:needs-human` to stop retries.
-
-## 131. Merge Interface-Changing PRs First to Avoid Cascading Conflicts
-
-**Added:** 2026-03-17 | **Source:** Synapset | **Status:** active
-
-**Category:** workflow-pattern
-**Context:** Parallel PRs modifying a shared Go interface (e.g., Provider with Embed/EmbedBatch/Ping) create cascading conflicts in mock implementations across test files. Automated keep-both-sides scripts cannot resolve these correctly.
-**Fix:** Merge the interface-changing PR first, then rebase dependent PRs onto updated main. When conflicts arise on already-pushed PRs, spawn a fresh worktree agent to rebuild the change on current main -- faster and more reliable than manual conflict resolution.
-**See also:** AP#127 (worktree isolation), KG#149 (worktree branch collision), AP#82 (rebase conflict resolution)
+**Context:** Parallel worktree agents both modifying the same file create merge conflicts if both branches merge independently.
+**Fix:** Merge the first branch to main via fast-forward, then rebase the second branch onto updated main before merging. Both merges stay fast-forward with zero conflicts.
 
 ## 132. Exclude Release-Please CHANGELOG From Markdownlint
 
@@ -712,12 +690,3 @@ MUI Popper needs `anchorEl` during render. `useRef` + `ref.current` triggers Rea
 **Category:** process-pattern
 **Context:** Issue spec said "call into existing `dispatcher.Claim()`" but no such public method existed, and the caller and callee were in separate processes. A 2-minute codebase check would have caught both problems.
 **Fix:** Before writing implementation specs that reference internal methods, verify: (1) the method exists and is exported, (2) the caller and callee are in the same process. Extends AP#47 (check existing assets before scoping) and AP#83 (sprint scope reduction via exploration).
-
-## 135. Worktree Sequential Merge Pattern for Shared-File Branches
-
-**Added:** 2026-03-17 | **Source:** Synapset | **Status:** active
-
-**Category:** workflow-pattern
-**Context:** Parallel worktree agents both modifying the same file (e.g., `tools.go`) create merge conflicts if both branches merge independently.
-**Fix:** Merge the first branch to main via fast-forward, then rebase the second branch onto updated main before merging. Both merges stay fast-forward with zero conflicts. Proven with hybrid search + consolidation agents both modifying `tools.go` and `server.go`.
-**See also:** AP#127 (worktree isolation), AP#131 (merge interface-changing PRs first)
