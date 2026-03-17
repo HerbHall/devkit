@@ -1,8 +1,8 @@
 ---
 description: Learned patterns from past sessions. Read when encountering similar situations.
 tier: 2
-entry_count: 67
-last_updated: "2026-03-15"
+entry_count: 68
+last_updated: "2026-03-17"
 ---
 
 # Learned Patterns
@@ -678,3 +678,12 @@ MUI Popper needs `anchorEl` during render. `useRef` + `ref.current` triggers Rea
 **Category:** workflow-pattern
 **Context:** Automated issue processing via agent dispatcher needs routing and failure handling.
 **Fix:** Label issues `status:queued` for overnight processing. Route short issues to triage/haiku. Mark hung issues `status:needs-human` to stop retries.
+
+## 131. Merge Interface-Changing PRs First to Avoid Cascading Conflicts
+
+**Added:** 2026-03-17 | **Source:** Synapset | **Status:** active
+
+**Category:** workflow-pattern
+**Context:** Parallel PRs modifying a shared Go interface (e.g., Provider with Embed/EmbedBatch/Ping) create cascading conflicts in mock implementations across test files. Automated keep-both-sides scripts cannot resolve these correctly.
+**Fix:** Merge the interface-changing PR first, then rebase dependent PRs onto updated main. When conflicts arise on already-pushed PRs, spawn a fresh worktree agent to rebuild the change on current main -- faster and more reliable than manual conflict resolution.
+**See also:** AP#127 (worktree isolation), KG#149 (worktree branch collision), AP#82 (rebase conflict resolution)
