@@ -124,15 +124,27 @@ Use these MCP-provided tools proactively when relevant:
 
 ### Knowledge & Memory
 
-- **Synapset**: Semantic vector memory across sessions and projects
+- **Synapset**: Semantic vector memory and structured retrieval across
+  sessions and projects. See `claude/skills/synapset/SKILL.md` for
+  full decision guide.
   - `store_memory` -- store a learning with embedding (pool: `devkit`
     for cross-project, project name for project-specific)
-  - `search_memory` -- semantic search in a pool (returns ranked
+  - `search_memory` -- semantic KNN search in a pool (returns ranked
     matches by relevance, not just keyword hits)
-  - `search_all` -- cross-pool search for patterns that span projects
-  - `list_pools` / `list_memories` / `delete_memory` -- manage pools
+  - `search_all` -- cross-pool semantic search for patterns that span
+    projects
+  - `query_memory` -- exact-match structured retrieval by source,
+    category, tags, or content/summary substring. Use instead of
+    `search_memory` when you know what you are looking for (e.g.,
+    machine specs, specific gotchas by category)
+  - `update_memory` -- update content or metadata on an existing
+    memory by ID (re-embeds automatically when content changes)
+  - `list_pools` / `list_memories` / `delete_memory` /
+    `import_memories` -- manage pools and bulk operations
   - Endpoint: `https://synapset.herbhall.net/mcp` (Streamable HTTP,
     POST only -- GET hangs by design)
+  - **Session start**: Use `query_memory(pool="machines",
+    source=<hostname>)` to load machine context
   - Use for autolearn storage, pre-task pattern lookup, and
     cross-project knowledge retrieval
 - **Memory**: Persistent knowledge graph across sessions
@@ -233,9 +245,14 @@ Discover and add new MCP servers at runtime:
 
 ### Best Practices
 
+- **Session start**: Load machine context with
+  `query_memory(pool="machines", source=<hostname>)` to know CPU,
+  GPU, RAM, dev tools, workspace paths, and network for this machine
 - Check Context7 before writing code using external libraries
 - Search Synapset (`search_memory`, pool: `devkit`) before starting
   tasks to find relevant patterns and gotchas
+- Use `query_memory` for structured lookups (by source, category,
+  tags); use `search_memory` for exploratory semantic searches
 - Store important project decisions in Memory knowledge graph
 - Use Sequential Thinking for complex debugging or architecture
 - Use MCP_DOCKER GitHub tools for cross-repo searches and bulk
