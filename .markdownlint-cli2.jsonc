@@ -2,6 +2,6 @@
   // Extend the main markdownlint config
   "config": false,
 
-  // Ignore git internal directory (template copies we can't modify)
-  "ignores": [".git/**"]
+  // Ignore files that are tool-generated and cannot be controlled
+  "ignores": [".git/**", "CHANGELOG.md"]
 }
