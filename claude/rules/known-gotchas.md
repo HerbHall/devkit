@@ -610,13 +610,13 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Issue:** `systemctl restart` hangs in `deactivating (stop-sigterm)` when claude CLI subprocesses have active network connections and don't respond to SIGTERM.
 **Fix:** `systemctl kill <service> --signal=SIGKILL` then `systemctl start`. Consider `TimeoutStopSec=30` in unit file.
 
-## 135. MCP Streamable HTTP Requires GET for SSE + OAuth 2.1 for Claude Mobile
+## 135. MCP Streamable HTTP Requires GET for SSE; OAuth Breaks Custom Connectors
 
-**Added:** 2026-03-15 | **Source:** Samverk | **Status:** active
+**Added:** 2026-03-15 | **Updated:** 2026-03-17 | **Source:** Samverk, Synapset | **Status:** active
 
 **Platform:** MCP (all)
-**Issue:** (1) MCP spec requires endpoint to handle both POST (messages) and GET (SSE streams). Claude mobile sends GET. (2) Claude.ai Custom Connectors require OAuth 2.1 flow via `/.well-known/oauth-authorization-server`.
-**Fix:** Register handler without method prefix (go-sdk `StreamableHTTPHandler` handles all methods). Implement OAuth 2.1 discovery endpoint for Custom Connectors.
+**Issue:** (1) MCP spec requires endpoint to handle both POST (messages) and GET (SSE streams). Register handler without method prefix. (2) Claude.ai Custom Connectors do NOT require OAuth 2.1. If `/.well-known/oauth-authorization-server` exists, Claude.ai attempts the OAuth flow; if it fails (e.g., empty auth token on server), the connection is rejected entirely. Synapset proves unauthenticated Custom Connectors work on both desktop and mobile.
+**Fix:** Register handler without method prefix (go-sdk `StreamableHTTPHandler` handles all methods). Do NOT implement OAuth unless you have a working token exchange. For self-hosted MCP servers behind Cloudflare Tunnel, omit OAuth entirely -- Claude.ai falls back to unauthenticated mode.
 
 ## 136. SPA Catch-All Swallows Co-Hosted API Routes in Go ServeMux
 
