@@ -589,13 +589,14 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Issue:** Cloudflare Free plan has an "Always active" managed WAF ruleset that cannot be disabled or skipped. WAF skip rules only affect user-deployed managed rules, not the built-in ones.
 **Fix:** No workaround for disabling built-in rules. If built-in rules block legitimate traffic, use a different ingress method or upgrade to a paid plan with full WAF rule control.
 
-## 152. Background Agents Cannot Use MCP Tools (Permissions Not Inherited)
+## 152. Background Agents (`run_in_background`) Cannot Use MCP Tools
 
 **Added:** 2026-03-17 | **Source:** DevKit | **Status:** active
 
 **Platform:** Claude Code (all)
-**Issue:** Background agents launched via the Agent tool (including `run_in_background: true`) cannot use MCP tools like `store_memory`. Tool permissions granted in the parent context are not inherited by subagents. The subagent gets "denied" on every MCP tool call.
-**Fix:** Perform all MCP operations from the main context before or after delegating file-based work to the subagent. Do not rely on subagents for MCP-dependent tasks.
+**Issue:** Agents launched with `run_in_background: true` cannot use MCP tools -- calls are denied. Foreground subagents (regular Agent tool calls without `run_in_background`) CAN use MCP tools normally. The limitation is specific to the background execution mode.
+**Fix:** For MCP-dependent work, use foreground agents (default). For background agents, perform MCP operations from the main context before launching, or use CLI fallbacks (`gh`, `git`, etc.).
+**See also:** Issue #395 (research: enable MCP for background agents)
 
 ## 153. Cherry-Pick Conflict Resolution Truncates Functions at Marker Boundaries
 
