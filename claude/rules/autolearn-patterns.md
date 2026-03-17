@@ -653,7 +653,7 @@ MUI Popper needs `anchorEl` during render. `useRef` + `ref.current` triggers Rea
 **Category:** workflow-pattern
 **Context:** Using `isolation: "worktree"` in Agent tool calls gives each parallel agent a fully isolated git copy. No shared working tree conflicts (solves KG#25). Each agent commits to its own branch in its own worktree.
 **Fix:** Use `isolation: "worktree"` for parallel code-gen agents. Merge via API after all complete. Proven: 3 waves x 2 agents = 7 total agents, all CI-clean first pass. Supersedes stash/pop workflow from AP#48 for new work.
-**See also:** KG#25 (parallel agents share working tree), AP#48 (legacy stash/pop approach)
+**See also:** KG#25 (parallel agents share working tree), KG#149 (worktree branch collision), AP#48 (legacy stash/pop approach)
 
 ## 128. Safe Deploy Pattern with Idle-Wait Gate for Background Workers
 
