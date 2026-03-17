@@ -1,6 +1,6 @@
 ---
 phase: execution
-updated: 2026-03-17T16:45:00Z
+updated: 2026-03-17T21:00:00Z
 updated_by: claude-code
 managed_by: samverk
 ---
@@ -15,7 +15,7 @@ Active maintenance and execution. AI tooling methodology, Claude Code configurat
 ## What Is Running
 
 - Symlinked rules loaded by all Claude Code sessions via ~/.claude/
-- 24 skills, 7 agents, 11 rules files, 123 active patterns (AP: 68, KG: 55)
+- 25 skills, 7 agents, 11 rules files, 119 active patterns (AP: 66, KG: 53)
 - 3 Claude Code hooks (SessionStart, SessionStop, SubagentVerify) + 3 git hooks (pre-push, pre-commit, commit-msg)
 - Credentials migrated to PowerShell SecretStore vault (HomeLabVault)
 
@@ -25,13 +25,14 @@ None.
 
 ## Queued
 
-- #400 (Samverk MCP checkout/checkin skill) -- priority:high, ready to build
-- #401 (autolearn: static prompts go stale) -- ready to work
-- #393 (create Gitea repo) -- blocked on Samverk #626
-- #394 (migration plan) -- blocked on #393 + Samverk #632
+None. 0 open issues as of 2026-03-17.
 
 ## Recently Completed
 
+- **KG#162 ingestion** (2026-03-17): GitHub issues-disabled API quirk (PR #417)
+- **Rules compaction** (2026-03-17): KG 63->52 entries, AP 72->66 entries (39.8k/38.6k -> 35.1k/35.9k), Synapset SYN#595-602
+- **KG#160-161 ingestion** (2026-03-17): Gitea tunnel auth + Samverk MCP init gating
+- **v2.7.0 release** (2026-03-17): AP#133-135, KG#157-159 ingested from Samverk/Synapset sessions
 - **v2.6.0 release** (2026-03-17): Samverk MCP routing, samverk-dispatch skill, errcheck/MCP hang fixes
 - **v2.5.0 release** (2026-03-17): Synapset-backed compaction, conformance check #20, archive recovery, hook expansion
 - **Synapset-backed compaction**: New archive architecture -- tombstone + Synapset ID (PRs #372-#380)
