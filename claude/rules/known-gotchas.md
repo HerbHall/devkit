@@ -1,7 +1,7 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 53
+entry_count: 55
 last_updated: "2026-03-17"
 ---
 
@@ -230,6 +230,7 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 - **Bash grep in CI:** `\r\n` in Windows-committed files causes trailing `\r` in grep output, breaking comparisons. Fix: `tr -d '\r' < "$file" > "$clean_file"`.
 - **Claude Code Edit tool:** `old_string` matching fails silently on CRLF files. Workaround: use Write tool for new files, or Python binary-mode (`open('file', 'rb')`).
 - **GitHub API body fields:** `gh api` returns `\r\n` in `body` field on Windows. Python regex fails silently. Fix: `body = body.replace("\r\n", "\n")` before parsing.
+- **Python binary-mode file manipulation:** `open(f, 'rb').read()` then `content.find(b'...\n')` returns -1 on CRLF files -- endings are `\r\n`. Using -1 as a slice index (`content[:-1]`) silently corrupts the file with no error. Fix: use `b'...\r\n'` in binary-mode searches.
 
 **Universal fix:** Normalize `\r\n` to `\n` before any string processing on Windows.
 
@@ -521,10 +522,25 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Issue:** Gitea REST API calls via the Cloudflare tunnel URL fail with "token is required" because the tunnel strips the `Authorization` header.
 **Fix:** Use the internal URL (e.g., `http://192.168.1.160:3000`) for all Gitea API calls. Token extraction: `printf 'protocol=https\nhost=gitea.example.com\n' | git credential fill | grep password`
 
-### Samverk MCP handler init gated on GitHub env vars (was KG#161)
+### Samverk MCP handler init gated on GitHub env vars (was KG#161, resolved)
 
-**Issue:** Samverk MCP handler init is gated on `GITHUB_TOKEN + SAMVERK_GITHUB_OWNER + SAMVERK_GITHUB_REPO` all being set. If any is missing, all MCP routes and server.yaml projects are skipped -- even Gitea-only projects.
-**Fix:** Set env vars to a non-colliding bootstrap project (e.g., `herbhall/devkit`) to keep the handler alive when migrating to Gitea. Proper fix: decouple Gitea project registry from GitHub init gate.
+**Issue:** Samverk MCP handler init was gated on `GITHUB_TOKEN + SAMVERK_GITHUB_OWNER + SAMVERK_GITHUB_REPO` all being set. If any was missing, all MCP routes and server.yaml projects were skipped.
+**Fix:** Resolved in Samverk refactor/38 -- MCP handler and server.yaml projects now initialize unconditionally. GitHub env vars only needed for GitHub-hosted projects.
+
+### Force-push rejected with 'stale info' -- fetch first
+
+**Issue:** `git push --force` or `--force-with-lease` to Gitea fails with "stale info" when the local remote-tracking ref is stale or missing (e.g., branch was created remotely via a PR or prior push from another worktree).
+**Fix:** `git fetch gitea <branch>` first, then force-push. The fetch creates the tracking ref. Occurs every time rebasing a branch originally created by a Gitea PR. Different from GitHub, which allows force-push with stale refs.
+
+### semantic-release EGITNOPERMISSION via Cloudflare Tunnel -- needs second url.insteadOf
+
+**Issue:** semantic-release uses `repositoryUrl` for both release notes link generation AND the git push target. If `repositoryUrl` points to the public Cloudflare Tunnel URL and Cloudflare strips `Authorization` headers, the tag push fails with `EGITNOPERMISSION`.
+**Fix:** Add a second `url.insteadOf` rule in CI that rewrites the public URL to authenticated localhost -- the first rule covering `localhost:3000` is not enough alone:
+
+```yaml
+git config --global url."http://user:${TOKEN}@localhost:3000/".insteadOf "http://localhost:3000/"
+git config --global url."http://user:${TOKEN}@localhost:3000/".insteadOf "https://gitea.herbhall.net/"
+```
 
 ## 125. go:embed Cache Misses Embedded File Changes
 
@@ -619,3 +635,20 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Issue:** When `has_issues=false` on a GitHub repo, individual issue GETs return 410 and PATCH on regular issues returns 403. However, PRs (which share the `/issues` endpoint) can still be closed via PATCH even with issues disabled.
 **Fix:** To close regular issues when issues are disabled: (1) re-enable: `GITHUB_TOKEN= gh api repos/OWNER/REPO -X PATCH -f has_issues=true`, (2) close the issues, (3) re-disable. The `GITHUB_TOKEN=` prefix clears any fine-grained PAT that lacks repo settings scope.
 **See also:** KG#120 (fine-grained PAT shadows gh CLI OAuth)
+
+## 163. semantic-release/git Incompatible With Branch Protection Requiring PR Status Checks
+
+**Added:** 2026-03-17 | **Source:** Synapset | **Status:** active
+
+**Platform:** Gitea / GitHub Actions
+**Issue:** `@semantic-release/git` and `@semantic-release/changelog` push commits directly to the default branch. Branch protection requiring `(pull_request)` status checks always rejects these -- direct commits can never have a `pull_request` CI context. Error: "Protected branch update failed: changes must be made through a pull request".
+**Fix:** Remove `@semantic-release/git` and `@semantic-release/changelog` from the plugin chain. Keep: `@semantic-release/commit-analyzer`, `@semantic-release/release-notes-generator`, and the release plugin. Semantic-release still creates the git tag and platform release without the direct-commit plugins.
+
+## 164. Gitea act_runner actcache Grows Unboundedly, Causes ENOSPC
+
+**Added:** 2026-03-17 | **Source:** Synapset | **Status:** active
+
+**Platform:** Gitea Actions (act_runner / Linux)
+**Issue:** act_runner caches workflow artifacts at `/home/git/.cache/actcache/cache/`. No built-in eviction. Can consume 20+ GB on a 40GB disk, causing ENOSPC in all running CI workflows.
+**Fix:** (1) Immediate cleanup: `rm -rf /home/git/.cache/actcache/cache/*`. (2) Daily pruning cron (run as `git` user): `0 3 * * * find /home/git/.cache/actcache/cache -mindepth 1 -maxdepth 1 -mtime +7 -exec rm -rf {} +`. (3) Disk alert at >80% usage via `logger`.
+**Infrastructure note:** `proxmox.herbhall.net` resolves to the dns-proxy LXC, NOT the Proxmox host. Actual Proxmox host is `192.168.1.203`. `pct resize` and `pvesm` are only available on the Proxmox host itself.
