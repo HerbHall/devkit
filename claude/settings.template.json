@@ -27,6 +27,16 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/hooks/SessionStop.sh"
+          }
+        ]
+      }
     ]
   },
   "enabledPlugins": {
