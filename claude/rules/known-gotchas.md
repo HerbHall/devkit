@@ -1,7 +1,7 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 58
+entry_count: 61
 last_updated: "2026-03-17"
 ---
 
@@ -631,3 +631,28 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Platform:** DevKit CI (lint.yml)
 **Issue:** The metadata validator (`Validate rule metadata` job) scans all text for `KG#N` and `AP#N` patterns and checks for matching `## N.` entries in the target file. References in descriptive prose (e.g., "archived as KG#148") trigger validation failures if the entry was archived. Additionally, extra pipe-separated fields on `**Added:**` lines (e.g., `| **Researched:** 2026-03-17`) break status parsing because the validator expects exactly 3 fields: Added, Source, Status.
 **Fix:** When referencing archived entries, omit the `KG#`/`AP#` prefix (use descriptive text instead). Never add extra pipe fields to `**Added:**` lines.
+
+## 157. git checkout Blocked by Worktree Holding Branch
+
+**Added:** 2026-03-17 | **Source:** Synapset | **Status:** active
+
+**Platform:** Git (all)
+**Issue:** `git checkout <branch>` fails with "already used by worktree" when the branch is checked out in any worktree (including agent worktrees). Blocks post-agent branch operations like applying lint fixes.
+**Fix:** Run `git worktree remove <path> --force` before checking out the branch in the main tree. After parallel worktree agents complete, prune worktrees before branch operations.
+**See also:** KG#25 (parallel agents share working tree), KG#117 (worktree markdownlint hangs)
+
+## 158. Gitea Runner Stops on Gitea Service Restart (systemd Requires)
+
+**Added:** 2026-03-17 | **Source:** Samverk | **Status:** active
+
+**Platform:** Gitea Actions / act_runner (systemd)
+**Issue:** Gitea Actions runner (`act_runner`) systemd service has `Requires=gitea.service`. When Gitea restarts (e.g., during upgrade), the runner stops and does NOT auto-restart despite `Restart=always`. systemd `Requires=` stops dependent units when the required unit stops.
+**Fix:** Manually restart `gitea-runner` after Gitea upgrade/restart. Consider changing to `Wants=` for a softer dependency that allows independent restart.
+
+## 159. Gitea Dump Permission Denied When Backup Dir Owned by Root
+
+**Added:** 2026-03-17 | **Source:** Samverk | **Status:** active
+
+**Platform:** Gitea (all)
+**Issue:** `gitea dump` runs as the `git` user but the backup directory is owned by root, causing permission denied errors.
+**Fix:** Backup script must: (1) `chown` backup dir to `git:git`, (2) `chown` log file to `git:git`, (3) run as root but `su` to git user for the dump command itself.
