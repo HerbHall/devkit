@@ -1,7 +1,7 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 52
+entry_count: 53
 last_updated: "2026-03-17"
 ---
 
@@ -610,3 +610,12 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Platform:** DevKit CI (lint.yml)
 **Issue:** The metadata validator (`Validate rule metadata` job) scans all text for `KG#N` and `AP#N` patterns and checks for matching `## N.` entries in the target file. References in descriptive prose (e.g., "archived as KG#148") trigger validation failures if the entry was archived. Additionally, extra pipe-separated fields on `**Added:**` lines (e.g., `| **Researched:** 2026-03-17`) break status parsing because the validator expects exactly 3 fields: Added, Source, Status.
 **Fix:** When referencing archived entries, omit the `KG#`/`AP#` prefix (use descriptive text instead). Never add extra pipe fields to `**Added:**` lines.
+
+## 162. GitHub Issues-Disabled Repo: PRs Closeable but Regular Issues Need Re-Enable
+
+**Added:** 2026-03-17 | **Source:** Samverk | **Status:** active
+
+**Platform:** GitHub API / gh CLI
+**Issue:** When `has_issues=false` on a GitHub repo, individual issue GETs return 410 and PATCH on regular issues returns 403. However, PRs (which share the `/issues` endpoint) can still be closed via PATCH even with issues disabled.
+**Fix:** To close regular issues when issues are disabled: (1) re-enable: `GITHUB_TOKEN= gh api repos/OWNER/REPO -X PATCH -f has_issues=true`, (2) close the issues, (3) re-disable. The `GITHUB_TOKEN=` prefix clears any fine-grained PAT that lacks repo settings scope.
+**See also:** KG#120 (fine-grained PAT shadows gh CLI OAuth)
