@@ -1,6 +1,6 @@
 ---
 phase: execution
-updated: 2026-03-15T23:00:00Z
+updated: 2026-03-17T12:00:00Z
 updated_by: claude-code
 managed_by: samverk
 ---
@@ -15,7 +15,7 @@ Active maintenance and execution. AI tooling methodology, Claude Code configurat
 ## What Is Running
 
 - Symlinked rules loaded by all Claude Code sessions via ~/.claude/
-- 22 skills, 7 agents, 11 rules files, 130 active patterns (AP: 67, KG: 63)
+- 23 skills, 7 agents, 11 rules files, 133 active patterns (AP: 67, KG: 66)
 - SessionStart hook for context injection
 - Credentials migrated to PowerShell SecretStore vault (HomeLabVault)
 
@@ -25,16 +25,19 @@ Active maintenance and execution. AI tooling methodology, Claude Code configurat
 
 ## Queued
 
-- Sync batch-ingested entries to Synapset pool (#333) -- closes coverage gap found during deep migration evaluation
+(none)
 
 ## Recently Completed
 
-- **v2.4.0 release** -- autonomous autolearn routing (PR #322)
+- Cross-client Claude configuration guide (PR #358)
+- KG#135 fix: OAuth not required for Custom Connectors (PR #357)
+- Synapset skill with structured retrieval guide (PR #356)
+- Autolearn ingests: trivy cleanup, Gitea merge API, Ollama gotchas, SQLite PRAGMA (PRs #347-#355)
+- Metrics: HTML dashboard, Synapset tracking, weekly GH Action, conformance persistence (PRs #338-#352)
+- Synapset batch-ingest sync (PR #339) -- closes #333
+- Rules compaction: KG 44k->35k, AP 38k->35k (PR #331)
 - Autolearn batch ingest: 15 issues -> 14 KG + 3 AP + 1 WP entries (PR #329)
-- Rules compaction: KG 44k->35k (90->60), AP 38k->35k (77->67) (PR #331)
-- Synapset deep migration evaluated: full migration not viable, dual-store is the target architecture
-- Synapset integration verified working (3 pools, dual-store operational)
-- v2.3.0: Synapset backend, MCP research, cross-ref verification
+- **v2.4.0 release** -- autonomous autolearn routing (PR #322)
 
 ## Related Projects
 
