@@ -6,8 +6,9 @@ auto-loaded.
 
 ## Purpose
 
-When a rule entry is deprecated or superseded by another entry, its text moves
-here to free context tokens from active sessions while preserving history.
+When a rule entry is deprecated or superseded by another entry, its full text
+is stored in Synapset (`pool: devkit`, tagged `archived`) and a tombstone is
+written here for audit trail and cross-reference integrity.
 
 ## Format
 
@@ -16,7 +17,12 @@ Archive files mirror their source files:
 - `autolearn-patterns.md` -- deprecated entries from `../autolearn-patterns.md`
 - `known-gotchas.md` -- deprecated entries from `../known-gotchas.md`
 
-Each archived entry retains its original number, heading, metadata, and content.
+**New entries (2026-03-17+)** use tombstone format: entry number, one-line
+summary, status, and Synapset ID. Full text lives in Synapset for semantic search.
+
+**Legacy entries (pre-2026-03-17)** retain full text inline. These will be
+migrated to tombstone format in a future pass.
+
 Entry numbers are never reused in the source file.
 
 ## When to Archive
