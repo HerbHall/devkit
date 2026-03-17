@@ -143,6 +143,15 @@ After archiving or consolidating, cross-references between AP and KG files may p
 
 Report any fixes made. This step prevents cross-reference drift (see MCP Memory entity `cross-reference-drift-after-compaction`).
 
+## Step 9: Recover archived entry (on-demand)
+
+If someone needs to view or restore an archived entry:
+
+1. Query Synapset by entry ID tag: `query_memory(pool: "devkit", tags: "<entry_id>")`
+2. If found, display the full archived text
+3. To restore: copy the entry back to the active rules file, remove the archive tombstone, update frontmatter counts
+4. If Synapset is unavailable, recover from git history: `git log -p --all -S "<entry title>" -- claude/rules/<filename>`
+
 </workflow>
 
 <success_criteria>

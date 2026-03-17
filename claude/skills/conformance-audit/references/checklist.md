@@ -182,6 +182,15 @@ A project may match multiple stacks (e.g., Go backend + Node frontend). Apply ch
 - **Fail indicators**: README entry counts diverge from frontmatter `entry_count`; verify.sh lists fewer skills than `claude/skills/` contains; verify.ps1 missing tools referenced in CLAUDE.md
 - **Fix reference**: AP#121 (structured 10-dimension audit prompt); run from main context with Explore subagent
 
+### 20. Synapset Archive Sync (Informational)
+
+- **What to check**: Active rules entries (AP/KG) have corresponding Synapset memories for semantic search discovery
+- **Stacks**: DevKit only (skip for non-DevKit projects)
+- **Pass criteria**: Sample 5 active entries from each rules file, query Synapset by entry ID tag (`query_memory(pool: "devkit", tags: "KG#N")`). At least 80% should return a match
+- **Fail indicators**: Multiple active entries missing from Synapset corpus
+- **Fix reference**: Run `/rules-compact` batch-ingest sync, or manually `store_memory` for missing entries
+- **Note**: This check is **informational only** (does not affect score). Skip entirely if Synapset MCP tools are unavailable
+
 ## Scoring
 
 - **Pass**: Check criteria met
