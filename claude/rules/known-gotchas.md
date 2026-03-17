@@ -603,13 +603,13 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Issue:** stdio-based MCP servers (sqlite, memory, sequential-thinking, context7, ms365-onenote) hang indefinitely when they fail to initialize (wrong path, missing auth, process crash). Tool calls never return and the session must be manually cancelled. The "If unavailable, skip" instruction in workflows has no way to detect unavailability before attempting the call.
 **Fix:** Before calling any stdio MCP tool, verify it appears in the available tools list. If not listed, skip the call entirely. For workflows, add explicit pre-check instructions. HTTP-based MCP servers (Synapset) fail fast with connection errors instead of hanging.
 
-## 156. DevKit CI Metadata Validator Parses All Cross-References in Text
+## 156. DevKit CI Metadata Validator Checks See-Also Lines and Added Metadata
 
 **Added:** 2026-03-17 | **Source:** DevKit | **Status:** active
 
 **Platform:** DevKit CI (lint.yml)
-**Issue:** The metadata validator (`Validate rule metadata` job) scans all text for `KG#N` and `AP#N` patterns and checks for matching `## N.` entries in the target file. References in descriptive prose (e.g., "archived as KG#148") trigger validation failures if the entry was archived. Additionally, extra pipe-separated fields on `**Added:**` lines (e.g., `| **Researched:** 2026-03-17`) break status parsing because the validator expects exactly 3 fields: Added, Source, Status.
-**Fix:** When referencing archived entries, omit the `KG#`/`AP#` prefix (use descriptive text instead). Never add extra pipe fields to `**Added:**` lines.
+**Issue:** The metadata validator (`Validate rule metadata` job) checks two things: (1) lines matching `^\*\*See also:\*\*` are scanned for `KG#N` and `AP#N` references -- each referenced entry must exist as `## N.` in the target file; (2) `**Added:**` lines must have exactly 3 pipe-separated fields (Added, Source, Status). Prose references like "(was KG#117)" in headings and body text do NOT trigger failures -- only `**See also:**` lines are validated.
+**Fix:** When referencing archived entries in `**See also:**` lines, omit the `KG#`/`AP#` prefix or remove the reference. Prose labels (e.g., "(was KG#117)") anywhere else in the entry are safe. Never add extra pipe fields to `**Added:**` lines.
 
 ## 162. GitHub Issues-Disabled Repo: PRs Closeable but Regular Issues Need Re-Enable
 
