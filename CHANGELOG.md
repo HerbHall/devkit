@@ -1,5 +1,40 @@
 # Changelog
 
+## [2.4.0](https://github.com/HerbHall/devkit/compare/v2.3.0...v2.4.0) (2026-03-17)
+
+
+### Features
+
+* add archive recovery workflow and Synapset conformance check ([#379](https://github.com/HerbHall/devkit/issues/379)) ([96b5956](https://github.com/HerbHall/devkit/commit/96b5956de7d82168ace77819e7d7f7b760343a21))
+* add synapset skill with structured retrieval guide ([#356](https://github.com/HerbHall/devkit/issues/356)) ([1c3be95](https://github.com/HerbHall/devkit/commit/1c3be9534e8faf7e5a5dae212128480a073051da))
+* **autolearn:** autonomous routing replaces blocking menu ([#322](https://github.com/HerbHall/devkit/issues/322)) ([e22fc90](https://github.com/HerbHall/devkit/commit/e22fc908d10a1701147ff087adae476ccdd91379))
+* **autolearn:** ingest [#330](https://github.com/HerbHall/devkit/issues/330) + update status.md ([#332](https://github.com/HerbHall/devkit/issues/332)) ([daade3c](https://github.com/HerbHall/devkit/commit/daade3cff5888e79b084cda6e8f8726aa0820592))
+* **autolearn:** ingest [#343](https://github.com/HerbHall/devkit/issues/343) (SQLite PRAGMA + Gitea assign gotchas) ([#347](https://github.com/HerbHall/devkit/issues/347)) ([ac4c5f8](https://github.com/HerbHall/devkit/commit/ac4c5f80a193468557f4e9d06e5999414f7934b1))
+* **autolearn:** ingest [#348](https://github.com/HerbHall/devkit/issues/348) + [#349](https://github.com/HerbHall/devkit/issues/349) (Ollama gotchas) ([#351](https://github.com/HerbHall/devkit/issues/351)) ([19d2915](https://github.com/HerbHall/devkit/commit/19d29156dd31ffa5ecbe21f3365d32fef8f26d92))
+* **autolearn:** ingest [#354](https://github.com/HerbHall/devkit/issues/354) (trivy cleanup + Gitea merge API) ([#355](https://github.com/HerbHall/devkit/issues/355)) ([25c8e66](https://github.com/HerbHall/devkit/commit/25c8e661aeddf686837013559c38e44f9387da69))
+* **autolearn:** ingest 15 issues as rules entries ([#309](https://github.com/HerbHall/devkit/issues/309)-[#328](https://github.com/HerbHall/devkit/issues/328)) ([#329](https://github.com/HerbHall/devkit/issues/329)) ([dab9c64](https://github.com/HerbHall/devkit/commit/dab9c6440439a7fc030cc63b71680b424357b812))
+* **autolearn:** sync batch-ingested entries to Synapset pool ([#333](https://github.com/HerbHall/devkit/issues/333)) ([#339](https://github.com/HerbHall/devkit/issues/339)) ([5c784e3](https://github.com/HerbHall/devkit/commit/5c784e31602c6df74486301d1ff09d9ad376b066))
+* **hooks:** add commit/push verification reminder hook ([#369](https://github.com/HerbHall/devkit/issues/369)) ([e05e2c7](https://github.com/HerbHall/devkit/commit/e05e2c73ad71e1adb25089fbe3fce16dbe87fda5))
+* **hooks:** add pre-commit and commit-msg git hook templates ([#366](https://github.com/HerbHall/devkit/issues/366)) ([919fe75](https://github.com/HerbHall/devkit/commit/919fe75552a33fbc03fdf7af7e6b237e227ce0a8))
+* **hooks:** add SessionStop hook for session-end hygiene ([#365](https://github.com/HerbHall/devkit/issues/365)) ([16e7115](https://github.com/HerbHall/devkit/commit/16e7115b988b0a66fcd97dc073a6d958438b0018))
+* **hooks:** add SubagentStop verification hook ([#368](https://github.com/HerbHall/devkit/issues/368)) ([1b75c04](https://github.com/HerbHall/devkit/commit/1b75c04bf02542eca6a8508a8e75401104e9df18))
+* **metrics:** add conformance score persistence and autolearn velocity ([#336](https://github.com/HerbHall/devkit/issues/336)) ([#341](https://github.com/HerbHall/devkit/issues/341)) ([18d6eb4](https://github.com/HerbHall/devkit/commit/18d6eb496f46277369b67841ab032e65eabdad44))
+* **metrics:** add effectiveness measurement skill and data model ([#334](https://github.com/HerbHall/devkit/issues/334)) ([#338](https://github.com/HerbHall/devkit/issues/338)) ([5b99d1e](https://github.com/HerbHall/devkit/commit/5b99d1ea56994be92744f38d2984ad3557dbbe90))
+* **metrics:** add visual HTML dashboard generator ([#346](https://github.com/HerbHall/devkit/issues/346)) ([3a058f7](https://github.com/HerbHall/devkit/commit/3a058f7a5e281097632484629004fe5f475783fc))
+* **metrics:** add weekly PR metrics collection GH Action ([#337](https://github.com/HerbHall/devkit/issues/337)) ([#342](https://github.com/HerbHall/devkit/issues/342)) ([1b51616](https://github.com/HerbHall/devkit/commit/1b51616605f897c2ba83649cbfd50ce86b40678d))
+* **metrics:** enhance dashboard with unified theme ([#350](https://github.com/HerbHall/devkit/issues/350)) ([#352](https://github.com/HerbHall/devkit/issues/352)) ([ad80efa](https://github.com/HerbHall/devkit/commit/ad80efa3d4d8fba7bf092b541d4649ad1dab82a0))
+* **metrics:** session instrumentation and pattern tracking ([#340](https://github.com/HerbHall/devkit/issues/340)) ([c5981dd](https://github.com/HerbHall/devkit/commit/c5981dd00642b5dfa0a40882c0a8763630c4df5d))
+* **metrics:** track Synapset pattern applications across all projects ([#345](https://github.com/HerbHall/devkit/issues/345)) ([2554388](https://github.com/HerbHall/devkit/commit/255438804b2221029c7d4fa873831e8e1fb466b5))
+* Synapset-backed compaction architecture ([#376](https://github.com/HerbHall/devkit/issues/376)) ([ae2948a](https://github.com/HerbHall/devkit/commit/ae2948ab485b648ab35a7d4a66f2df67e95f445f))
+
+
+### Bug Fixes
+
+* collect-pr-metrics.sh Python fallback for MSYS/Windows ([#344](https://github.com/HerbHall/devkit/issues/344)) ([39e32f2](https://github.com/HerbHall/devkit/commit/39e32f2a3cbd8f789eec9bdc42c0251f2f2269d5))
+* **docs:** correct pattern counts and skill list drift ([#353](https://github.com/HerbHall/devkit/issues/353)) ([5888070](https://github.com/HerbHall/devkit/commit/588807057e7475415cdea7aa3a586cac77821c6e))
+* **docs:** correct pattern counts and status drift ([#359](https://github.com/HerbHall/devkit/issues/359)) ([b39018a](https://github.com/HerbHall/devkit/commit/b39018aee611cc1ec0d326a62b4bf976beb44282))
+* **rules:** correct KG[#135](https://github.com/HerbHall/devkit/issues/135) -- OAuth not required for Custom Connectors ([#357](https://github.com/HerbHall/devkit/issues/357)) ([113e5a2](https://github.com/HerbHall/devkit/commit/113e5a2e3d2f5ceb7fcb09f592cc3fec579c7440))
+
 ## v2.4.0 -- 2026-03-15
 
 Autonomous autolearn -- removes manual menu and runs learnings capture automatically.
