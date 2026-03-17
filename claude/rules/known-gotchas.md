@@ -1,7 +1,7 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 54
+entry_count: 56
 last_updated: "2026-03-17"
 ---
 
@@ -596,3 +596,20 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Platform:** Claude Code (all)
 **Issue:** Background agents launched via the Agent tool (including `run_in_background: true`) cannot use MCP tools like `store_memory`. Tool permissions granted in the parent context are not inherited by subagents. The subagent gets "denied" on every MCP tool call.
 **Fix:** Perform all MCP operations from the main context before or after delegating file-based work to the subagent. Do not rely on subagents for MCP-dependent tasks.
+
+## 153. Cherry-Pick Conflict Resolution Truncates Functions at Marker Boundaries
+
+**Added:** 2026-03-17 | **Source:** Synapset | **Status:** active
+
+**Platform:** Git (all)
+**Issue:** Automated cherry-pick/rebase conflict resolution scripts that "keep both sides" can break code when the `=======` marker falls inside a function body. Naive marker removal produces functions missing closing `}` and `)`.
+**Fix:** Always compile-check after automated conflict resolution. Better approach: use a fresh worktree agent to rebuild changes cleanly on current main instead of manual conflict resolution.
+
+## 154. Gitea actcache Grows Unbounded and Fills Disk
+
+**Added:** 2026-03-17 | **Source:** Synapset | **Status:** active
+
+**Platform:** Gitea Actions / act_runner (host mode)
+**Issue:** Gitea Actions runner actcache at `/home/git/.cache/actcache/cache` grows ~650MB per CI run with no automatic eviction. Combined with trivy temp files and Go build cache, disk fills completely. Gitea returns "database or disk is full" on merge API calls.
+**Fix:** Periodic cleanup via cron: `find /home/git/.cache/actcache/cache -maxdepth 1 -mtime +7 -exec rm -rf {} +`. Also clean `/tmp/tmp.*` and Go build cache.
+**See also:** KG#148 (archived, trivy binary accumulation -- same root cause)
