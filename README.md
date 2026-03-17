@@ -32,7 +32,7 @@ Setup creates symlinks from `~/.claude/` to the DevKit clone (or copies files in
 | Component | Count | Location |
 |-----------|-------|----------|
 | Rules (auto-loaded every session) | 11 files | `claude/rules/` |
-| Skills (invoke with `/skill-name`) | 24 skills | `claude/skills/` |
+| Skills (invoke with `/skill-name`) | 25 skills | `claude/skills/` |
 | Agent templates | 7 agents | `claude/agents/` |
 | Claude Code hooks (SessionStart, SessionStop, SubagentVerify) | 3 | `claude/hooks/` |
 | Git hooks (pre-push, pre-commit, commit-msg) | 3 | `git-templates/hooks/` |
@@ -62,7 +62,7 @@ See [Settings Strategy](docs/settings-strategy.md) for the two-layer permission 
 
 | Directory | Purpose |
 |-----------|---------|
-| `claude/` | Global Claude Code config — CLAUDE.md, 11 rules files (121 patterns), 24 skills, 7 agent templates, 6 hooks |
+| `claude/` | Global Claude Code config — CLAUDE.md, 11 rules files (123 patterns), 25 skills, 7 agent templates, 6 hooks |
 | `devspace/` | Workspace shared configs — .editorconfig, .markdownlint.json, VS Code fragments |
 | `docs/` | Human-readable guides — architecture decisions, profile format spec |
 | `machine/` | Machine state snapshots — VS Code extensions, tool versions |
@@ -272,6 +272,8 @@ Claude.ai Chat uses a separate skill store - install via Settings > Skills in th
 | conformance-audit | 20-point project conformance checklist against DevKit standards | Code |
 | rules-compact | Compact oversized rules files: archive stale, deduplicate, consolidate | Code |
 | skill-audit | Audit skill quality: wait states, routing, references, frontmatter, rules metadata | Code |
+| samverk-dispatch | Dispatcher work protocol: claim issues, process queues, decompose work | Code |
+| samverk-checkout | MCP checkout/checkin protocol: claim, heartbeat, complete, release | Code |
 
 ### Agent Templates
 
