@@ -32,7 +32,8 @@
         "claude/agents/vscode-translation-manager.md"
       ],
       "hooks": [
-        "claude/hooks/SessionStart.sh"
+        "claude/hooks/SessionStart.sh",
+        "claude/hooks/SessionStop.sh"
       ],
       "reference": [
         "profiles/",
