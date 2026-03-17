@@ -71,8 +71,9 @@ If existing entity found, use `add_observations` instead. Create relations with 
 If Synapset MCP tools are available, also store in the appropriate pool:
 
 ```text
-store_memory(pool: "devkit", text: "<description of the learning>",
-  metadata: { source: "<project>", category: "<type>", confidence: "HIGH", date: "YYYY-MM-DD" })
+store_memory(pool: "devkit", content: "<description of the learning>",
+  source: "<project>", category: "<pattern|gotcha|correction|decision>",
+  tags: "<language>,<topic>", summary: "<one-line summary>")
 ```
 
 Use pool `devkit` for cross-project learnings. Use the project name as pool for project-specific learnings. If Synapset tools are not available, skip -- MCP Memory is sufficient.
