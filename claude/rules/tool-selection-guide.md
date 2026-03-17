@@ -59,7 +59,13 @@ Reduces tool-cycling waste and context consumption. Tier 2 (learned).
 
 | Task | Preferred Tool | Why |
 | --- | --- | --- |
-| Cross-session knowledge | MCP Memory (`create_entities`, `search_nodes`) | Persistent graph, survives session boundaries |
+| **Session start: load machine context** | Synapset `query_memory(pool="machines", source=<hostname>)` | Deterministic structured retrieval of CPU, GPU, RAM, dev tools, paths, network for current host |
+| Structured lookup (known pool/source/category) | Synapset `query_memory` | Exact-match filters, no embedding overhead, deterministic results |
+| Semantic concept search (one pool) | Synapset `search_memory` | KNN vector similarity finds related memories even with different wording |
+| Semantic concept search (all pools) | Synapset `search_all` | Cross-pool KNN; note mixed embedding models affect score comparability |
+| Store a learning or pattern | Synapset `store_memory` | Pool: `devkit` for cross-project, project name for project-specific |
+| Update stale machine/project data | Synapset `update_memory` | Preserves memory ID, auto-re-embeds on content change |
+| Cross-session knowledge graph | MCP Memory (`create_entities`, `search_nodes`) | Persistent graph with relations, entity types, structured observations |
 | Complex reasoning | Sequential Thinking MCP | Structured multi-step analysis |
 | Current session tracking | TodoWrite tool | Tasks, progress, completion |
 | Long-term preferences | Memory files in `.claude/projects/` | Local file-based, indexed in MEMORY.md |
