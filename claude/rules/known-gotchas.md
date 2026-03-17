@@ -612,7 +612,7 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 
 ## 135. MCP Streamable HTTP Requires GET for SSE; OAuth Breaks Custom Connectors
 
-**Added:** 2026-03-15 | **Updated:** 2026-03-17 | **Source:** Samverk, Synapset | **Status:** active
+**Added:** 2026-03-17 | **Source:** Samverk, Synapset | **Status:** active
 
 **Platform:** MCP (all)
 **Issue:** (1) MCP spec requires endpoint to handle both POST (messages) and GET (SSE streams). Register handler without method prefix. (2) Claude.ai Custom Connectors do NOT require OAuth 2.1. If `/.well-known/oauth-authorization-server` exists, Claude.ai attempts the OAuth flow; if it fails (e.g., empty auth token on server), the connection is rejected entirely. Synapset proves unauthenticated Custom Connectors work on both desktop and mobile.
