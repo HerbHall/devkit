@@ -591,7 +591,7 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 
 ## 152. Background Agents (`run_in_background`) Cannot Use MCP Tools
 
-**Added:** 2026-03-17 | **Source:** DevKit | **Status:** active | **Researched:** 2026-03-17
+**Added:** 2026-03-17 | **Source:** DevKit | **Status:** active
 
 **Platform:** Claude Code (all)
 **Issue:** Background subagents auto-deny any tool permissions not pre-approved before launch. MCP tools require interactive permission prompts that cannot be pre-collected, so they are systematically blocked. This is **by design** -- background agents use a permission snapshot, not live permission resolution. Foreground subagents (default mode) inherit full MCP tool access. Hooks also do not fire for background agent tool calls (anthropics/claude-code#34240).
