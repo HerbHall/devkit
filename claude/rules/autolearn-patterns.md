@@ -1,7 +1,7 @@
 ---
 description: Learned patterns from past sessions. Read when encountering similar situations.
 tier: 2
-entry_count: 69
+entry_count: 71
 last_updated: "2026-03-17"
 ---
 
@@ -695,3 +695,20 @@ MUI Popper needs `anchorEl` during render. `useRef` + `ref.current` triggers Rea
 **Category:** ci-config
 **Context:** Release-please generates CHANGELOG.md with asterisk list markers (`*`) and double blank lines. These violate MD004 and MD012 but cannot be fixed -- the file is regenerated on each release.
 **Fix:** Add `"CHANGELOG.md"` to the `ignores` array in `.markdownlint-cli2.jsonc`. Do not attempt `replace_all` on asterisk-space -- it corrupts bold markers (`**text:**`) inside list items.
+
+## 133. Prefer Dynamic MCP Discovery Over Static Prompt Files
+
+**Added:** 2026-03-17 | **Source:** Samverk | **Status:** active
+
+**Category:** process-pattern
+**Context:** Hand-written `.samverk/prompts/*.md` files listed issues as critical that were already implemented. MCP calls (`get_digest`, `list_open_prs`) at session start already provide live state. Static prompts duplicate and contradict.
+**Fix:** Use dynamic MCP discovery for session orientation. If static prompts are used, they should be generated (not hand-written) and include a staleness warning with a generation timestamp.
+**See also:** AP#85 (roadmap drift)
+
+## 134. Issue Specs Must Reference Verified Exported API
+
+**Added:** 2026-03-17 | **Source:** Samverk | **Status:** active
+
+**Category:** process-pattern
+**Context:** Issue spec said "call into existing `dispatcher.Claim()`" but no such public method existed, and the caller and callee were in separate processes. A 2-minute codebase check would have caught both problems.
+**Fix:** Before writing implementation specs that reference internal methods, verify: (1) the method exists and is exported, (2) the caller and callee are in the same process. Extends AP#47 (check existing assets before scoping) and AP#83 (sprint scope reduction via exploration).
