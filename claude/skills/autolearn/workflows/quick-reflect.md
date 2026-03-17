@@ -95,7 +95,9 @@ Scan the conversation for patterns that were actively used to solve a problem or
 1. **Rules file references**: Look for AP#N or KG#N citations in the conversation
 2. **Synapset search results**: Look for `search_memory` or `search_all` tool calls where a returned result influenced the solution. Use the memory ID as `SYN#<id>` (e.g., `SYN#412`)
 
-For each pattern that helped, record an application event using SQLite MCP:
+For each pattern that helped, record an application event using SQLite MCP.
+
+**Pre-check:** Before calling any `mcp__sqlite__*` tool, verify it appears in your available tools. If not listed, skip step 5b entirely. Do NOT attempt the call -- stdio MCP servers hang indefinitely when unavailable.
 
 ```text
 write_query(database: "claude.db", query: "CREATE TABLE IF NOT EXISTS pattern_events (id INTEGER PRIMARY KEY AUTOINCREMENT, entry_id TEXT NOT NULL, entry_title TEXT, event_type TEXT NOT NULL, project TEXT, session_date TEXT NOT NULL, description TEXT, source TEXT); INSERT INTO pattern_events (entry_id, entry_title, event_type, project, session_date, description, source) VALUES ('<AP#N, KG#N, or SYN#id>', '<title>', '<prevented|caught|applied>', '<project>', datetime('now'), '<brief note>', '<rules-file|synapset>');"

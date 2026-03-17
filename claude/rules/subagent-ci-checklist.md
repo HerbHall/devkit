@@ -97,7 +97,7 @@ Common Go CI failures to watch for:
 - gocritic unnamedResult: Functions returning multiple values need named returns. After adding names, change `:=` to `=` for those variables AND remove redundant `var` declarations for those names.
 - gocritic appendCombine: Two consecutive `append()` to the same slice must be combined into one call with multiple elements.
 - gocritic rangeValCopy: Use `for i := range slice` with `slice[i]` instead of `for _, v := range slice` for large structs.
-- bodyclose: Always close `*http.Response` body, including from `websocket.Dial()`.
+- bodyclose/errcheck: Always close HTTP response bodies AND file handles. Direct: `_ = f.Close()`. Deferred: `defer func() { _ = f.Close() }()`. Applies to `os.Open`, `resp.Body`, `websocket.Dial`.
 - Build-tag files (!windows): Lint errors only show in Linux CI. Check for filepathJoin, G115, paramTypeCombine.
 - exhaustive: Switch on enum types MUST list ALL cases, even with a default return. Group non-matching cases on 2-3 lines.
 - prealloc: `var slice []T` in a loop body should be `make([]T, 0, len(source))`.
@@ -112,7 +112,7 @@ Backend:
 1. `go build ./...` && `go test ./...`
 2. If HTTP handlers added: `go run github.com/swaggo/swag/cmd/swag@v1.16.4 init -g cmd/<app>/main.go -o api/swagger --parseDependency --parseInternal`
 3. Self-check: `for _, v := range` on large structs -> index-based; `var []T` -> `make([]T, 0, cap)`; consecutive appends -> combine; unnamed multi-returns -> name them
-4. Watch for: gosec G101, gocritic unnamedResult (`:=` -> `=` + remove `var` after named returns), gocritic appendCombine, bodyclose, exhaustive (all enum cases in switch)
+4. Watch for: gosec G101, gocritic unnamedResult (`:=` -> `=` + remove `var` after named returns), gocritic appendCombine, bodyclose/errcheck (file handles + response bodies), exhaustive (all enum cases in switch)
 
 Frontend:
 1. If deps changed: `cd web && pnpm install` to sync lockfile

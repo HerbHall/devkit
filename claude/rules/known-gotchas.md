@@ -1,7 +1,7 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 56
+entry_count: 57
 last_updated: "2026-03-17"
 ---
 
@@ -613,3 +613,11 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Issue:** Gitea Actions runner actcache at `/home/git/.cache/actcache/cache` grows ~650MB per CI run with no automatic eviction. Combined with trivy temp files and Go build cache, disk fills completely. Gitea returns "database or disk is full" on merge API calls.
 **Fix:** Periodic cleanup via cron: `find /home/git/.cache/actcache/cache -maxdepth 1 -mtime +7 -exec rm -rf {} +`. Also clean `/tmp/tmp.*` and Go build cache.
 **See also:** KG#148 (archived, trivy binary accumulation -- same root cause)
+
+## 155. stdio MCP Servers Hang Indefinitely When Unavailable
+
+**Added:** 2026-03-17 | **Source:** Samverk | **Status:** active
+
+**Platform:** Claude Code (all)
+**Issue:** stdio-based MCP servers (sqlite, memory, sequential-thinking, context7, ms365-onenote) hang indefinitely when they fail to initialize (wrong path, missing auth, process crash). Tool calls never return and the session must be manually cancelled. The "If unavailable, skip" instruction in workflows has no way to detect unavailability before attempting the call.
+**Fix:** Before calling any stdio MCP tool, verify it appears in the available tools list. If not listed, skip the call entirely. For workflows, add explicit pre-check instructions. HTTP-based MCP servers (Synapset) fail fast with connection errors instead of hanging.
