@@ -141,8 +141,8 @@ Use these MCP-provided tools proactively when relevant:
     memory by ID (re-embeds automatically when content changes)
   - `list_pools` / `list_memories` / `delete_memory` /
     `import_memories` -- manage pools and bulk operations
-  - Endpoint: `https://synapset.herbhall.net/mcp` (Streamable HTTP,
-    POST only -- GET hangs by design)
+  - Endpoint: `https://synapset.herbhall.net/mcp` (Streamable HTTP;
+    POST for JSON-RPC tool calls, GET for SSE streams)
   - **Session start**: Use `query_memory(pool="machines",
     source=<hostname>)` to load machine context
   - Use for autolearn storage, pre-task pattern lookup, and

@@ -106,8 +106,9 @@ add_observations: [
 If Synapset MCP tools are available, also store each HIGH-confidence finding:
 
 ```text
-store_memory(pool: "devkit", text: "<description>",
-  metadata: { source: "<project>", category: "<type>", confidence: "HIGH", date: "YYYY-MM-DD" })
+store_memory(pool: "devkit", content: "<description>",
+  source: "<project>", category: "<pattern|gotcha|correction|decision>",
+  tags: "<language>,<topic>", summary: "<one-line summary>")
 ```
 
 Use pool `devkit` for cross-project learnings. Use project name as pool for project-specific. If Synapset unavailable, skip -- MCP Memory is sufficient.

@@ -60,12 +60,10 @@ The `machines` pool is the single source of truth for hardware context.
 | `machines` | Hardware specs, network, dev tools per host | hostname lowercase (e.g., `hdh-nzxt`) | nomic-embed-text |
 | `devkit` | Cross-project patterns, gotchas, corrections | `migration-from-openai` or skill name | nomic-embed-text |
 | `samverk` | Agent session completions, dispatcher learnings | `session:sess_<issue>_<ts>` | nomic-embed-text |
-| `mcp-memory` | General knowledge graph bridge | varies | text-embedding-3-small |
+| `mcp-memory` | General knowledge graph bridge | varies | nomic-embed-text |
 
-Note: `machines` and `devkit` use local Ollama (`nomic-embed-text`)
-while `mcp-memory` uses OpenAI (`text-embedding-3-small`). Cross-pool
-`search_all` runs KNN across mixed embedding models, so similarity
-scores between pools are not directly comparable.
+All pools use the same active embedding model (Ollama `nomic-embed-text`,
+768 dimensions). Cross-pool `search_all` scores are directly comparable.
 
 **Storage Best Practices**
 

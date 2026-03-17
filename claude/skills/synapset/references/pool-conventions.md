@@ -39,11 +39,11 @@ Agent session completions and dispatcher operational data.
 
 Bridge pool for MCP Memory knowledge graph integration.
 
-- **Embedding model**: text-embedding-3-small (OpenAI API)
+- **Embedding model**: nomic-embed-text (Ollama, local)
 - **Source convention**: Varies
-- **Note**: Different embedding model from other pools. Similarity scores
-  from `search_all` are not directly comparable across this pool and
-  Ollama-backed pools.
+- **Note**: This pool was originally seeded with OpenAI embeddings but
+  has been re-embedded with the active Ollama provider. All pools now
+  use the same embedding model, so `search_all` scores are comparable.
 
 ## Naming Rules
 
