@@ -1,6 +1,6 @@
 ---
 phase: execution
-updated: 2026-03-17T21:00:00Z
+updated: 2026-03-17T22:00:00Z
 updated_by: claude-code
 managed_by: samverk
 ---
@@ -15,7 +15,7 @@ Active maintenance and execution. AI tooling methodology, Claude Code configurat
 ## What Is Running
 
 - Symlinked rules loaded by all Claude Code sessions via ~/.claude/
-- 25 skills, 7 agents, 11 rules files, 119 active patterns (AP: 66, KG: 53)
+- 25 skills, 7 agents, 11 rules files, 123 active patterns (AP: 68, KG: 55)
 - 3 Claude Code hooks (SessionStart, SessionStop, SubagentVerify) + 3 git hooks (pre-push, pre-commit, commit-msg)
 - Credentials migrated to PowerShell SecretStore vault (HomeLabVault)
 
@@ -25,10 +25,11 @@ None.
 
 ## Queued
 
-None. 0 open issues as of 2026-03-17.
+- **Issue ingestion** (#418, #419, #422-#426): 7 autolearn patterns from Samverk/Synapset sessions — in this PR
 
 ## Recently Completed
 
+- **KG#156 correction** (2026-03-17): CI validator scope (PR #420)
 - **KG#162 ingestion** (2026-03-17): GitHub issues-disabled API quirk (PR #417)
 - **Rules compaction** (2026-03-17): KG 63->52 entries, AP 72->66 entries (39.8k/38.6k -> 35.1k/35.9k), Synapset SYN#595-602
 - **KG#160-161 ingestion** (2026-03-17): Gitea tunnel auth + Samverk MCP init gating
@@ -44,7 +45,7 @@ None. 0 open issues as of 2026-03-17.
 ## Related Projects
 
 - **Synapset** (gitea:samverk-admin/synapset) — Vector memory MCP server, DevKit is primary consumer
-- **Samverk** (github:HerbHall/samverk) — Project lifecycle manager
+- **Samverk** (gitea:samverk/samverk) — Project lifecycle manager
 
 ## Start Here (Cold Start Protocol)
 

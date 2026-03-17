@@ -1,7 +1,7 @@
 ---
 description: Learned patterns from past sessions. Read when encountering similar situations.
 tier: 2
-entry_count: 66
+entry_count: 68
 last_updated: "2026-03-17"
 ---
 
@@ -690,3 +690,19 @@ MUI Popper needs `anchorEl` during render. `useRef` + `ref.current` triggers Rea
 **Category:** process-pattern
 **Context:** Issue spec said "call into existing `dispatcher.Claim()`" but no such public method existed, and the caller and callee were in separate processes. A 2-minute codebase check would have caught both problems.
 **Fix:** Before writing implementation specs that reference internal methods, verify: (1) the method exists and is exported, (2) the caller and callee are in the same process. Extends AP#47 (check existing assets before scoping) and AP#83 (sprint scope reduction via exploration).
+
+## 136. Go Interface Extension Requires Updating All Test Mocks
+
+**Added:** 2026-03-17 | **Source:** Samverk | **Status:** active
+
+**Category:** correction
+**Context:** Adding a method to a Go interface requires updating ALL structs implementing it, including private test mocks. The compiler catches missing methods, but if a mock adds the new method stub without calling it in any test, golangci-lint's `unused` linter fails.
+**Fix:** Before submitting a PR that extends a Go interface, grep for all types implementing it. Ensure every mock (1) adds the new method and (2) exercises it in at least one test case.
+
+## 137. Hardcoded Count Assertions Break When Adding Features
+
+**Added:** 2026-03-17 | **Source:** Samverk | **Status:** active
+
+**Category:** gotcha
+**Context:** Tests asserting exact counts (e.g., `len(tools) != 41`) fail whenever a new item is added. Common in tool-discovery tests, route-registration tests, and enum exhaustiveness checks.
+**Fix:** Before creating a PR that adds tools/routes/handlers, search for `len(...) != N` or `assert.Equal(t, N, len(...))` patterns and update the expected count. For non-correctness counts, prefer `>= N` over exact equality.
