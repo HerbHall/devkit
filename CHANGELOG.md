@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.7.0](https://github.com/HerbHall/devkit/compare/v2.6.0...v2.7.0) (2026-03-17)
+
+
+### Features
+
+* add samverk-checkout skill for MCP work protocol ([#400](https://github.com/HerbHall/devkit/issues/400)) ([#406](https://github.com/HerbHall/devkit/issues/406)) ([b3e268e](https://github.com/HerbHall/devkit/commit/b3e268e42909a933add35200189e03388ef51983))
+
 ## [2.6.0](https://github.com/HerbHall/devkit/compare/v2.5.0...v2.6.0) (2026-03-17)
 
 
