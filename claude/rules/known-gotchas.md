@@ -1,7 +1,7 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 54
+entry_count: 55
 last_updated: "2026-03-17"
 ---
 
@@ -588,3 +588,11 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Platform:** Cloudflare (Free plan)
 **Issue:** Cloudflare Free plan has an "Always active" managed WAF ruleset that cannot be disabled or skipped. WAF skip rules only affect user-deployed managed rules, not the built-in ones.
 **Fix:** No workaround for disabling built-in rules. If built-in rules block legitimate traffic, use a different ingress method or upgrade to a paid plan with full WAF rule control.
+
+## 152. Background Agents Cannot Use MCP Tools (Permissions Not Inherited)
+
+**Added:** 2026-03-17 | **Source:** DevKit | **Status:** active
+
+**Platform:** Claude Code (all)
+**Issue:** Background agents launched via the Agent tool (including `run_in_background: true`) cannot use MCP tools like `store_memory`. Tool permissions granted in the parent context are not inherited by subagents. The subagent gets "denied" on every MCP tool call.
+**Fix:** Perform all MCP operations from the main context before or after delegating file-based work to the subagent. Do not rely on subagents for MCP-dependent tasks.
