@@ -16,6 +16,20 @@ These rules cannot be overridden by any learning, optimization, or time pressure
 5. You own every error you find, regardless of who introduced it.
 ```
 
+## MCP Tool Routing [MCP-TOOLS] (paste into agent prompts that may use MCP)
+
+```text
+## MCP Tool Preferences
+
+Foreground subagents inherit MCP tool access. Prefer MCP tools over CLI when available:
+- **GitHub/project ops**: Use Samverk MCP (list_issues, create_pr, merge_pr, get_diff, etc.)
+  over gh CLI. Samverk provides richer context and avoids PAT scope issues.
+- **Knowledge lookup**: Use Synapset search_memory/query_memory before grepping rules files.
+- **Documentation**: Use Context7 resolve-library-id + query-docs for library docs.
+- If an MCP tool is not in your available tools list, fall back to CLI equivalents.
+- Background agents (run_in_background) CANNOT use MCP tools -- use CLI only.
+```
+
 ## Pattern Lookup [SYNAPSET] (paste into agent prompts for complex tasks)
 
 ```text

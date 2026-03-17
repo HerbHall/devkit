@@ -3,17 +3,33 @@
 Proactive decision tree for choosing the right tool the first time.
 Reduces tool-cycling waste and context consumption. Tier 2 (learned).
 
-## GitHub Operations
+## MCP Availability by Agent Context
 
-| Task | Preferred Tool | Why |
+| Context | MCP Tools Available? | Fallback |
 | --- | --- | --- |
-| Issue CRUD (create, close, edit, list) | `gh` CLI | Fastest, most reliable, supports `--json` for parsing |
-| PR create, merge, review | `gh pr` CLI | Native squash-merge, auto-merge support |
-| Cross-repo code search | MCP_DOCKER `search_code` | Faster than `gh api` for multi-repo queries |
-| Cross-repo issue search | MCP_DOCKER `search_issues` | Better filtering than `gh issue list` across repos |
-| Repo settings (disable features) | `gh api` with PATCH | `gh repo edit` lacks `--disable-*` flags (KG#74) |
-| GET requests with params | URL query string | `-f` flags default to POST, breaking GET (KG#107) |
-| Milestone assignment | `--milestone "Title"` (string) | `--milestone N` fails; CLI takes title, not number (KG#108) |
+| Main conversation | Yes (all configured MCP servers) | N/A |
+| Foreground subagent (Agent tool, default) | Yes (inherits parent permissions) | N/A |
+| Background subagent (`run_in_background: true`) | **No** -- calls denied (KG#152, issue #395) | CLI tools (`gh`, `git`, etc.) |
+
+**Rule**: Prefer MCP tools when available. Use CLI as fallback for background agents or when MCP server is down.
+
+## GitHub and Project Operations
+
+| Task | Preferred Tool | Fallback | Why |
+| --- | --- | --- | --- |
+| Issue CRUD (create, close, edit, list) | Samverk MCP `list_issues`, `create_issue`, `close_issue` | `gh` CLI | Samverk has richer filtering; `gh` is universal fallback |
+| PR create, merge, review | Samverk MCP `create_pr`, `merge_pr`, `review_pr` | `gh pr` CLI | Samverk tracks lifecycle; `gh` for squash-merge, auto-merge |
+| PR diff and file listing | Samverk MCP `get_diff`, `list_files` | `gh pr diff` | Samverk returns structured data |
+| Commit log and branch ops | Samverk MCP `get_commit_log`, `list_branches` | `git log`, `git branch -r` | Samverk works cross-repo without local clone |
+| Issue comments | Samverk MCP `add_comment`, `list_comments` | `gh issue comment` | Samverk avoids fine-grained PAT scope issues (KG#120) |
+| Cross-repo code search | MCP_DOCKER `search_code` | `gh api` | Faster than CLI for multi-repo queries |
+| Cross-repo issue search | MCP_DOCKER `search_issues` | `gh issue list` | Better filtering across repos |
+| Repo settings (disable features) | `gh api` with PATCH | -- | `gh repo edit` lacks `--disable-*` flags (KG#74) |
+| GET requests with params | URL query string | -- | `-f` flags default to POST, breaking GET (KG#107) |
+| Milestone assignment | `--milestone "Title"` (string) | -- | `--milestone N` fails; CLI takes title, not number (KG#108) |
+| Project digest / cost summary | Samverk MCP `get_digest`, `get_cost_summary` | -- | No CLI equivalent |
+
+**When to use Samverk MCP vs `gh` CLI**: Check if Samverk MCP tools appear in available tools. If yes, prefer them -- they provide richer project context and avoid PAT scope issues. If unavailable (not configured for this project, or running in background agent), fall back to `gh` CLI.
 
 ## Web Content and Research
 
