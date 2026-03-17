@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# Commit-msg hook: validates conventional commit format.
+# Install: git config core.hooksPath git-templates/hooks
+set -euo pipefail
+
+MSG_FILE="$1"
+
+# Strip comments and leading/trailing blank lines
+SUBJECT=$(sed '/^#/d' "$MSG_FILE" | sed '/^$/d' | head -n 1)
+
+if [ -z "$SUBJECT" ]; then
+  echo "[commit-msg] ERROR: Commit message is empty."
+  exit 1
+fi
+
+# Allow merge, revert, fixup, and squash commits without validation
+if echo "$SUBJECT" | grep -qE '^Merge '; then
+  exit 0
+fi
+if echo "$SUBJECT" | grep -qE '^Revert '; then
+  exit 0
+fi
+if echo "$SUBJECT" | grep -qE '^(fixup|squash)! '; then
+  exit 0
+fi
+
+# Validate conventional commit format
+if ! echo "$SUBJECT" | grep -qE '^(feat|fix|refactor|docs|test|chore|ci|perf|build|style|revert)(\(.+\))?(!)?: .+'; then
+  echo "[commit-msg] ERROR: Commit message does not follow conventional commit format."
+  echo ""
+  echo "  Expected: <type>(<scope>): <description>"
+  echo ""
+  echo "  Types: feat, fix, refactor, docs, test, chore, ci, perf, build, style, revert"
+  echo ""
+  echo "  Examples:"
+  echo "    feat: add user authentication"
+  echo "    fix(auth): resolve token refresh issue"
+  echo "    chore!: drop support for Node 14"
+  echo "    docs(readme): update installation instructions"
+  echo ""
+  echo "  Your message: $SUBJECT"
+  exit 1
+fi

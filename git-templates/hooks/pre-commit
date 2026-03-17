@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+# Pre-commit hook: lightweight checks on every commit.
+# Complements the pre-push hook which runs full CI checks.
+# Install: git config core.hooksPath git-templates/hooks
+set -euo pipefail
+
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM)
+
+if [ -z "$STAGED_FILES" ]; then
+  exit 0
+fi
+
+# --- Secret pattern scan ---
+SECRET_PATTERNS=(
+  'AKIA[A-Z0-9]{16}'
+  '-----BEGIN.*PRIVATE KEY-----'
+  'sk-[a-zA-Z0-9]{20,}'
+  'ghp_[a-zA-Z0-9]{36}'
+  'glpat-[a-zA-Z0-9\-]{20,}'
+)
+
+FOUND_SECRETS=0
+
+for file in $STAGED_FILES; do
+  # Skip binary files
+  if git diff --cached --numstat "$file" | grep -q '^-'; then
+    continue
+  fi
+
+  for pattern in "${SECRET_PATTERNS[@]}"; do
+    if git diff --cached "$file" | grep -Eq "$pattern"; then
+      if [ "$FOUND_SECRETS" -eq 0 ]; then
+        echo "[pre-commit] ERROR: Potential secret detected in staged files:"
+      fi
+      echo "  $file  (pattern: $pattern)"
+      FOUND_SECRETS=1
+    fi
+  done
+done
+
+if [ "$FOUND_SECRETS" -ne 0 ]; then
+  echo ""
+  echo "If this is a false positive, use: git commit --no-verify"
+  exit 1
+fi
+
+# --- File size guard (10MB = 10485760 bytes) ---
+MAX_SIZE=10485760
+
+for file in $STAGED_FILES; do
+  # Use git cat-file to check size of the staged blob
+  FILE_SIZE=$(git cat-file -s "$(git ls-files -s "$file" | awk '{print $2}')" 2>/dev/null || echo 0)
+  if [ "$FILE_SIZE" -gt "$MAX_SIZE" ]; then
+    echo "[pre-commit] ERROR: File exceeds 10MB limit:"
+    echo "  $file  ($(( FILE_SIZE / 1048576 ))MB)"
+    exit 1
+  fi
+done
+
+echo "[pre-commit] checks passed"
