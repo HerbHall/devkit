@@ -62,7 +62,7 @@ See [Settings Strategy](docs/settings-strategy.md) for the two-layer permission 
 
 | Directory | Purpose |
 |-----------|---------|
-| `claude/` | Global Claude Code config — CLAUDE.md, 11 rules files (133 patterns), 23 skills, 7 agent templates, 3 hooks |
+| `claude/` | Global Claude Code config — CLAUDE.md, 11 rules files (121 patterns), 23 skills, 7 agent templates, 6 hooks |
 | `devspace/` | Workspace shared configs — .editorconfig, .markdownlint.json, VS Code fragments |
 | `docs/` | Human-readable guides — architecture decisions, profile format spec |
 | `machine/` | Machine state snapshots — VS Code extensions, tool versions |
@@ -237,7 +237,7 @@ With symlinks active, changes flow automatically:
 | `compaction-recovery.md` | - | Context compaction recovery rules and loop detection |
 | `core-principles.md` | 10 | Immutable core principles (Tier 0) |
 | `error-policy.md` | - | Zero-tolerance error policy and fix-forward workflow (Tier 1) |
-| `known-gotchas.md` | 63 | Platform issues: Windows, GitHub, Go, React, Docker |
+| `known-gotchas.md` | 54 | Platform issues: Windows, GitHub, Go, React, Docker |
 | `markdown-style.md` | - | Markdownlint conventions |
 | `review-policy.md` | - | Independent review policy: mandatory triggers and scope |
 | `subagent-ci-checklist.md` | - | Pre-commit CI validation checklists |
@@ -269,7 +269,7 @@ Claude.ai Chat uses a separate skill store - install via Settings > Skills in th
 | code-review | Independent code review gate before commits | Code |
 | plan-review | Independent plan review gate before implementation | Code |
 | devkit-sync | Multi-machine DevKit sync: status, push, pull, init, diff, verify, promote, update | Code |
-| conformance-audit | 19-point project conformance checklist against DevKit standards | Code |
+| conformance-audit | 20-point project conformance checklist against DevKit standards | Code |
 | rules-compact | Compact oversized rules files: archive stale, deduplicate, consolidate | Code |
 | skill-audit | Audit skill quality: wait states, routing, references, frontmatter, rules metadata | Code |
 

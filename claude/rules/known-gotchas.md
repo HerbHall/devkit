@@ -1,7 +1,7 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 55
+entry_count: 54
 last_updated: "2026-03-17"
 ---
 
