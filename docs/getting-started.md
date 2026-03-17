@@ -101,5 +101,6 @@ Open your project directory and start Claude Code. The SessionStart hook fires a
 
 - **Adopting DevKit in an existing project?** See the [Migration Guide](migration-guide.md)
 - **Want to add skills, agents, or rules?** See [Extending DevKit](extending-devkit.md)
+- **Using claude.ai web/desktop/mobile too?** See [Cross-Client Configuration](cross-client-configuration.md) for Profile Preferences, Projects, and Custom Connectors
 - **Running into problems?** See [Troubleshooting](troubleshooting.md)
 - **Full development methodology**: Read [METHODOLOGY.md](../METHODOLOGY.md) for the 6-phase process
