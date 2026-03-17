@@ -1,7 +1,7 @@
 ---
 description: Learned patterns from past sessions. Read when encountering similar situations.
 tier: 2
-entry_count: 68
+entry_count: 69
 last_updated: "2026-03-17"
 ---
 
@@ -687,3 +687,11 @@ MUI Popper needs `anchorEl` during render. `useRef` + `ref.current` triggers Rea
 **Context:** Parallel PRs modifying a shared Go interface (e.g., Provider with Embed/EmbedBatch/Ping) create cascading conflicts in mock implementations across test files. Automated keep-both-sides scripts cannot resolve these correctly.
 **Fix:** Merge the interface-changing PR first, then rebase dependent PRs onto updated main. When conflicts arise on already-pushed PRs, spawn a fresh worktree agent to rebuild the change on current main -- faster and more reliable than manual conflict resolution.
 **See also:** AP#127 (worktree isolation), KG#149 (worktree branch collision), AP#82 (rebase conflict resolution)
+
+## 132. Exclude Release-Please CHANGELOG From Markdownlint
+
+**Added:** 2026-03-17 | **Source:** DevKit | **Status:** active
+
+**Category:** ci-config
+**Context:** Release-please generates CHANGELOG.md with asterisk list markers (`*`) and double blank lines. These violate MD004 and MD012 but cannot be fixed -- the file is regenerated on each release.
+**Fix:** Add `"CHANGELOG.md"` to the `ignores` array in `.markdownlint-cli2.jsonc`. Do not attempt `replace_all` on asterisk-space -- it corrupts bold markers (`**text:**`) inside list items.
