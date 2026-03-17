@@ -591,11 +591,12 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 
 ## 152. Background Agents (`run_in_background`) Cannot Use MCP Tools
 
-**Added:** 2026-03-17 | **Source:** DevKit | **Status:** active
+**Added:** 2026-03-17 | **Source:** DevKit | **Status:** active | **Researched:** 2026-03-17
 
 **Platform:** Claude Code (all)
-**Issue:** Agents launched with `run_in_background: true` cannot use MCP tools -- calls are denied. Foreground subagents (regular Agent tool calls without `run_in_background`) CAN use MCP tools normally. The limitation is specific to the background execution mode.
-**Fix:** For MCP-dependent work, use foreground agents (default). For background agents, perform MCP operations from the main context before launching, or use CLI fallbacks (`gh`, `git`, etc.).
+**Issue:** Background subagents auto-deny any tool permissions not pre-approved before launch. MCP tools require interactive permission prompts that cannot be pre-collected, so they are systematically blocked. This is **by design** -- background agents use a permission snapshot, not live permission resolution. Foreground subagents (default mode) inherit full MCP tool access. Hooks also do not fire for background agent tool calls (anthropics/claude-code#34240).
+**Fix:** For MCP-dependent work, use foreground agents (default). For background agents: (1) pre-fetch MCP data from main context and pass as text in the prompt, (2) use CLI fallbacks (`gh`, `git`, `curl`), or (3) split into foreground MCP-gather phase + background compute phase.
+**Upstream:** anthropics/claude-code#18617 (open, no team response yet). MCP SDK has SEP-1686 Task support but Claude Code application layer does not invoke it.
 **See also:** Issue #395 (research: enable MCP for background agents)
 
 ## 153. Cherry-Pick Conflict Resolution Truncates Functions at Marker Boundaries
