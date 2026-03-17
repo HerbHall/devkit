@@ -1,7 +1,7 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 57
+entry_count: 58
 last_updated: "2026-03-17"
 ---
 
@@ -623,3 +623,11 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Platform:** Claude Code (all)
 **Issue:** stdio-based MCP servers (sqlite, memory, sequential-thinking, context7, ms365-onenote) hang indefinitely when they fail to initialize (wrong path, missing auth, process crash). Tool calls never return and the session must be manually cancelled. The "If unavailable, skip" instruction in workflows has no way to detect unavailability before attempting the call.
 **Fix:** Before calling any stdio MCP tool, verify it appears in the available tools list. If not listed, skip the call entirely. For workflows, add explicit pre-check instructions. HTTP-based MCP servers (Synapset) fail fast with connection errors instead of hanging.
+
+## 156. DevKit CI Metadata Validator Parses All Cross-References in Text
+
+**Added:** 2026-03-17 | **Source:** DevKit | **Status:** active
+
+**Platform:** DevKit CI (lint.yml)
+**Issue:** The metadata validator (`Validate rule metadata` job) scans all text for `KG#N` and `AP#N` patterns and checks for matching `## N.` entries in the target file. References in descriptive prose (e.g., "archived as KG#148") trigger validation failures if the entry was archived. Additionally, extra pipe-separated fields on `**Added:**` lines (e.g., `| **Researched:** 2026-03-17`) break status parsing because the validator expects exactly 3 fields: Added, Source, Status.
+**Fix:** When referencing archived entries, omit the `KG#`/`AP#` prefix (use descriptive text instead). Never add extra pipe fields to `**Added:**` lines.
