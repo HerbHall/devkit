@@ -1,8 +1,8 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 66
-last_updated: "2026-03-16"
+entry_count: 69
+last_updated: "2026-03-17"
 ---
 
 # Known Gotchas
@@ -699,3 +699,29 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Platform:** Gitea Actions / act_runner (host mode)
 **Issue:** `security.yml` downloads trivy (155MB) to `/tmp` per run, never cleans up. On host-mode act_runners, 15+ runs accumulates 2.3GB of stale binaries. Disk full causes `actions/checkout@v4` to fail silently in 0 seconds.
 **Fix:** Add `if: always()` cleanup step to remove trivy temp files after each run. For host-mode runners, consider a cron job to sweep `/tmp/trivy*` periodically.
+
+## 149. Worktree Isolation Agents Can Commit to Wrong Branch
+
+**Added:** 2026-03-17 | **Source:** DevKit | **Status:** active
+
+**Platform:** Claude Code (all)
+**Issue:** Parallel agents with `isolation: "worktree"` can commit to the wrong branch. Both agents' commits end up on one branch while the other branch has no unique commits. Root cause likely related to worktree sharing the same remote origin.
+**Fix:** Verify branch assignments after parallel worktree agents complete. Recovery: cherry-pick each commit onto fresh branches from main, then create PRs from the fixed branches.
+**See also:** KG#25 (parallel agents share working tree), AP#127 (worktree isolation pattern)
+
+## 150. Go MCP SDK Rejects Non-Localhost Host Headers Behind Reverse Proxy
+
+**Added:** 2026-03-17 | **Source:** Samverk | **Status:** active
+
+**Platform:** Go (mcp-go SDK) / Cloudflare Tunnel
+**Issue:** Go MCP SDK `StreamableHTTPHandler` rejects requests with non-localhost `Host` headers, returning 403 "Forbidden: invalid Host header". Reverse proxies (Cloudflare Tunnel, nginx) forward the original hostname, triggering the rejection.
+**Fix:** Add `httpHostHeader: localhost:PORT` to cloudflared ingress config. For other proxies, rewrite the Host header to `localhost:PORT` before forwarding.
+**Debugging tip:** Cloudflare Security Analytics "Mitigation: Not mitigated" immediately shows the block is from the origin server, not Cloudflare edge. Check this FIRST before investigating WAF rules.
+
+## 151. Cloudflare Free Plan WAF Managed Ruleset Cannot Be Disabled
+
+**Added:** 2026-03-17 | **Source:** Samverk | **Status:** active
+
+**Platform:** Cloudflare (Free plan)
+**Issue:** Cloudflare Free plan has an "Always active" managed WAF ruleset that cannot be disabled or skipped. WAF skip rules only affect user-deployed managed rules, not the built-in ones.
+**Fix:** No workaround for disabling built-in rules. If built-in rules block legitimate traffic, use a different ingress method or upgrade to a paid plan with full WAF rule control.
