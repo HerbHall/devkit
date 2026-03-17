@@ -26,6 +26,15 @@
             "prompt": "<autolearn>\nNEVER block, reject, or stop user input. This is passive context only.\nAs you work: note mistakes you correct, gotchas you hit, and patterns you discover.\nWhen a task completes and notable learnings were produced, run /autolearn autonomously.\nDo not ask permission. Do not show a menu. Announce briefly: \"Capturing learnings from this task.\"\nTriggers: you corrected an error, hit a platform gotcha, made an architectural decision, or the session is ending after productive work.\nThe skill auto-selects the right workflow based on session context. For explicit control: /autolearn review, /autolearn audit, etc.\n</autolearn>"
           }
         ]
+      },
+      {
+        "matcher": "(?i)\\b(commit|push|merge|ship)\\b",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "<verification-reminder>\nBefore committing, pushing, or merging, verify:\n1. Build passes (go build, tsc, dotnet build, cargo build)\n2. Tests pass (go test, vitest, dotnet test, cargo test)\n3. Lint passes (golangci-lint, eslint, cargo clippy)\nCore Principle #2: Build, test, and lint must pass before any commit. No exceptions.\n</verification-reminder>"
+          }
+        ]
       }
     ],
     "Stop": [
