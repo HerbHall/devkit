@@ -120,34 +120,34 @@ tool calls. Use `text` for conversational responses.
 
 </tool_reference>
 
-<examples>
+<!-- examples -->
 
 ## Common Patterns
 
 **Load machine context at session start:**
 
-```
+```text
 query_memory(pool="machines", source="hdh-nzxt")
 → Returns all 13 hardware/software entries for that host
 ```
 
 **Find all PowerShell gotchas in devkit:**
 
-```
+```text
 query_memory(pool="devkit", summary_contains="PowerShell")
 → Exact substring match, returns all PS-related memories
 ```
 
 **Semantic search for a concept you can't name precisely:**
 
-```
+```text
 search_memory(pool="samverk", query="dispatcher timeout recovery")
 → Ranked results by embedding similarity
 ```
 
 **Store a new machine entry:**
 
-```
+```text
 store_memory(
   pool="machines",
   source="cm-asus",
@@ -160,11 +160,11 @@ store_memory(
 
 **Update stale info without losing the memory ID:**
 
-```
+```text
 update_memory(id=484, content="HDH-NZXT GPU: NVIDIA GeForce RTX 5090, 32GB VRAM. Ollama native Windows install working. Running qwen2.5-coder:32b.")
 ```
 
-</examples>
+<!-- /examples -->
 
 <references>
 - references/pool-conventions.md -- Detailed pool schema, naming rules, and data lifecycle

@@ -4,7 +4,7 @@ Flowchart for choosing the right Synapset retrieval tool.
 
 ## Decision Tree
 
-```
+```text
 START: "I need information from Synapset"
   │
   ├─ Do I know the exact pool, source, category, or tags?
@@ -41,13 +41,15 @@ START: "I need information from Synapset"
 ### Mistake: Using search_memory for structured lookups
 
 **Wrong:**
-```
+
+```text
 search_memory(pool="machines", query="HDH-NZXT GPU specs")
 → Returns ranked results, may include irrelevant hardware from other machines
 ```
 
 **Right:**
-```
+
+```text
 query_memory(pool="machines", source="hdh-nzxt", tags="hardware,gpu")
 → Returns exactly the GPU entry for HDH-NZXT, nothing else
 ```
@@ -55,14 +57,16 @@ query_memory(pool="machines", source="hdh-nzxt", tags="hardware,gpu")
 ### Mistake: Using query_memory for exploratory questions
 
 **Wrong:**
-```
+
+```text
 query_memory(pool="devkit", content_contains="error handling")
 → Only finds memories with literal substring "error handling"
 → Misses memories about "nilerr", "bodyclose", "error wrapping"
 ```
 
 **Right:**
-```
+
+```text
 search_memory(pool="devkit", query="Go error handling patterns and gotchas")
 → Semantic search finds conceptually related memories regardless of wording
 ```
@@ -76,13 +80,15 @@ default human-readable text format.
 ### Mistake: Storing without metadata
 
 **Wrong:**
-```
+
+```text
 store_memory(pool="devkit", content="PowerShell $args is reserved")
 → No source, category, tags, or summary -- nearly impossible to find later with query_memory
 ```
 
 **Right:**
-```
+
+```text
 store_memory(
   pool="devkit",
   content="PowerShell $args is an automatic variable...",
@@ -93,11 +99,12 @@ store_memory(
 )
 → Findable by source, category, tags, or summary substring
 ```
+
 ## Anti-Patterns
 
 ### DON'T: Semantic search for structured data
 
-```
+```text
 # BAD: Embedding similarity is unreliable for exact lookups
 search_memory(pool="machines", query="HDH-NZXT GPU specs")
 → Might return GPU entries from other machines, or Ollama config instead of hardware
@@ -109,7 +116,7 @@ query_memory(pool="machines", source="hdh-nzxt", tags="hardware,gpu")
 
 ### DON'T: query_memory for fuzzy concepts
 
-```
+```text
 # BAD: Exact filters miss conceptually related memories
 query_memory(pool="devkit", content_contains="error handling")
 → Misses memories that say "exception management" or "fault tolerance"
@@ -121,7 +128,7 @@ search_memory(pool="devkit", query="error handling patterns")
 
 ### DON'T: search_all when you know the pool
 
-```
+```text
 # BAD: Searches all pools, mixed embedding models, slower
 search_all(query="PowerShell gotcha")
 
