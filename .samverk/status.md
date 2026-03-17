@@ -1,6 +1,6 @@
 ---
 phase: execution
-updated: 2026-03-17T12:00:00Z
+updated: 2026-03-17T06:00:00Z
 updated_by: claude-code
 managed_by: samverk
 ---
@@ -16,7 +16,7 @@ Active maintenance and execution. AI tooling methodology, Claude Code configurat
 
 - Symlinked rules loaded by all Claude Code sessions via ~/.claude/
 - 23 skills, 7 agents, 11 rules files, 133 active patterns (AP: 67, KG: 66)
-- SessionStart hook for context injection
+- 3 Claude Code hooks (SessionStart, SessionStop, SubagentVerify) + 3 git hooks (pre-push, pre-commit, commit-msg)
 - Credentials migrated to PowerShell SecretStore vault (HomeLabVault)
 
 ## In Flight
@@ -29,6 +29,7 @@ Active maintenance and execution. AI tooling methodology, Claude Code configurat
 
 ## Recently Completed
 
+- **Hook expansion Phase 1-2**: SessionStop, SubagentVerify, commit/push reminder, pre-commit, commit-msg (PRs #365-#369)
 - Cross-client Claude configuration guide (PR #358)
 - KG#135 fix: OAuth not required for Custom Connectors (PR #357)
 - Synapset skill with structured retrieval guide (PR #356)

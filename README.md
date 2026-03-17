@@ -34,7 +34,8 @@ Setup creates symlinks from `~/.claude/` to the DevKit clone (or copies files in
 | Rules (auto-loaded every session) | 11 files | `claude/rules/` |
 | Skills (invoke with `/skill-name`) | 23 skills | `claude/skills/` |
 | Agent templates | 7 agents | `claude/agents/` |
-| SessionStart hook | 1 | `claude/hooks/` |
+| Claude Code hooks (SessionStart, SessionStop, SubagentVerify) | 3 | `claude/hooks/` |
+| Git hooks (pre-push, pre-commit, commit-msg) | 3 | `git-templates/hooks/` |
 | Setup scripts (PowerShell + legacy bash) | 7+3 | `setup/` + `setup/legacy/` |
 
 ### Templates (customize per user/machine)
@@ -61,7 +62,7 @@ See [Settings Strategy](docs/settings-strategy.md) for the two-layer permission 
 
 | Directory | Purpose |
 |-----------|---------|
-| `claude/` | Global Claude Code config — CLAUDE.md, 11 rules files (133 patterns), 23 skills, 7 agent templates, hooks |
+| `claude/` | Global Claude Code config — CLAUDE.md, 11 rules files (133 patterns), 23 skills, 7 agent templates, 3 hooks |
 | `devspace/` | Workspace shared configs — .editorconfig, .markdownlint.json, VS Code fragments |
 | `docs/` | Human-readable guides — architecture decisions, profile format spec |
 | `machine/` | Machine state snapshots — VS Code extensions, tool versions |
