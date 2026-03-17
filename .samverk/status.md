@@ -15,7 +15,7 @@ Active maintenance and execution. AI tooling methodology, Claude Code configurat
 ## What Is Running
 
 - Symlinked rules loaded by all Claude Code sessions via ~/.claude/
-- 23 skills, 7 agents, 11 rules files, 136 active patterns (AP: 67, KG: 69)
+- 23 skills, 7 agents, 11 rules files, 121 active patterns (AP: 67, KG: 54)
 - 3 Claude Code hooks (SessionStart, SessionStop, SubagentVerify) + 3 git hooks (pre-push, pre-commit, commit-msg)
 - Credentials migrated to PowerShell SecretStore vault (HomeLabVault)
 
@@ -29,6 +29,7 @@ Active maintenance and execution. AI tooling methodology, Claude Code configurat
 
 ## Recently Completed
 
+- **Synapset-backed compaction**: Compacted KG 38k->30k, 15 entries archived to Synapset with tombstones
 - **Hook expansion Phase 1-2**: SessionStop, SubagentVerify, commit/push reminder, pre-commit, commit-msg (PRs #365-#369)
 - Cross-client Claude configuration guide (PR #358)
 - KG#135 fix: OAuth not required for Custom Connectors (PR #357)

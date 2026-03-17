@@ -1,7 +1,7 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 69
+entry_count: 54
 last_updated: "2026-03-17"
 ---
 
@@ -546,70 +546,6 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Issue:** Funnel returns "Forbidden: invalid Host header" when accessed from a device within the same tailnet. Intra-tailnet traffic bypasses Funnel's public ingress path via WireGuard. External clients work fine.
 **Fix:** Use Cloudflare Tunnel instead of Tailscale Funnel for universal access (both internal and external clients).
 
-## 127. sqlite-vec Virtual Table Gotchas (Consolidated Reference)
-
-**Added:** 2026-03-14 | **Source:** Synapset | **Status:** active
-
-**Platform:** SQLite / sqlite-vec
-
-### Dimension must match embedding provider
-
-**Issue:** vec0 virtual table dimension (`float[N]`) is fixed at CREATE time. Hardcoding 1536 (OpenAI) but using Ollama (768) at runtime causes "Dimension mismatch" on insert.
-**Fix:** Pass dims from embedding provider at DB init time. Don't use const schema strings for vec0 -- make dimension configurable.
-
-### No UPDATE support
-
-**Issue:** `vec0` virtual tables do NOT support SQL UPDATE. Attempting to update an embedding in-place fails silently or errors.
-**Fix:** DELETE old row then INSERT new one. Wrap batch re-embedding in a transaction.
-
-## 128. Claude Code User-Scope MCP Config Location Is ~/.claude.json
-
-**Added:** 2026-03-14 | **Source:** Synapset | **Status:** active
-
-**Platform:** Claude Code (all)
-**Issue:** User-scope MCP servers go in `~/.claude.json`, NOT `~/.claude/.mcp.json` or `~/.claude/settings.json`. Easy to put config in the wrong file.
-**Fix:** Use `claude mcp add --transport http <name> <url> --scope user`. HTTP servers need `"type": "http"` in the JSON config.
-
-## 129. Claude Code --dangerously-skip-permissions Blocked as Root
-
-**Added:** 2026-03-15 | **Source:** Samverk | **Status:** active
-
-**Platform:** Claude Code (Linux)
-**Issue:** `claude --dangerously-skip-permissions` exits with error when running as root/sudo. Blocks headless agent use in systemd services running as root.
-**Fix:** Run Claude Code as a non-root service user. Create a dedicated user with shell access.
-
-## 131. git init Defaults to master on CI Runners
-
-**Added:** 2026-03-15 | **Source:** Samverk | **Status:** active
-
-**Platform:** GitHub Actions (Ubuntu)
-**Issue:** `git init` on CI runners defaults to `master`, not `main`. Tests referencing `origin/main` fail on CI but pass locally.
-**Fix:** Always use `git init --initial-branch=main` for bare repos, `git checkout -b main` after init for working repos in test helpers.
-
-## 132. systemd ProtectSystem=strict Blocks Worktree in /tmp
-
-**Added:** 2026-03-15 | **Source:** Samverk | **Status:** active
-
-**Platform:** Linux (systemd)
-**Issue:** `ProtectSystem=strict` makes `/tmp` read-only, blocking `git worktree add` for agent isolation.
-**Fix:** Use `ProtectSystem=full` with `ReadWritePaths=/tmp /var/lib/<service>`. Add `PrivateTmp=no` and `ProtectHome=no` for agents needing home directory access.
-
-## 133. LXC Unprivileged Container Resize Requires Stop
-
-**Added:** 2026-03-15 | **Source:** Samverk | **Status:** active
-
-**Platform:** Proxmox / LXC
-**Issue:** `resize2fs` cannot run inside unprivileged container (device not accessible) or from host while running (device busy). Proxmox config does NOT auto-update after manual LVM resize.
-**Fix:** `pct stop NNN` -> `e2fsck -f -y` -> `resize2fs` -> `pct start NNN` (~10s downtime). Manually edit `/etc/pve/lxc/NNN.conf` to update `size=XG`.
-
-## 134. Dispatcher Restart Requires SIGKILL with In-Flight Subprocesses
-
-**Added:** 2026-03-15 | **Source:** Samverk | **Status:** active
-
-**Platform:** Linux (systemd)
-**Issue:** `systemctl restart` hangs in `deactivating (stop-sigterm)` when claude CLI subprocesses have active network connections and don't respond to SIGTERM.
-**Fix:** `systemctl kill <service> --signal=SIGKILL` then `systemctl start`. Consider `TimeoutStopSec=30` in unit file.
-
 ## 135. MCP Streamable HTTP Requires GET for SSE; OAuth Breaks Custom Connectors
 
 **Added:** 2026-03-17 | **Source:** Samverk, Synapset | **Status:** active
@@ -626,79 +562,6 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Issue:** SPA catch-all route (`/ -> spaHandler`) intercepts paths not explicitly registered for all HTTP methods. Registering only `POST /mcp` causes GET/DELETE to fall through to SPA, returning HTML instead of JSON.
 **Fix:** Register without method prefix: `mux.Handle("/mcp", handler)` when the handler routes methods internally.
 **See also:** KG#28 (Go 1.22+ route pattern panic)
-
-## 140. nologin Shell Masks Real Errors for Service Users
-
-**Added:** 2026-03-15 | **Source:** Samverk | **Status:** active
-
-**Platform:** Linux (all)
-**Issue:** Service users with `/usr/sbin/nologin` show "This account is currently not available" for ALL `su - user` commands. Masks the real error.
-**Fix:** Use `su -s /bin/bash user` to override shell, or `usermod -s /bin/bash user` permanently.
-
-## 141. SQLite BUSY with Two-Process Sharing Without WAL
-
-**Added:** 2026-03-15 | **Source:** Samverk | **Status:** active
-
-**Platform:** SQLite (all)
-**Issue:** Two systemd services sharing the same SQLite DB without WAL mode cause SQLITE_BUSY. Writes from one process are silently lost.
-**Fix:** Enable WAL mode (`PRAGMA journal_mode=WAL`) and set busy timeout (`PRAGMA busy_timeout=5000`) at connection open time.
-
-## 142. Stale Env Var Cross-Service Provider Confusion
-
-**Added:** 2026-03-15 | **Source:** Samverk | **Status:** active
-
-**Platform:** All (AI services)
-**Issue:** Stale API keys in env vars (e.g., expired `OPENAI_API_KEY`) silently override intended provider selection. Local process picks up stale key instead of configured provider.
-**Fix:** Remove env vars immediately when a service subscription expires. Audit: `[Environment]::GetEnvironmentVariable('VAR', 'User')` on Windows.
-**See also:** KG#120 (fine-grained PAT shadows gh keyring)
-
-## 143. stdout fsync EINVAL on Linux
-
-**Added:** 2026-03-15 | **Source:** Samverk | **Status:** active
-
-**Platform:** Linux (Go / zap)
-**Issue:** `/dev/stdout` returns EINVAL for `fsync()`. Any zap `WriteSyncer` calling `Sync()` on `os.Stdout` fails in Linux CI.
-**Fix:** Make `Sync()` best-effort for stdout: `_ = f.Sync()` instead of `return f.Sync()`.
-
-## 144. SQLite PRAGMA Only Applies to One Pooled Connection
-
-**Added:** 2026-03-16 | **Source:** Samverk | **Status:** active
-
-**Platform:** Go (all SQLite drivers)
-**Issue:** `PRAGMA journal_mode=WAL` and `PRAGMA busy_timeout` run after `sql.Open` only affect one connection in the pool. Other connections use defaults.
-**Fix:** Use DSN query params instead: `file:path.db?_journal_mode=WAL&_busy_timeout=5000`. Or set via `db.SetMaxOpenConns(1)` for single-connection pools.
-
-## 145. Gitea Assign API Requires Repo Collaborator
-
-**Added:** 2026-03-16 | **Source:** Samverk | **Status:** active
-
-**Platform:** Gitea
-**Issue:** Gitea `PATCH /repos/{owner}/{repo}/issues/{index}` with `assignees` field returns 403 if the user is not a repo collaborator. GitHub silently ignores invalid assignees.
-**Fix:** Wrap assignment in best-effort try/catch. Log warning but don't fail the workflow.
-
-## 146. Ollama Models Overwrite CLAUDE.md Instead of Following Issue Instructions
-
-**Added:** 2026-03-16 | **Source:** Samverk | **Status:** active
-
-**Platform:** Ollama / Claude Code dispatcher
-**Issue:** Ollama models (qwen3-coder:30b, qwen2.5-coder:14b) complete dispatcher tasks but produce wrong output -- overwrite CLAUDE.md with hallucinated content instead of implementing the actual issue. Agent prompt format is tuned for Claude CLI tool-use and doesn't transfer to raw chat completions.
-**Fix:** Don't use Ollama models for code-gen tasks that require file navigation via tools. Restrict to triage, labeling, and text-only tasks. Validate agent output before merging.
-
-## 147. Ollama on Windows Requires Full Process Restart After OLLAMA_HOST Env Change
-
-**Added:** 2026-03-16 | **Source:** Samverk | **Status:** active
-
-**Platform:** Windows (Ollama)
-**Issue:** Setting `OLLAMA_HOST=0.0.0.0` as a Windows User env var doesn't take effect until Ollama app is fully restarted. `Start-Process` from a shell without the new env inherits the old value.
-**Fix:** Kill all `ollama` processes and relaunch from a context with refreshed env. On Windows: `Stop-Process -Name ollama -Force`, refresh env, then relaunch.
-
-## 148. Trivy Binary Accumulation Fills Disk on Host-Mode Gitea Runners
-
-**Added:** 2026-03-16 | **Source:** Synapset | **Status:** active
-
-**Platform:** Gitea Actions / act_runner (host mode)
-**Issue:** `security.yml` downloads trivy (155MB) to `/tmp` per run, never cleans up. On host-mode act_runners, 15+ runs accumulates 2.3GB of stale binaries. Disk full causes `actions/checkout@v4` to fail silently in 0 seconds.
-**Fix:** Add `if: always()` cleanup step to remove trivy temp files after each run. For host-mode runners, consider a cron job to sweep `/tmp/trivy*` periodically.
 
 ## 149. Worktree Isolation Agents Can Commit to Wrong Branch
 

@@ -622,3 +622,82 @@ sqlite-vec vec0 Virtual Tables Do Not Support UPDATE. Merged into KG#127 (sqlite
 ## KG#138 (archived 2026-03-15, consolidated into KG#123)
 
 Gitea Reserves GITEA_ Prefix for Actions Secret Names. Merged into KG#123 (Gitea API and Actions Gotchas).
+
+## Archived 2026-03-17: Synapset-backed compaction (infrastructure/ops entries)
+
+### Infrastructure and project-specific entries (Samverk/Synapset ops)
+
+## KG#127 (archived 2026-03-17)
+
+sqlite-vec virtual table gotchas: dimension mismatch and no UPDATE support.
+Synapset: pool=devkit, ID=515
+
+## KG#128 (archived 2026-03-17)
+
+Claude Code user-scope MCP config location is ~/.claude.json.
+Synapset: pool=devkit, ID=516
+
+## KG#129 (archived 2026-03-17)
+
+Claude Code --dangerously-skip-permissions blocked as root on Linux.
+Synapset: pool=devkit, ID=517
+
+## KG#131 (archived 2026-03-17)
+
+git init defaults to master on CI runners; use --initial-branch=main.
+Synapset: pool=devkit, ID=518
+
+## KG#132 (archived 2026-03-17)
+
+systemd ProtectSystem=strict blocks git worktree in /tmp.
+Synapset: pool=devkit, ID=519
+
+## KG#133 (archived 2026-03-17)
+
+LXC unprivileged container resize requires stop on Proxmox.
+Synapset: pool=devkit, ID=520
+
+## KG#134 (archived 2026-03-17)
+
+Dispatcher restart requires SIGKILL with in-flight claude CLI subprocesses.
+Synapset: pool=devkit, ID=521
+
+## KG#140 (archived 2026-03-17)
+
+nologin shell masks real errors for Linux service users.
+Synapset: pool=devkit, ID=522
+
+## KG#141 (archived 2026-03-17, consolidated with KG#144)
+
+SQLite BUSY with two-process sharing without WAL mode.
+Synapset: pool=devkit, ID=523 (consolidated with KG#144)
+
+## KG#143 (archived 2026-03-17)
+
+stdout fsync EINVAL on Linux breaks zap Sync() on os.Stdout.
+Synapset: pool=devkit, ID=524
+
+## KG#144 (archived 2026-03-17, consolidated with KG#141)
+
+SQLite PRAGMA only applies to one pooled connection; use DSN query params.
+Synapset: pool=devkit, ID=523 (consolidated with KG#141)
+
+## KG#145 (archived 2026-03-17)
+
+Gitea assign API requires repo collaborator; GitHub silently ignores.
+Synapset: pool=devkit, ID=525
+
+## KG#146 (archived 2026-03-17)
+
+Ollama models overwrite CLAUDE.md instead of following issue instructions.
+Synapset: pool=devkit, ID=526
+
+## KG#147 (archived 2026-03-17)
+
+Ollama on Windows requires full process restart after OLLAMA_HOST env change.
+Synapset: pool=devkit, ID=527
+
+## KG#148 (archived 2026-03-17)
+
+Trivy binary accumulation fills disk on host-mode Gitea runners.
+Synapset: pool=devkit, ID=528

@@ -12,7 +12,9 @@ Compact oversized rules files in `claude/rules/` by archiving stale entries, ded
 
 **Why this matters.** Rules files load into every Claude Code session. Files over 40k degrade performance -- large input blocks get ignored at task transitions (Variant B stall pattern). Keeping files under 35k leaves headroom for growth.
 
-**Archive, never delete.** Removed entries go to `claude/rules/archive/` with full text preserved. Zero information loss.
+**Archive, never delete.** Removed entries go to `claude/rules/archive/` and Synapset (`pool: devkit`). Archive files hold tombstones (number, title, status, Synapset ID); Synapset holds full text for semantic search. Zero information loss.
+
+**Synapset is the long-term store.** Every archived entry MUST be stored in Synapset before removal from the active file. This enables semantic discovery of deprecated patterns that may still be relevant in new contexts.
 
 **Consolidation over deletion.** Entries sharing the same root cause merge into a single super-entry with subsections. This reduces line count without losing detail.
 
@@ -56,15 +58,42 @@ autolearn-patterns.md: 45k, 80 entries
   Projected: 45k -> 32k
 ```
 
-## Step 3: Archive stale entries
+## Step 3: Store in Synapset (MANDATORY)
 
-For each stale entry:
+Before removing ANY entry from the active file, store it in Synapset:
 
-1. Copy the full entry text to `claude/rules/archive/<filename>`
-2. Add under a dated header: `## Archived YYYY-MM-DD: Rules compaction`
+```text
+store_memory(
+  pool: "devkit",
+  content: "<full entry text including heading, metadata, context, and fix>",
+  category: "<entry category or 'general'>",
+  source: "<original source project>",
+  tags: "archived,<entry_id>,<category>",
+  summary: "<entry title> (archived from <filename>)"
+)
+```
+
+Record the returned Synapset ID for the archive tombstone.
+
+If Synapset MCP is unavailable, fall back to full-text archive (Step 3b) and create a DevKit issue to backfill later.
+
+## Step 3b: Write archive tombstone
+
+For each archived entry:
+
+1. Add a tombstone to `claude/rules/archive/<filename>` under a dated header
+2. Tombstone format (title + status + Synapset pointer, NOT full text):
+
+   ```markdown
+   ## KG#N (archived YYYY-MM-DD)
+
+   <one-line summary of what the entry covered>.
+   Synapset: pool=devkit, ID=<synapset_id>
+   ```
+
 3. Remove the entry from the active file
-4. If Synapset MCP is available, store the archived entry for long-tail search:
-   `store_memory(pool: "devkit", content: "<archived entry>", category: "general", tags: "archived,<entry_id>", summary: "<title> (archived)")`
+
+**Legacy entries:** Existing full-text archive entries are valid. New entries use tombstone format. Full-text archives will be migrated to tombstones in a future pass.
 
 ## Step 4: Deduplicate
 
@@ -119,8 +148,9 @@ Report any fixes made. This step prevents cross-reference drift (see MCP Memory 
 <success_criteria>
 
 - [ ] All rules files under 35k
-- [ ] Archived entries preserved in `claude/rules/archive/` with full text
-- [ ] No information loss (every removed entry exists in archive)
+- [ ] Every archived entry stored in Synapset with full text (Step 3)
+- [ ] Archive tombstones written with Synapset IDs (Step 3b)
+- [ ] No information loss (every removed entry exists in Synapset + archive tombstone)
 - [ ] YAML frontmatter `entry_count` updated
 - [ ] markdownlint passes on all modified files
 - [ ] Before/after report shown to user
