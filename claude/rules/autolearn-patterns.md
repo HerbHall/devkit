@@ -1,7 +1,7 @@
 ---
 description: Learned patterns from past sessions. Read when encountering similar situations.
 tier: 2
-entry_count: 71
+entry_count: 72
 last_updated: "2026-03-17"
 ---
 
@@ -712,3 +712,12 @@ MUI Popper needs `anchorEl` during render. `useRef` + `ref.current` triggers Rea
 **Category:** process-pattern
 **Context:** Issue spec said "call into existing `dispatcher.Claim()`" but no such public method existed, and the caller and callee were in separate processes. A 2-minute codebase check would have caught both problems.
 **Fix:** Before writing implementation specs that reference internal methods, verify: (1) the method exists and is exported, (2) the caller and callee are in the same process. Extends AP#47 (check existing assets before scoping) and AP#83 (sprint scope reduction via exploration).
+
+## 135. Worktree Sequential Merge Pattern for Shared-File Branches
+
+**Added:** 2026-03-17 | **Source:** Synapset | **Status:** active
+
+**Category:** workflow-pattern
+**Context:** Parallel worktree agents both modifying the same file (e.g., `tools.go`) create merge conflicts if both branches merge independently.
+**Fix:** Merge the first branch to main via fast-forward, then rebase the second branch onto updated main before merging. Both merges stay fast-forward with zero conflicts. Proven with hybrid search + consolidation agents both modifying `tools.go` and `server.go`.
+**See also:** AP#127 (worktree isolation), AP#131 (merge interface-changing PRs first)
