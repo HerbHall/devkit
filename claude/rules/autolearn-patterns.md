@@ -1,7 +1,7 @@
 ---
 description: Learned patterns from past sessions. Read when encountering similar situations.
 tier: 2
-entry_count: 66
+entry_count: 67
 last_updated: "2026-03-18"
 ---
 
@@ -685,3 +685,13 @@ MUI Popper needs `anchorEl` during render. `useRef` + `ref.current` triggers Rea
 **Category:** gotcha
 **Context:** Tests asserting exact counts (e.g., `len(tools) != 41`) fail whenever a new item is added. Common in tool-discovery tests, route-registration tests, and enum exhaustiveness checks.
 **Fix:** Before creating a PR that adds tools/routes/handlers, search for `len(...) != N` or `assert.Equal(t, N, len(...))` patterns and update the expected count. For non-correctness counts, prefer `>= N` over exact equality.
+
+## 138. Two-Org Gitea Lifecycle Model for Samverk Projects
+
+**Added:** 2026-03-18 | **Source:** DevKit | **Status:** active
+
+**Category:** architecture-pattern
+**Context:** Gitea server hosts both dispatcher-managed production work and pre-intake exploratory research. Without org separation, research repos mix with production ones and become confusing.
+**Fix:** Use two orgs: (1) `samverk-research` -- new ideas, exploratory work, pre-viability repos; (2) `samverk` -- dispatcher-managed production projects (devkit, samverk, synapset). When a research project proves viable, transfer once from `samverk-research` to `samverk` and set `lifecycle.phase: intake` in `.samverk/project.yaml`. No further org transfers -- phase progression stays within the `samverk` org.
+**Why:** Keeps unmanaged exploratory repos from cluttering the dispatcher's project registry. Org membership signals management status at a glance.
+**See also:** KG#168 (Gitea transfer + rename sequence)

@@ -1,7 +1,7 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 47
+entry_count: 48
 last_updated: "2026-03-18"
 ---
 
@@ -601,3 +601,25 @@ Note: reference the binary directly (`$HOME/.local/bin/trivy`) in the install st
 **Platform:** markdownlint-cli2 (all)
 **Issue:** Running `npx markdownlint-cli2` with a glob that accidentally includes non-`.md` files (e.g. `.gitignore`, `.sh` scripts) produces false positives. `#` comment lines are parsed as H1 headings, triggering MD022 (no blank line around headings), MD025 (multiple H1), and MD032 (no blank line around lists).
 **Fix:** Always scope markdownlint globs to `**/*.md` only. CI lint job already does this correctly — the issue only appears in manual local runs where a non-md file is passed directly or included via a broad glob.
+
+## 168. Gitea Repo Transfer Does Not Rename -- Separate PATCH Required
+
+**Added:** 2026-03-18 | **Source:** DevKit | **Status:** active
+
+**Platform:** Gitea REST API
+**Issue:** `POST /api/v1/repos/{owner}/{repo}/transfer` moves a repo to a new org but keeps the original name. There is no `new_name` field in the transfer payload -- the request silently succeeds with the old name intact.
+**Fix:** Always follow transfer with a rename step:
+
+```bash
+# Step 1: Transfer org
+curl -X POST "$GITEA_URL/api/v1/repos/old-org/my-repo/transfer" \
+  -H "Authorization: token $TOKEN" \
+  -d '{"new_owner": "new-org"}'
+
+# Step 2: Rename (separate call, after transfer completes)
+curl -X PATCH "$GITEA_URL/api/v1/repos/new-org/my-repo" \
+  -H "Authorization: token $TOKEN" \
+  -d '{"name": "new-name"}'
+```
+
+Full repo management sequence: (1) `POST /api/v1/orgs` -- create org, (2) transfer, (3) rename, (4) `PATCH` description.
