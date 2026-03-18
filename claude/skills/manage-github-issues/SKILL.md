@@ -1,6 +1,7 @@
 ---
 name: manage-github-issues
 description: Reviews project roadmaps and requirements to generate, audit, and triage GitHub Issues. Keeps any project on track by syncing planning docs with actionable issues. Use when creating issues for a phase or milestone, auditing existing issues, or triaging and prioritizing open work.
+user_invocable: true
 ---
 
 <essential_principles>

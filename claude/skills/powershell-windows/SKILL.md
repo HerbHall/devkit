@@ -1,6 +1,7 @@
 ---
 name: powershell-windows
 description: PowerShell Windows patterns. Critical pitfalls, operator syntax, error handling. Use when writing or debugging PowerShell scripts on Windows.
+user_invocable: true
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 ---
 

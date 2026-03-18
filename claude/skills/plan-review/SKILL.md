@@ -1,6 +1,7 @@
 ---
 name: plan-review
 description: Submit the current implementation plan for independent review by the plan-reviewer agent. Spawns the reviewer with fresh context and limited file scope — no implementation history carried over. Use before starting any significant implementation. Blocks on REVISE/REJECT until the plan is approved or the user overrides.
+user_invocable: true
 ---
 
 # Plan Review Skill

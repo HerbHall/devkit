@@ -1,6 +1,7 @@
 ---
 name: code-review
 description: Submit changed files for independent review by the review-code agent before committing. Spawns the reviewer with fresh context and scoped to only the changed files and their direct dependencies. Critical/High findings block the commit. Use after implementing a feature, before any git commit touching more than one file.
+user_invocable: true
 ---
 
 # Code Review Skill

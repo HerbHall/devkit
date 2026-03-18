@@ -1,6 +1,7 @@
 ---
 name: go-development
 description: Go development patterns, idioms, and conventions. Use when writing Go code, structuring Go modules, implementing error handling, writing tests, or building network and security tools in Go.
+user_invocable: true
 ---
 
 <objective>

@@ -51,6 +51,7 @@ Desktop.ini
 
 # Editor
 .vs/
+.vscode/
 .idea/
 *.swp
 *.swo

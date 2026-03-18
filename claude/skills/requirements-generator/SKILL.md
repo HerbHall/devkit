@@ -1,6 +1,7 @@
 ---
 name: requirements-generator
 description: Creates and maintains requirements.md files for programming projects using industry-standard practices. Optionally generates REQUIREMENTS_QUESTIONS.md to capture open decisions and trade-offs using ADR/RFC patterns. Use when starting a new project, updating requirements as scope changes, or reviewing existing requirements documents.
+user_invocable: true
 ---
 
 <essential_principles>

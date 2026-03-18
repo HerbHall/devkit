@@ -1,6 +1,7 @@
 ---
 name: windows-development
 description: Windows-specific development patterns, registry operations, shell integration, and path handling. Use when working with Windows registry, Explorer context menus, shell extensions, batch files, Windows Terminal configuration, or any task requiring Windows-specific knowledge about quoting, escaping, and path handling.
+user_invocable: true
 ---
 
 <critical_lessons>
