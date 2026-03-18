@@ -3,9 +3,9 @@ schema_version: "1.0.0"
 project:
   name: devkit
   description: "AI development methodology and Claude Code configuration toolkit"
-  forge: github
-  repo: HerbHall/devkit
-  url: https://github.com/HerbHall/devkit
+  forge: gitea
+  repo: samverk/devkit
+  url: https://gitea.herbhall.net/samverk/devkit
   license: MIT
   stack: powershell
   phase: execution
