@@ -1,7 +1,7 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 46
+entry_count: 47
 last_updated: "2026-03-18"
 ---
 
@@ -593,3 +593,11 @@ Diagnose manually: `ssh root@host 'lsof /usr/local/bin/<binary>'` then kill list
 ```
 
 Note: reference the binary directly (`$HOME/.local/bin/trivy`) in the install step since `$GITHUB_PATH` is not applied to PATH until the **next** step.
+
+## 167. markdownlint-cli2 False Positives on Non-.md Files
+
+**Added:** 2026-03-18 | **Source:** DevKit | **Status:** active
+
+**Platform:** markdownlint-cli2 (all)
+**Issue:** Running `npx markdownlint-cli2` with a glob that accidentally includes non-`.md` files (e.g. `.gitignore`, `.sh` scripts) produces false positives. `#` comment lines are parsed as H1 headings, triggering MD022 (no blank line around headings), MD025 (multiple H1), and MD032 (no blank line around lists).
+**Fix:** Always scope markdownlint globs to `**/*.md` only. CI lint job already does this correctly — the issue only appears in manual local runs where a non-md file is passed directly or included via a broad glob.
