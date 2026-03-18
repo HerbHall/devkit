@@ -1,8 +1,8 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 44
-last_updated: "2026-03-17"
+entry_count: 46
+last_updated: "2026-03-18"
 ---
 
 # Known Gotchas
@@ -556,3 +556,40 @@ git config --global url."http://user:${TOKEN}@localhost:3000/".insteadOf "https:
 **Issue:** act_runner caches workflow artifacts at `/home/git/.cache/actcache/cache/`. No built-in eviction. Can consume 20+ GB on a 40GB disk, causing ENOSPC in all running CI workflows.
 **Fix:** (1) Immediate cleanup: `rm -rf /home/git/.cache/actcache/cache/*`. (2) Daily pruning cron (run as `git` user): `0 3 * * * find /home/git/.cache/actcache/cache -mindepth 1 -maxdepth 1 -mtime +7 -exec rm -rf {} +`. (3) Disk alert at >80% usage via `logger`.
 **Infrastructure note:** `proxmox.herbhall.net` resolves to the dns-proxy LXC, NOT the Proxmox host. Actual Proxmox host is `192.168.1.203`. `pct resize` and `pvesm` are only available on the Proxmox host itself.
+
+## 165. Lingering Process Blocks Binary Replacement During Deploy
+
+**Added:** 2026-03-18 | **Source:** Samverk | **Status:** active
+
+**Platform:** Linux deploy scripts
+**Issue:** `scp` to replace a running Go binary fails with `dest open: Failure` even after `systemctl stop` because an orphaned process (launched outside systemd, or that survived the stop signal) keeps the binary mapped as its executable. `lsof /usr/local/bin/<binary>` shows the PID with type `txt`.
+**Fix:** Add a `fuser -k` step to the deploy script before `scp`:
+
+```bash
+# Kill any processes holding the binary open
+ssh "root@${HOST}" 'fuser -k /usr/local/bin/<binary> 2>/dev/null || true'
+sleep 1
+scp bin/<binary>-linux-amd64 "root@${HOST}:/usr/local/bin/<binary>"
+```
+
+Diagnose manually: `ssh root@host 'lsof /usr/local/bin/<binary>'` then kill listed PIDs.
+
+## 166. Trivy install.sh Fails With Permission Denied on Pre-Installed Runner Binary
+
+**Added:** 2026-03-18 | **Source:** Samverk | **Status:** active
+
+**Platform:** GitHub Actions (Linux)
+**Issue:** The aquasecurity `trivy` install.sh script fails with `install: cannot remove '/usr/local/bin/trivy': Permission denied` when the runner has trivy pre-installed at a system path. The CI job user cannot write to `/usr/local/bin`.
+**Fix:** Install to a user-writable directory instead:
+
+```yaml
+- name: Install trivy
+  run: |
+    mkdir -p "$HOME/.local/bin"
+    curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
+      | sh -s -- -b "$HOME/.local/bin"
+    echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+    "$HOME/.local/bin/trivy" --version
+```
+
+Note: reference the binary directly (`$HOME/.local/bin/trivy`) in the install step since `$GITHUB_PATH` is not applied to PATH until the **next** step.

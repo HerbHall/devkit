@@ -2,7 +2,7 @@
 description: Learned patterns from past sessions. Read when encountering similar situations.
 tier: 2
 entry_count: 66
-last_updated: "2026-03-17"
+last_updated: "2026-03-18"
 ---
 
 # Learned Patterns
@@ -162,6 +162,25 @@ Structure as: Research issues -> Implementation issues -> Gate issue (checklist)
 
 **Context:** `go build` in pre-push hook compiles untracked files from other agents, failing with "undefined" errors.
 **Fix:** `git stash push -u -m "other-files" -- path/to/other/*.go` before pushing, then `git stash pop` after.
+
+### Dual-forge rebase requires --onto to replay only feature commits
+
+**Context:** Projects using two forges (e.g., GitHub as `origin` + Gitea as `gitea` remote) have the same logical history but different commit SHAs (squash-merged separately into each). A feature branch based on GitHub `main` cannot fast-forward onto Gitea `main`. Naive `git rebase gitea/main feat/branch` replays 80+ commits from the divergence point, producing conflicts on already-merged unrelated commits.
+**Fix:** Use `--onto` to replay only the feature commits:
+
+```bash
+# Find the last GitHub main commit the branch was based on
+git log --oneline main | head -5  # e.g. d96284e
+
+# Replay only commits after that point onto Gitea main
+git rebase --onto gitea/main d96284e feat/branch
+
+# Fetch first (KG#123: Gitea rejects force-push with stale info)
+git fetch gitea feat/branch
+git push --force-with-lease gitea feat/branch
+```
+
+**See also:** KG#123 (Gitea force-push requires fetch first)
 
 ## 23. Go Slice Assignment Creates Alias, Not Copy
 
