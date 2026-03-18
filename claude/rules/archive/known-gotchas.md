@@ -586,3 +586,60 @@ Synapset: pool=devkit, ID=598
 
 Gitea dump permission denied when backup dir owned by root -- chown to git:git.
 Synapset: pool=devkit, ID=599
+
+## Archived 2026-03-17: Rules compaction (KG approaching 40k limit)
+
+## KG#27 (archived 2026-03-17)
+
+SQLite strftime returns NULL for RFC3339Nano timestamps -- do time-bucketing in Go.
+Synapset: pool=devkit, ID=608
+
+## KG#28 (archived 2026-03-17)
+
+Recharts v3 uses TooltipContentProps not TooltipProps for custom tooltip components.
+Synapset: pool=devkit, ID=609
+
+## KG#29 (archived 2026-03-17)
+
+Build-tag files with //go:build !windows are invisible to golangci-lint on Windows.
+Synapset: pool=devkit, ID=610
+
+## KG#35 (archived 2026-03-17)
+
+Go race detection requires CGO on Windows MSYS -- run without -race locally.
+Synapset: pool=devkit, ID=611
+
+## KG#50 (archived 2026-03-17)
+
+Winget installation gotchas -- exit codes for already-installed and PATH staleness after install.
+Synapset: pool=devkit, ID=612
+
+## KG#74 (archived 2026-03-17)
+
+gh repo edit lacks --disable-* flags -- use gh api PATCH instead.
+Synapset: pool=devkit, ID=613
+
+## KG#87 (archived 2026-03-17)
+
+Vitest cannot resolve browser-only npm package exports -- add resolve.alias in vitest.config.ts.
+Synapset: pool=devkit, ID=614
+
+## KG#89 (archived 2026-03-17)
+
+go get does not resolve all transitive dependencies -- always run go mod tidy after.
+Synapset: pool=devkit, ID=615
+
+## KG#94 (archived 2026-03-17)
+
+GITHUB_TOKEN-created tags don't trigger push events in other workflows (anti-recursion).
+Synapset: pool=devkit, ID=616
+
+## KG#95 (archived 2026-03-17)
+
+Release-please branch updates don't always trigger CI pull_request: synchronize events.
+Synapset: pool=devkit, ID=617
+
+## KG#96 (archived 2026-03-17)
+
+Auto-merge requires explicit repo setting -- gh api PATCH allow_auto_merge=true.
+Synapset: pool=devkit, ID=618

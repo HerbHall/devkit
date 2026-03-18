@@ -1,7 +1,7 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 55
+entry_count: 44
 last_updated: "2026-03-17"
 ---
 
@@ -155,54 +155,6 @@ All parallel agents write to the same working directory. Sort into branches via 
 **Issue:** Multiple PRs modifying the same file conflict after one merges.
 **Fix:** Merge one at a time, rebase each subsequent branch onto updated main, force-push. Use `GIT_EDITOR=true git rebase --continue` when rebase pauses with no conflicts.
 
-## 27. SQLite strftime Returns NULL for RFC3339Nano Timestamps
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Platform:** SQLite (all)
-**Issue:** `strftime` returns NULL for RFC3339Nano format timestamps. SQL-side time-bucketing fails.
-**Fix:** Do time-bucketing in Go: `ts.Truncate(interval).UTC().Format(time.RFC3339)`. Use `WHERE timestamp BETWEEN ? AND ?` for range queries.
-
-## 28. Recharts v3 Uses TooltipContentProps, Not TooltipProps
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Platform:** React / recharts 3.x
-**Issue:** `<Tooltip content={...} />` receives `TooltipContentProps`, not `TooltipProps`. Using JSX element form renders with empty `{}` initially.
-**Fix:** Use `TooltipContentProps<number, string>`. For JSX element form, use `Partial<TooltipContentProps<...>>`. See AP#63 (archived).
-
-## 29. Build-Tag Files Invisible to Local Lint on Different OS
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Platform:** Go (cross-platform)
-**Issue:** `//go:build !windows` files are excluded from `golangci-lint` on Windows. Lint errors only appear in Linux CI.
-**Fix:** Mentally check for `filepathJoin`, `G115`, `paramTypeCombine`, `prealloc` in platform-specific files. Consider `GOOS=linux golangci-lint run`.
-
-## 35. Go Race Detection Requires CGO on Windows MSYS
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Platform:** Windows (MSYS_NT)
-**Issue:** `go test -race` fails without CGO. Race detector is implemented in C.
-**Fix:** Run `go test` locally without `-race`. Rely on CI Linux runners for race detection.
-
-## 50. Winget Installation Gotchas (Consolidated Reference)
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Platform:** Windows (winget / PowerShell / MSYS)
-
-### Exit codes for "already installed"
-
-**Issue:** `winget install` returns `-1978335189` (already installed) or `-1978335184`. Scripts treat as failure.
-**Fix:** Check for both exit codes and treat as success.
-
-### PATH staleness after install
-
-**Issue:** Winget-installed tools update registry PATH but current session has old PATH.
-**Fix:** Refresh: `$env:PATH = [Environment]::GetEnvironmentVariable('PATH', 'Machine') + ';' + [Environment]::GetEnvironmentVariable('PATH', 'User')`.
-
 ## 61. Claude Code Settings Scope and Gitignore (Consolidated Reference)
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
@@ -250,14 +202,6 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Issue:** v7 enforces strict JSON schema. v2.1 config keys fail with v2.10 schema. `linters-settings:` moved under `linters: settings:`. `issues: exclude-rules:` moved to `linters: exclusions: rules:`.
 **Fix:** Migrate config to v2.10 schema. Use `@v7` (not `@v6`) for golangci-lint v2. Default binary mode (not `goinstall`).
 
-## 74. gh repo edit Lacks --disable-* Flags
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Platform:** GitHub CLI (gh)
-**Issue:** `gh repo edit` has `--enable-*` but no `--disable-*` flags.
-**Fix:** Use `gh api repos/{owner}/{repo} -X PATCH -f allow_merge_commit=false`.
-
 ## 77. Docker Desktop Extension Development Gotchas (Consolidated Reference)
 
 **Added:** 2026-02-17 | **Source:** Multiple | **Status:** active
@@ -272,22 +216,6 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 - **Multi-arch:** Must build `linux/amd64` + `linux/arm64` via `docker buildx`.
 - **MUI v5:** `@docker/docker-mui-theme` pins v5. Use `InputProps` not `slotProps.input`.
 - **Update after rebuild:** Use `docker extension install` (not `update`) -- tracks by digest.
-
-## 87. Vitest Cannot Resolve Browser-Only npm Package Exports
-
-**Added:** 2026-03-02 | **Source:** Runbooks | **Status:** active
-
-**Platform:** Vitest / Node.js
-**Issue:** Packages with only `browser` field (no `main`/`exports`) fail in Vitest's Node.js resolution.
-**Fix:** Add `resolve.alias` in `vitest.config.ts` pointing to the package's dist entry file. See also KG#77 (Docker extension-specific case).
-
-## 89. go get Does Not Resolve All Transitive Dependencies
-
-**Added:** 2026-03-02 | **Source:** Samverk | **Status:** active
-
-**Platform:** Go (all)
-**Issue:** `go get` doesn't always resolve all transitive dependencies into `go.sum`. Build may fail after.
-**Fix:** Always run `go mod tidy` after `go get`.
 
 ## 91. markdownlint-cli2 Nested node_modules Not Excluded by Root Pattern
 
@@ -304,30 +232,6 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Platform:** Git (all)
 **Issue:** `.claude/` (trailing slash) ignores entire directory. `!.claude/settings.json` cannot override.
 **Fix:** Use `.claude/*` (glob) instead. Glob-level ignores allow negation.
-
-## 94. GITHUB_TOKEN-Created Tags Don't Trigger Push Events
-
-**Added:** 2026-03-05 | **Source:** Runbooks | **Status:** active
-
-**Platform:** GitHub Actions
-**Issue:** Tags created by `GITHUB_TOKEN` don't trigger `on: push: tags:` in other workflows (anti-recursion).
-**Fix:** Chain publish job in same workflow, or use `on: release: types: [published]`. For release-please, use `RELEASE_PLEASE_TOKEN` (PAT) -- see AP#120.
-
-## 95. Release-Please Branch Updates Don't Always Trigger CI
-
-**Added:** 2026-03-05 | **Source:** Runbooks | **Status:** active
-
-**Platform:** GitHub Actions
-**Issue:** `pull_request: synchronize` sometimes doesn't fire for release-please commits.
-**Fix:** Deploy `retrigger-ci.yml`. Manual: `gh pr close N && sleep 2 && gh pr reopen N`.
-
-## 96. Auto-Merge Requires Explicit Repo Setting
-
-**Added:** 2026-03-05 | **Source:** Runbooks | **Status:** active
-
-**Platform:** GitHub
-**Issue:** `gh pr merge --auto` fails silently when auto-merge is not enabled on the repo.
-**Fix:** `gh api repos/OWNER/REPO -X PATCH -f allow_auto_merge=true`.
 
 ## 97. Copilot Auto-Review Is UI-Only (No REST API)
 
@@ -473,7 +377,7 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Platform:** Windows (MSYS_NT) / GitHub CLI
 **Issue:** A fine-grained PAT set as Windows User env var `GITHUB_TOKEN` shadows `gh` CLI's keyring-stored OAuth token. Token precedence: `GITHUB_TOKEN` env > keyring OAuth > `GH_TOKEN` env. Fine-grained PATs often lack `issues:write` scope, causing 403 on `gh issue close/create`.
 **Fix:** Remove the User env var: `[Environment]::SetEnvironmentVariable('GITHUB_TOKEN', $null, 'User')`. PATs for CI (e.g., release-please) should only be GitHub Actions secrets, never local env vars. Inline override: `GITHUB_TOKEN= gh <command>`.
-**See also:** KG#94 (GITHUB_TOKEN tags), AP#120 (secrets distribution)
+**See also:** AP#120 (secrets distribution)
 
 ## 121. MailChannels Free Tier Deprecated
 
@@ -574,7 +478,7 @@ git config --global url."http://user:${TOKEN}@localhost:3000/".insteadOf "https:
 **Platform:** Go 1.22+ (ServeMux)
 **Issue:** SPA catch-all route (`/ -> spaHandler`) intercepts paths not explicitly registered for all HTTP methods. Registering only `POST /mcp` causes GET/DELETE to fall through to SPA, returning HTML instead of JSON.
 **Fix:** Register without method prefix: `mux.Handle("/mcp", handler)` when the handler routes methods internally.
-**See also:** KG#28 (Go 1.22+ route pattern panic)
+**See also:** AP#28 (Go 1.22+ ServeMux route patterns)
 
 ## 150. Go MCP SDK Rejects Non-Localhost Host Headers Behind Reverse Proxy
 
