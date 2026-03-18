@@ -351,3 +351,15 @@ Synapset: pool=devkit, ID=601
 
 Dispatcher overnight queue pattern -- label queued, route to haiku, mark hung as needs-human.
 Synapset: pool=devkit, ID=602
+
+## Archived 2026-03-17: Rules compaction (KG approaching 40k limit)
+
+## AP#33 (archived 2026-03-17)
+
+Research Methodology consolidated reference -- GitHub search, gh CLI competitive analysis, gap report, blog aggregation, curated list ecosystem mapping.
+Synapset: pool=devkit, ID=606
+
+## AP#48 (archived 2026-03-17)
+
+Parallel Agent Orchestration legacy stash/pop approach. Superseded by AP#127 (worktree isolation).
+Synapset: pool=devkit, ID=607

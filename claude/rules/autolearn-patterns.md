@@ -1,7 +1,7 @@
 ---
 description: Learned patterns from past sessions. Read when encountering similar situations.
 tier: 2
-entry_count: 68
+entry_count: 66
 last_updated: "2026-03-17"
 ---
 
@@ -208,33 +208,6 @@ copy(oldKEK, km.kek)
 **Context:** Constructing target struct with literal when source/target have identical fields triggers S1016.
 **Fix:** Use type conversion: `TargetType(sourceValue)`.
 
-## 33. Research Methodology (Consolidated Reference)
-
-**Added:** 2026-02-17 | **Source:** Multiple | **Status:** active
-**Consolidates:** AP#34, AP#42, AP#45, AP#46 (archived)
-
-**Category:** research-methodology
-
-### Search GitHub before claiming "no competitors"
-
-Search by function, not product names. Check GitHub, Docker Hub, Product Hunt, HN. Re-scan monthly.
-
-### Deep competitive analysis via gh CLI
-
-Use `gh api` for repo structure, releases, contributors. Sort issues by comment count for highest friction. Discussions API reveals UX pain.
-
-### Gap exploitation report structure
-
-7 sections: metrics, weaknesses (with issue #s), feature gaps, discussion intelligence, action items, moat, risk. Every claim links to evidence.
-
-### Blog aggregation for blocked platforms
-
-Reddit blocks WebFetch. Search aggregator sites instead. For Reddit threads, append `.json` to URL.
-
-### Curated list ecosystem mapping
-
-Analyze awesome-selfhosted categories for gaps. Empty categories = underserved segments.
-
 ## 36. Merge and PR Ordering (Consolidated Reference)
 
 **Added:** 2026-02-17 | **Source:** Multiple | **Status:** active
@@ -273,19 +246,6 @@ Check CI on ALL PRs first. Merge green sequentially (rebase between each). Close
 **Category:** pattern
 **Context:** "Create X" issues may already have deliverables in the codebase. Planning without checking leads to overscoped work.
 **Fix:** Search codebase first: `grep -r "<keyword>" --include="*.svg" --include="*.md" .` Can reduce scope by 90%.
-
-## 48. Parallel Agent Orchestration (Consolidated Reference)
-
-**Added:** 2026-02-17 | **Source:** Multiple | **Status:** active
-**Consolidates:** AP#41, AP#52, AP#67 (archived)
-
-**Category:** workflow-pattern
-
-Legacy stash/pop approach for parallel agents. Superseded by AP#127 (worktree isolation) for new work. Retained for reference when worktrees unavailable.
-
-- **Self-recovery from shared working tree**: Agents detect leaked files via `git status`, clean with `git checkout -- <leaked>`.
-- **Agent disruption of parallel work**: `git checkout <branch>` discards other agents' unstaged changes. Restrict agents from committing (safer) or re-apply from output summary (faster).
-- **Subagent recovery after session break**: On resume: `git status`, `git diff --stat`, `go build ./...`, then commit.
 
 ## 50. VS Code Auto-Open File on Workspace Start
 
@@ -569,7 +529,7 @@ MUI Popper needs `anchorEl` during render. `useRef` + `ref.current` triggers Rea
 **Category:** workflow-pattern
 **Context:** Cross-project compliance can be parallelized across independent repos with zero conflict (unlike KG#25 same-repo agents).
 **Fix:** One agent per repo with full git autonomy: DevKit templates, customization instructions, CI checklist. Main context handles orchestration only.
-**See also:** KG#25, AP#48
+**See also:** KG#25
 
 ## 118. Skill Routing Must Have Explicit Cancel for Skip/Dismiss Intake
 
@@ -653,7 +613,7 @@ MUI Popper needs `anchorEl` during render. `useRef` + `ref.current` triggers Rea
 **Category:** workflow-pattern
 **Context:** Using `isolation: "worktree"` in Agent tool calls gives each parallel agent a fully isolated git copy. No shared working tree conflicts (solves KG#25). Each agent commits to its own branch in its own worktree.
 **Fix:** Use `isolation: "worktree"` for parallel code-gen agents. Merge via API after all complete. Proven: 3 waves x 2 agents = 7 total agents, all CI-clean first pass. Supersedes stash/pop workflow from AP#48 for new work.
-**See also:** KG#25 (parallel agents share working tree), AP#48 (legacy stash/pop approach)
+**See also:** KG#25 (parallel agents share working tree)
 
 ### Merge interface-changing PRs first to avoid cascading conflicts (was AP#131)
 
