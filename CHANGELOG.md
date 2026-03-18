@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.7.1](https://github.com/HerbHall/devkit/compare/v2.7.0...v2.7.1) (2026-03-18)
+
+
+### Bug Fixes
+
+* **rules:** correct KG[#156](https://github.com/HerbHall/devkit/issues/156) -- CI validator only checks See-Also lines, not all text ([#420](https://github.com/HerbHall/devkit/issues/420)) ([d61b209](https://github.com/HerbHall/devkit/commit/d61b209c97748f76085db22886f75dd151de34dc))
+
 ## [2.7.0](https://github.com/HerbHall/devkit/compare/v2.6.0...v2.7.0) (2026-03-17)
 
 
