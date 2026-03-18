@@ -32,7 +32,7 @@ Setup creates symlinks from `~/.claude/` to the DevKit clone (or copies files in
 | Component | Count | Location |
 |-----------|-------|----------|
 | Rules (auto-loaded every session) | 11 files | `claude/rules/` |
-| Skills (invoke with `/skill-name`) | 25 skills | `claude/skills/` |
+| Skills (invoke with `/skill-name`) | 27 skills | `claude/skills/` |
 | Agent templates | 7 agents | `claude/agents/` |
 | Claude Code hooks (SessionStart, SessionStop, SubagentVerify) | 3 | `claude/hooks/` |
 | Git hooks (pre-push, pre-commit, commit-msg) | 3 | `git-templates/hooks/` |
@@ -62,7 +62,7 @@ See [Settings Strategy](docs/settings-strategy.md) for the two-layer permission 
 
 | Directory | Purpose |
 |-----------|---------|
-| `claude/` | Global Claude Code config — CLAUDE.md, 11 rules files (123 patterns), 25 skills, 7 agent templates, 6 hooks |
+| `claude/` | Global Claude Code config — CLAUDE.md, 11 rules files (112 patterns), 27 skills, 7 agent templates, 6 hooks |
 | `devspace/` | Workspace shared configs — .editorconfig, .markdownlint.json, VS Code fragments |
 | `docs/` | Human-readable guides — architecture decisions, profile format spec |
 | `machine/` | Machine state snapshots — VS Code extensions, tool versions |
@@ -82,15 +82,11 @@ DevKit uses **symlinks** instead of copies. Files in `~/.claude/` are symbolic l
 ```bash
 # Clone DevKit, then create symlinks
 pwsh -File devkit/setup/sync.ps1 -Link
-```
+
 
 This backs up any existing files in `~/.claude/`, creates symlinks for all shared files, and generates a machine identity for multi-machine sync.
 
 ### Subcommands (`/devkit-sync`)
-
-| Command | Purpose |
-|---------|---------|
-| `/devkit-sync status` | Show symlink health, git status, drift report |
 | `/devkit-sync push` | Commit changes and push to `sync/<machine-id>` branch |
 | `/devkit-sync pull` | Fetch and pull latest from main |
 | `/devkit-sync init` | First-time setup: create symlinks and machine identity |
@@ -233,11 +229,11 @@ With symlinks active, changes flow automatically:
 | File | Entries | Purpose |
 |------|---------|---------|
 | `agent-team-coordination.md` | - | Multi-agent team coordination rules and anti-patterns |
-| `autolearn-patterns.md` | 67 | Learned patterns: lint fixes, CI config, architecture, testing |
+| `autolearn-patterns.md` | 66 | Learned patterns: lint fixes, CI config, architecture, testing |
 | `compaction-recovery.md` | - | Context compaction recovery rules and loop detection |
 | `core-principles.md` | 10 | Immutable core principles (Tier 0) |
 | `error-policy.md` | - | Zero-tolerance error policy and fix-forward workflow (Tier 1) |
-| `known-gotchas.md` | 54 | Platform issues: Windows, GitHub, Go, React, Docker |
+| `known-gotchas.md` | 46 | Platform issues: Windows, GitHub, Go, React, Docker |
 | `markdown-style.md` | - | Markdownlint conventions |
 | `review-policy.md` | - | Independent review policy: mandatory triggers and scope |
 | `subagent-ci-checklist.md` | - | Pre-commit CI validation checklists |
@@ -274,6 +270,9 @@ Claude.ai Chat uses a separate skill store - install via Settings > Skills in th
 | skill-audit | Audit skill quality: wait states, routing, references, frontmatter, rules metadata | Code |
 | samverk-dispatch | Dispatcher work protocol: claim issues, process queues, decompose work | Code |
 | samverk-checkout | MCP checkout/checkin protocol: claim, heartbeat, complete, release | Code |
+| synapset | Semantic memory tool selection, pool conventions, session-start machine context | Code/Chat |
+| skills-dashboard | Browse all skills — triggers, usage examples, discovery and onboarding | Code/Chat |
+| skill-template | Template for creating new skills with correct frontmatter and routing | Code |
 
 ### Agent Templates
 

@@ -1,6 +1,7 @@
 ---
 name: setup-github-actions
 description: Creates and configures GitHub Actions CI/CD workflows for Go, C#/.NET, Rust, and Node.js projects. Use when setting up automated builds, tests, linting, releases, or deployment pipelines using GitHub Actions.
+user_invocable: true
 ---
 
 <objective>

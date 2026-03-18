@@ -1,6 +1,7 @@
 ---
 name: quality-control
 description: Follow up after code changes to verify PRs pass CI, check for unresolved issues, ensure quality gates are met, and validate release readiness. Use after creating PRs, pushing code, auditing open PRs, or before tagging a release.
+user_invocable: true
 ---
 
 <essential_principles>

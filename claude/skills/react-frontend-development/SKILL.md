@@ -1,6 +1,7 @@
 ---
 name: react-frontend-development
 description: Modern React + TypeScript dashboard and SPA development patterns. Covers Vite, shadcn/ui, TanStack Query, Zustand, React Router, React Hook Form + Zod, Vitest + Testing Library, accessibility, and performance. Use when building React frontends, creating components, managing state, integrating APIs, writing frontend tests, or setting up a new React project.
+user_invocable: true
 ---
 
 <essential_principles>

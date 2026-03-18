@@ -1,6 +1,7 @@
 ---
 name: docker-containerization
 description: Docker and container best practices for production workloads. Covers multi-stage Dockerfiles, base image selection, security hardening, BuildKit caching, docker-compose patterns, health checks, multi-arch builds, size optimization, and CI/CD integration. Use when writing Dockerfiles, setting up docker-compose, optimizing container images, or building CI/CD pipelines with containers.
+user_invocable: true
 ---
 
 <essential_principles>
