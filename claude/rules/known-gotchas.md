@@ -1,8 +1,8 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 48
-last_updated: "2026-03-18"
+entry_count: 49
+last_updated: "2026-03-19"
 ---
 
 # Known Gotchas
@@ -615,3 +615,34 @@ Note: reference the binary directly (`$HOME/.local/bin/trivy`) in the install st
 **Issue:** A CVE published to GitHub Security Advisories at 13:00 UTC caused all PRs to fail Trivy scans from ~19:35 UTC onward on the same day -- including PRs that added zero new dependencies. Trivy downloads a fresh vulnerability DB on each CI run.
 **Fix:** For transitive deps with no fixed version, add a `.trivyignore` file suppressing the specific GHSA ID with a justification comment: (1) it is a transitive dep not directly used, (2) no fix is available, (3) attack surface is limited. Remove when upstream patches.
 **Critical ordering:** Merge the `.trivyignore` hotfix PR *before* feature PRs so CI unblocks across the board. The hotfix PR itself passes Trivy because the ignore is included in its own CI run.
+
+## 169. Gitea act_runner Host Executor Has No pip, ruby, or sudo
+
+**Added:** 2026-03-19 | **Source:** DevKit | **Status:** active
+
+**Platform:** Gitea Actions (act_runner host executor)
+**Issue:** act_runner's host executor runs jobs directly on the server. The "ubuntu-latest" label is just a tag — the actual environment depends on what's installed on the host. Discovered: `python3` is available but has no `pip` (`No module named pip`). No `ruby`. No `sudo` (git user lacks sudo, causing `sudo apt-get` to hang indefinitely — not fail fast). `actions/setup-python@v5` and `actions/setup-node@v4` may also fail.
+**Fix:** Use only Python3 stdlib. For third-party packages, bootstrap from PyPI source using `urllib.request` + `tarfile`:
+
+```python
+import sys, io, os, tarfile, json, urllib.request
+try:
+    import yaml
+except ImportError:
+    api = json.loads(urllib.request.urlopen(
+        'https://pypi.org/pypi/PyYAML/json').read())
+    src_url = next(u['url'] for u in api['urls']
+                   if u['packagetype'] == 'sdist')
+    data = urllib.request.urlopen(src_url).read()
+    with tarfile.open(fileobj=io.BytesIO(data), mode='r:gz') as tf:
+        os.makedirs('/tmp/pyyaml/yaml', exist_ok=True)
+        for m in tf.getmembers():
+            if '/yaml/' in m.name and m.name.endswith('.py'):
+                fobj = tf.extractfile(m)
+                if fobj:
+                    open('/tmp/pyyaml/yaml/' + os.path.basename(m.name), 'wb').write(fobj.read())
+    sys.path.insert(0, '/tmp/pyyaml')
+    import yaml
+```
+
+**Diagnosis tip:** A job that fails "after 0s" but logs show the checkout succeeded indicates the next step is failing immediately — check for missing modules, not missing actions.
