@@ -1,7 +1,7 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 47
+entry_count: 48
 last_updated: "2026-03-18"
 ---
 
@@ -146,6 +146,11 @@ All parallel agents write to the same working directory. Sort into branches via 
 
 **Issue:** `git checkout <branch>` fails with "already used by worktree" when the branch is checked out in any worktree (including agent worktrees).
 **Fix:** Run `git worktree remove <path> --force` before checking out in the main tree. Prune worktrees after parallel agents complete.
+
+### Shared registration files are the most common parallel agent conflict surface (from issue #437)
+
+**Issue:** Two parallel worktree agents both modifying a shared registration file (e.g. `tools.go`, `router.go`, `routes.go`, skill routing tables) create a two-block rebase conflict when the second branch is rebased onto main after the first merges.
+**Fix:** When planning parallel agents that all add to a shared registration file, assign file ownership -- only ONE agent touches the shared file. Others wait or use a different integration point. Extends the general parallel-agent rule with the most common specific case.
 
 ## 26. Sequential Same-File PR Merge Requires Rebase Between Each
 
@@ -601,3 +606,12 @@ Note: reference the binary directly (`$HOME/.local/bin/trivy`) in the install st
 **Platform:** markdownlint-cli2 (all)
 **Issue:** Running `npx markdownlint-cli2` with a glob that accidentally includes non-`.md` files (e.g. `.gitignore`, `.sh` scripts) produces false positives. `#` comment lines are parsed as H1 headings, triggering MD022 (no blank line around headings), MD025 (multiple H1), and MD032 (no blank line around lists).
 **Fix:** Always scope markdownlint globs to `**/*.md` only. CI lint job already does this correctly — the issue only appears in manual local runs where a non-md file is passed directly or included via a broad glob.
+
+## 168. New Trivy CVE Day-Of Blocks All PRs — Hotfix With .trivyignore First
+
+**Added:** 2026-03-18 | **Source:** Synapset | **Status:** active
+
+**Platform:** GitHub Actions (CI with Trivy)
+**Issue:** A CVE published to GitHub Security Advisories at 13:00 UTC caused all PRs to fail Trivy scans from ~19:35 UTC onward on the same day -- including PRs that added zero new dependencies. Trivy downloads a fresh vulnerability DB on each CI run.
+**Fix:** For transitive deps with no fixed version, add a `.trivyignore` file suppressing the specific GHSA ID with a justification comment: (1) it is a transitive dep not directly used, (2) no fix is available, (3) attack surface is limited. Remove when upstream patches.
+**Critical ordering:** Merge the `.trivyignore` hotfix PR *before* feature PRs so CI unblocks across the board. The hotfix PR itself passes Trivy because the ignore is included in its own CI run.
