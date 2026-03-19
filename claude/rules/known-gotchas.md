@@ -1,7 +1,7 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 49
+entry_count: 50
 last_updated: "2026-03-19"
 ---
 
@@ -646,3 +646,21 @@ except ImportError:
 ```
 
 **Diagnosis tip:** A job that fails "after 0s" but logs show the checkout succeeded indicates the next step is failing immediately — check for missing modules, not missing actions.
+
+## 170. Gitea Actions Check Runs Do Not Satisfy Commit Status Branch Protection
+
+**Added:** 2026-03-19 | **Source:** DevKit | **Status:** active
+
+**Platform:** Gitea Actions / Gitea branch protection
+**Issue:** Gitea branch protection `status_check_contexts` (required status checks) matches against *commit statuses*, but Gitea Actions creates *check runs* — a different system. A PR where Actions CI passes will still show "Not all required status checks successful" and block merge. `gh pr checks` or the Gitea API shows runs as `completed/success` but the merge is still blocked.
+**Fix:** Use `"force_merge": true` in the Gitea merge PR API call:
+
+```bash
+curl -X POST "http://<gitea>/api/v1/repos/<owner>/<repo>/pulls/<N>/merge" \
+  -H "Authorization: token $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"Do":"squash","merge_message_field":"...","force_merge":true}'
+```
+
+Alternatively, use branch protection rules that match check run names instead of commit status contexts — but the mismatch is architectural and `force_merge` is the practical workaround.
+**See also:** KG#123 (Gitea API and Actions gotchas)
