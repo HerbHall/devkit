@@ -216,16 +216,20 @@ Keep rules files concise. If a file exceeds 30 entries, consider archiving older
 1. Store all learnings in MCP Memory only (steps 3-6 above).
 2. For findings that are universal or stack-specific, create a DevKit issue:
 
-```bash
-gh issue create -R HerbHall/devkit \
-  --title "autolearn: <brief description>" \
-  --body "Source project: $(basename $(pwd))
+Use the Samverk MCP `create_issue` tool:
+
+- `project`: `devkit`
+- `title`: `autolearn: <brief description>`
+- `body`:
+
+```text
+Source project: <project name>
 Category: <pattern|gotcha|correction>
 Confidence: HIGH
 
 <description of the learning>
 
-Suggested rules file: <autolearn-patterns.md or known-gotchas.md>"
+Suggested rules file: <autolearn-patterns.md or known-gotchas.md>
 ```
 
 **Important:** Do NOT edit files in `~/.claude/rules/` from a project context -- they are symlinks to DevKit.

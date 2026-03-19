@@ -75,10 +75,15 @@ Pick up a specific issue by number, implement the solution, and mark it complete
 
     ```bash
     git push -u origin feature/issue-N-description
-    gh pr create --title "feat: <description>" --body "Closes #N\n\n<summary>"
     ```
 
-    Capture the PR number from the output.
+    Then use the Samverk MCP `create_pr` tool:
+
+    - `title`: `feat: <description>`
+    - `head`: `feature/issue-N-description`
+    - `body`: `Closes #N\n\n<summary>`
+
+    Capture the PR number from the response.
 
 11. **Complete the issue**
 

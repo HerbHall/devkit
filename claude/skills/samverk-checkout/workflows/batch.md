@@ -74,8 +74,13 @@ Follow the standard implementation workflow (explore, code, test, lint). Call `h
 
 ```bash
 git push -u origin feature/issue-N-description
-gh pr create --title "feat: <description>" --body "Closes #N"
 ```
+
+Then use the Samverk MCP `create_pr` tool:
+
+- `title`: `feat: <description>`
+- `head`: `feature/issue-N-description`
+- `body`: `Closes #N`
 
 #### 4f. Complete
 

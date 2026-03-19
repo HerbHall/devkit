@@ -145,7 +145,7 @@ After fixing errors or discovering patterns, assess abstraction level:
 
 When working in a project context (e.g., Samverk), do NOT directly edit files in other projects (e.g., DevKit). Instead:
 
-- Create a GitHub issue in the other repo: `gh issue create -R HerbHall/<repo>`
+- Create an issue in the other repo via the Samverk MCP `create_issue` tool (`project: <name>`, e.g. `devkit`, `samverk`, `synapset`)
 - Include enough detail to reproduce/implement the fix
 - The fix gets implemented when actively working in that project's context
 - This prevents projects from becoming coupled and keeps sessions focused
