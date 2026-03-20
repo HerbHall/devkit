@@ -1,7 +1,7 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 48
+entry_count: 49
 last_updated: "2026-03-20"
 ---
 
@@ -625,3 +625,13 @@ Full repo management sequence: (1) `POST /api/v1/orgs` -- create org, (2) transf
 **Fix:** Add a top-level `ErrorBoundary` in `App.tsx` wrapping all routes (`<ErrorBoundary><Routes>...</Routes></ErrorBoundary>`). Minimum viable class: `state = { error: null }`, `getDerivedStateFromError` sets it, `render()` returns error message div when `this.state.error` is set, otherwise `this.props.children`. See AP#143 for full pattern.
 **Note:** This error is silent in production. DevTools console shows the original TypeError.
 **See also:** KG#173 (TypeScript fetch wrapper wrong shape)
+
+## 175. TypeScript Interface Auto-Resolve Drops Closing Braces in Conflict Resolution
+
+**Added:** 2026-03-20 | **Source:** Samverk | **Status:** active
+
+**Platform:** TypeScript / Git (all)
+**Issue:** Auto-resolving merge conflicts in `.ts` files using "keep both sides" concatenation can drop the closing `}` between adjacent interface declarations. The conflict zone boundary is treated as a text separator, not as syntax — the `}` ending one block gets swallowed when the next block starts immediately after.
+**Symptom:** `TS1131: Property or signature expected` at the line where the next interface begins.
+**Fix:** After any automated conflict resolution in `.ts` files, always run `npx tsc --noEmit` before committing. Visually inspect boundaries between adjacent interface or type declarations.
+**See also:** KG#153 (cherry-pick conflict resolution truncates functions at marker boundaries)
