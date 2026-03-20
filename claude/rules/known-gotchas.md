@@ -1,8 +1,8 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 48
-last_updated: "2026-03-18"
+entry_count: 52
+last_updated: "2026-03-20"
 ---
 
 # Known Gotchas
@@ -146,6 +146,11 @@ All parallel agents write to the same working directory. Sort into branches via 
 
 **Issue:** `git checkout <branch>` fails with "already used by worktree" when the branch is checked out in any worktree (including agent worktrees).
 **Fix:** Run `git worktree remove <path> --force` before checking out in the main tree. Prune worktrees after parallel agents complete.
+
+### Worktree isolation is partial when launching 5+ agents simultaneously
+
+**Issue:** When launching 5+ parallel agents with `isolation: "worktree"`, not all agents receive isolated worktrees. In observed sessions, only 2-3 of 5 agents got proper worktree directories. The other agents worked in the shared main working directory, causing cross-contamination (commits appearing in wrong branches, agents needing stash-based sorting).
+**Fix:** After launching 5+ parallel agents, verify worktree-agent-{id} branches exist before assuming isolation (`git branch -r | grep worktree-agent`). Fallback: stash-based sorting from AP#22. Limit parallel worktree agents to 3 when isolation is critical.
 
 ## 26. Sequential Same-File PR Merge Requires Rebase Between Each
 
@@ -354,6 +359,11 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Issue:** TypeScript API interfaces accumulate phantom fields the Go backend never sends. Causes `undefined` React keys and silent failures.
 **Fix:** Verify TS interfaces against actual Go JSON output (`curl` the endpoint). Grep for TS uses when changing Go JSON field names. See AP#79.
 
+### `?? 0` fallbacks mask field name mismatches (variant)
+
+**Issue:** When `fetchJSON<T>()` is called with a TypeScript interface whose field names do not match the actual Go JSON response keys, `?? 0` / `?? []` fallbacks in components silently display 0 or empty instead of crashing. No TypeScript error, no console error. Example: interface has `total_cost_usd` but Go sends `estimated_cost_usd` — dashboard shows $0.00 for the entire project lifetime.
+**Fix:** Curl the live endpoint and compare actual JSON keys to the TS interface before shipping any new API-connected component. This is different from phantom fields (extra fields the backend never sends) — this is completely wrong field names from day one.
+
 ## 116. Go context.WithTimeout Cancels Cleanup Operations
 
 **Added:** 2026-03-14 | **Source:** Samverk | **Status:** active
@@ -445,6 +455,21 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 git config --global url."http://user:${TOKEN}@localhost:3000/".insteadOf "http://localhost:3000/"
 git config --global url."http://user:${TOKEN}@localhost:3000/".insteadOf "https://gitea.herbhall.net/"
 ```
+
+### Issue creation requires label IDs, not names
+
+**Issue:** `POST /api/v1/repos/{owner}/{repo}/issues` with `labels: ["agent:human"]` (string names) returns 422 Unprocessable Entity. Gitea requires integer label IDs. GitHub's API accepts both names and IDs, so code that works on GitHub silently fails on Gitea.
+**Fix:** Query labels first to get the ID mapping: `GET /api/v1/repos/{owner}/{repo}/labels` returns `[{"id": 275, "name": "agent:human"}, ...]`. Pass integer IDs in the create payload: `{"title": "...", "labels": [275, 338]}`.
+
+### force_merge 405 has two causes
+
+**Issue:** HTTP 405 from the Gitea merge PR API has two distinct causes: (1) PR is already merged (empty body, documented in KG#123 above), and (2) PR has ancestor commits that Gitea main does not have (dual-forge drift) — returns 405 with body `{"message":"Please try again later"}` and PR state is `open` with `mergeable=False`.
+**Fix:** Distinguish by checking PR state + body content before retrying. For case 2 (dual-forge drift), use the force-sync procedure from AP#140.
+
+### gh CLI targets GitHub, not Gitea
+
+**Issue:** When a repo has both GitHub (`origin`) and Gitea (`gitea`) remotes, `gh pr create --repo owner/repo` always creates a GitHub PR regardless of which forge is primary. Agent prompts using `gh pr create` will create GitHub PRs even when Gitea is the intended forge.
+**Fix:** Use the Gitea REST API for Gitea PRs: `POST /api/v1/repos/{owner}/{repo}/pulls` with `Authorization: token {TOKEN}`. The `gh` CLI has no Gitea support.
 
 ## 125. go:embed Cache Misses Embedded File Changes
 
@@ -623,3 +648,73 @@ curl -X PATCH "$GITEA_URL/api/v1/repos/new-org/my-repo" \
 ```
 
 Full repo management sequence: (1) `POST /api/v1/orgs` -- create org, (2) transfer, (3) rename, (4) `PATCH` description.
+
+## 171. Samverk MCP Proxy 502 — Gitea API Fallback Pattern
+
+**Added:** 2026-03-20 | **Source:** Synapset | **Status:** active
+
+**Platform:** Claude Code / Samverk MCP
+**Issue:** mcp-proxy.anthropic.com returns 502 Bad Gateway intermittently when calling Samverk MCP `create_issue`. Multiple parallel calls can fail simultaneously. Bash heredocs also fail with unexpected EOF when issue body contains apostrophes.
+**Fix:** Fall back to Gitea API at `http://192.168.1.160:3000/api/v1`. Use Python `urllib.request` inside a PYEOF heredoc for multi-issue creation — bash heredocs break on apostrophes in body text:
+
+````python
+python3 << 'PYEOF'
+import urllib.request, json
+token = open('/dev/stdin').readline().strip()
+data = json.dumps({"title": "...", "body": "it's fine to use apostrophes"}).encode()
+req = urllib.request.Request(
+    "http://192.168.1.160:3000/api/v1/repos/owner/repo/issues",
+    data=data, headers={"Authorization": f"token {token}", "Content-Type": "application/json"}
+)
+urllib.request.urlopen(req)
+PYEOF
+````
+
+## 172. ESLint v9 Requires eslint.config.js — .eslintrc.* Silently Fails
+
+**Added:** 2026-03-20 | **Source:** Samverk | **Status:** active
+
+**Platform:** Node.js / Frontend (ESLint v9+)
+**Issue:** ESLint v9 dropped `.eslintrc.*` support entirely. Projects with ESLint v9 installed but no `eslint.config.(js|mjs|cjs)` file get exit code 2: "ESLint couldn't find an eslint.config.* file." The `pnpm lint` script appears to be configured but ESLint never actually runs — easy to miss because the script exits without surfacing a lint error. Discovered in a project where the lint script had existed since creation but was silently no-opping.
+**Fix:** Create `eslint.config.js` (flat config format) or migrate from `.eslintrc.*` using the ESLint v9 migration guide. Verify lint is actually running by checking for output, not just exit code 0.
+
+## 173. TypeScript Generic Fetch Wrapper Silently Accepts Wrong Response Shape
+
+**Added:** 2026-03-20 | **Source:** Samverk | **Status:** active
+
+**Platform:** TypeScript / React (all)
+**Issue:** `fetchJSON<T>()` generic parameter does not validate the actual HTTP response shape at runtime. A Go handler returning `{items: T[], total: number}` typed as `fetchJSON<T[]>()` is silently accepted by TypeScript. The mismatch is benign until code calls `.forEach()` or `.map()` on the result, throwing `TypeError` at runtime. A later PR added `.forEach()` — the first iteration call — which crashed the entire React app (black screen, no error boundary).
+**Fix:** Unwrap response in the API client: `const data = await fetchJSON<{items: T[]}>(...); return data.items`. Prevention: generate TS interfaces from Go DTOs using openapi-typescript or similar. Always curl the endpoint and verify the response shape matches the TS type before shipping.
+**See also:** KG#115 (phantom field drift), KG#174 (black screen from missing error boundary)
+
+## 174. React 18 Production: Missing Error Boundary Causes Silent Black Screen
+
+**Added:** 2026-03-20 | **Source:** Samverk | **Status:** active
+
+**Platform:** React 18 (production)
+**Issue:** An unhandled `TypeError` in a `useMemo` or render function during re-render (post-loading-state) causes React to unmount the entire component tree if no error boundary exists. Result: completely blank/black page with no error message. Looks identical to a network hang or infinite load. Playwright may not reproduce if it snapshots during loading state before data arrives — misleading diagnosis.
+**Fix:** Add a top-level `ErrorBoundary` component in `App.tsx` wrapping all routes. Use `getDerivedStateFromError` + `componentDidCatch`. Minimum viable:
+
+````tsx
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { error: Error | null }
+> {
+  state = { error: null }
+  static getDerivedStateFromError(error: Error) { return { error } }
+  componentDidCatch(error: Error) { console.error('App crashed:', error) }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{padding: '2rem', color: 'red'}}>
+          Error: {(this.state.error as Error).message}
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
+````
+
+**Note:** This error is silent in production. DevTools console shows the original TypeError.
+**See also:** KG#173 (TypeScript fetch wrapper wrong shape)
