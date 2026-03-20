@@ -66,6 +66,31 @@ agents review their own work using specialized review agents.
 | Before any commit touching more than one file | Code review | `/code-review` |
 | Before opening a PR | Code review (if not already done) | `/code-review` |
 | Any change to authentication, authorization, or secrets handling | Security review | `security-analyzer` agent |
+| Any PR adding, removing, or modifying authentication/session handling | Workflow continuity assessment | Review manually |
+
+### Workflow Continuity Assessment (auth/session PRs)
+
+Any PR that adds, removes, or modifies authentication or session handling MUST include a workflow continuity assessment:
+
+1. What does a currently-authenticated user experience after this change?
+2. What does a user experience after a service restart?
+3. Is the login/re-login flow smooth or disruptive?
+
+This is separate from the security review. Security asks "is this safe?" Workflow continuity asks "does this break the user experience?"
+
+### Required PR Description Section (handlers, middleware, auth PRs)
+
+For any PR modifying existing handlers, middleware, or authentication, the PR description MUST include an "Impact on Existing Behaviors" section:
+
+````markdown
+## Impact on Existing Behaviors
+- [ ] Authenticated users: [describe what changes for logged-in users]
+- [ ] API clients: [describe what changes for Bearer token callers]
+- [ ] After service restart: [describe the user experience]
+- [ ] N/A: [only if the change is purely additive with no effect on existing paths]
+````
+
+Advisory sections get skipped under time pressure. This is a required checklist item.
 
 ### Scope Limits for Reviewers
 
