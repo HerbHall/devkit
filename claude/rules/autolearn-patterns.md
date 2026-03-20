@@ -1,8 +1,8 @@
 ---
 description: Learned patterns from past sessions. Read when encountering similar situations.
 tier: 2
-entry_count: 67
-last_updated: "2026-03-18"
+entry_count: 71
+last_updated: "2026-03-20"
 ---
 
 # Learned Patterns
@@ -645,6 +645,22 @@ MUI Popper needs `anchorEl` during render. `useRef` + `ref.current` triggers Rea
 **Context:** Parallel worktree agents both modifying the same file create merge conflicts if both branches merge independently.
 **Fix:** Merge the first branch to main via fast-forward, then rebase the second branch onto updated main before merging. Both merges stay fast-forward with zero conflicts.
 
+### Stacked worktree commits: rebase --onto to separate agent branches
+
+**Context:** When parallel worktree agents all end up committing to the main worktree (instead of their isolated worktrees), commits become stacked on a single branch. For example, `feat/issue-102` ends up with commits for issues 103, 104, AND 102 stacked on top of each other -- only 102 should be there.
+**Fix:** Use `git rebase --onto origin/main <parent-commit> <branch>` to replay only the target commit onto main. The parent-commit is the hash of the commit just below your target in `git log --oneline <branch>`. Run this for each affected branch separately.
+**See also:** KG#25
+
+### Sequential worktrees for issues sharing central files
+
+**Context:** When a wave of code-gen issues all touch the same central files (e.g., `tools.go` + `search.go`), parallel worktree agents produce merge conflicts requiring manual combination. Sequential execution eliminates this entirely.
+**Fix:** Sequential wave pattern: run agent A -> merge PR A -> `git pull main` -> run agent B -> merge PR B -> repeat. Result: zero conflicts, zero manual resolution. Use parallel only when issues have non-overlapping file sets. Check each issue's acceptance criteria to identify which files will be touched before deciding parallel vs sequential.
+
+### Check worktree for partial progress before re-running truncated agent
+
+**Context:** When a worktree agent returns a truncated response (mid-sentence, no PR created), do NOT re-run from scratch. The agent may have completed all code changes and only failed at the final summary/PR step.
+**Fix:** First inspect the worktree directory at `.claude/worktrees/agent-*/`. Review what files were changed with `git diff main...HEAD` inside the worktree. If substantial work exists, continue via `SendMessage` to the same agent or run a targeted agent for only the missing piece. This can save 70k+ tokens compared to a full re-run.
+
 ## 132. Exclude Release-Please CHANGELOG From Markdownlint
 
 **Added:** 2026-03-17 | **Source:** DevKit | **Status:** active
@@ -695,3 +711,111 @@ MUI Popper needs `anchorEl` during render. `useRef` + `ref.current` triggers Rea
 **Fix:** Use two orgs: (1) `samverk-research` -- new ideas, exploratory work, pre-viability repos; (2) `samverk` -- dispatcher-managed production projects (devkit, samverk, synapset). When a research project proves viable, transfer once from `samverk-research` to `samverk` and set `lifecycle.phase: intake` in `.samverk/project.yaml`. No further org transfers -- phase progression stays within the `samverk` org.
 **Why:** Keeps unmanaged exploratory repos from cluttering the dispatcher's project registry. Org membership signals management status at a glance.
 **See also:** KG#168 (Gitea transfer + rename sequence)
+
+## 140. Dual-Forge Force-Sync Procedure (GitHub -> Gitea)
+
+**Added:** 2026-03-20 | **Source:** Samverk | **Status:** active
+
+**Category:** workflow-pattern
+**Context:** When Gitea main drifts far behind GitHub main (dual-forge squash divergence), all Gitea PRs show `mergeable=False` and `force_merge:true` returns 405 "Please try again later". The code is equivalent on both forks but commit SHAs differ from squash-merging separately into each.
+**Fix:** Force-sync procedure:
+
+```bash
+# 1. Verify divergence
+git log gitea/main..origin/main --oneline | wc -l  # commits Gitea is missing
+
+# 2. Enable admin push via Gitea API
+curl -X PATCH "http://GITEA/api/v1/repos/OWNER/REPO/branch_protections/main" \
+  -H "Authorization: token $TOKEN" -H "Content-Type: application/json" \
+  -d '{"enable_push":true,"enable_push_whitelist":true,"enable_force_push":true,"enable_force_push_allowlist":true}'
+
+# 3. Force-sync
+git push gitea origin/main:main --force
+
+# 4. Restore protection
+curl -X PATCH "http://GITEA/api/v1/repos/OWNER/REPO/branch_protections/main" \
+  -H "Authorization: token $TOKEN" -H "Content-Type: application/json" \
+  -d '{"enable_push":false,"enable_force_push":false,"enable_status_check":true}'
+```
+
+After syncing, all Gitea PRs show `mergeable=True`. Note: force-syncing replaces Gitea's squash commits with GitHub's (same code, different history).
+**See also:** KG#123 (Gitea API gotchas), AP#22 (Git stash and branch workflows)
+
+## 141. Go restartCh Channel Pattern for Goroutine Slice Ownership
+
+**Added:** 2026-03-20 | **Source:** Samverk | **Status:** active
+
+**Category:** pattern
+**Context:** When a background timer goroutine calls a closure that writes to a local slice (e.g., `watchers[idx].cancel = wcancel`), and the main select loop also reads that slice, the race detector flags a concurrent read/write. This failure mode is flaky -- passes without `-race` and may pass sporadically in CI.
+**Fix:** Add a `restartCh chan int`. The timer goroutine sends the watcher index to `restartCh` instead of calling the closure directly. The main select loop handles the restart:
+
+```go
+// Instead of calling startWatcher(idx) directly from a goroutine:
+go func(idx int, delay time.Duration) {
+    select {
+    case <-ctx.Done():
+        return
+    case <-time.After(delay):
+        select {
+        case restartCh <- idx: // hand ownership back to main loop
+        case <-ctx.Done():
+        }
+    }
+}(idx, backoff)
+
+// In main select:
+case idx := <-restartCh:
+    startWatcher(idx) // safe -- runs on main goroutine, no race
+```
+
+Use channels for ownership transfer between goroutines rather than mutexes for shared local slice access. Idiomatic Go.
+
+## 142. strace FD-Level Diagnosis for Process Hang vs Output Buffering
+
+**Added:** 2026-03-20 | **Source:** Samverk | **Status:** active
+
+**Category:** debugging-pattern
+**Context:** When a subprocess appears hung (no stdout output, `output_bytes=0`) but the process is alive, it may be buffering output rather than truly stuck.
+**Fix:** Use `strace` FD-level tracing to distinguish buffering from stuck:
+
+```bash
+strace -p PID -e trace=read,write,recvfrom
+```
+
+Active `recvfrom` calls on a network FD confirm the process is receiving data. Zero writes to stdout (FD 1) with active network reads = process is buffering output, not hung. Change the fix from "kill process" to "increase timeout". Discovered while diagnosing `claude --print` processes: `--print` mode buffers ALL output until the entire agentic session ends.
+
+## 143. React ErrorBoundary at Router Level -- Standard Pattern
+
+**Added:** 2026-03-20 | **Source:** Samverk | **Status:** active
+
+**Category:** frontend-pattern
+**Context:** React apps without an ErrorBoundary show a silent black screen when any render error occurs -- React unmounts the entire tree with no visible error or crash dialog. Looks identical to a hang or network failure. Standard practice for all React dashboards.
+**Fix:** Add `ErrorBoundary` in `App.tsx` wrapping all routes:
+
+```tsx
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { error: Error | null }
+> {
+  state = { error: null }
+  static getDerivedStateFromError(error: Error) { return { error } }
+  componentDidCatch(error: Error) { console.error('App crashed:', error) }
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="flex h-screen items-center justify-center">
+          <div className="rounded border border-red-800 p-6 text-sm">
+            <p className="font-semibold text-red-400">Dashboard Error</p>
+            <p className="font-mono text-gray-400">{(this.state.error as Error).message}</p>
+            <button onClick={() => window.location.reload()}>Reload</button>
+          </div>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
+```
+
+Wrap all routes: `return <ErrorBoundary><Routes>...</Routes></ErrorBoundary>`. Must wrap at router level to cover all routes. Also add to `react-frontend-development` skill on next pass.
+**See also:** AP#111 (React Compiler and MUI patterns)
