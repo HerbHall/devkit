@@ -1,7 +1,7 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 52
+entry_count: 48
 last_updated: "2026-03-20"
 ---
 
@@ -207,21 +207,6 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Issue:** v7 enforces strict JSON schema. v2.1 config keys fail with v2.10 schema. `linters-settings:` moved under `linters: settings:`. `issues: exclude-rules:` moved to `linters: exclusions: rules:`.
 **Fix:** Migrate config to v2.10 schema. Use `@v7` (not `@v6`) for golangci-lint v2. Default binary mode (not `goinstall`).
 
-## 77. Docker Desktop Extension Development Gotchas (Consolidated Reference)
-
-**Added:** 2026-02-17 | **Source:** Multiple | **Status:** active
-
-**Platform:** Docker Desktop Extensions
-
-- **Marketplace:** Submit via docker/extensions-submissions. Run `docker extension validate` first.
-- **hadolint:** DL3048/DL3045 false positives. Add `.hadolint.yaml` with `ignored: [DL3048, DL3045]`.
-- **Vitest:** `@docker/extension-api-client` CJS/ESM mismatch. Add `resolve.alias` -> mock file. See KG#87.
-- **Version drift:** Designate one source of truth. CI overrides Dockerfile ARG via `--build-arg`.
-- **Labels:** Screenshots (JSON array, min 3, 2400x1600px), changelog (HTML), icon (local file).
-- **Multi-arch:** Must build `linux/amd64` + `linux/arm64` via `docker buildx`.
-- **MUI v5:** `@docker/docker-mui-theme` pins v5. Use `InputProps` not `slotProps.input`.
-- **Update after rebuild:** Use `docker extension install` (not `update`) -- tracks by digest.
-
 ## 91. markdownlint-cli2 Nested node_modules Not Excluded by Root Pattern
 
 **Added:** 2026-03-03 | **Source:** Samverk | **Status:** active
@@ -237,14 +222,6 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Platform:** Git (all)
 **Issue:** `.claude/` (trailing slash) ignores entire directory. `!.claude/settings.json` cannot override.
 **Fix:** Use `.claude/*` (glob) instead. Glob-level ignores allow negation.
-
-## 97. Copilot Auto-Review Is UI-Only (No REST API)
-
-**Added:** 2026-03-05 | **Source:** Runbooks | **Status:** active
-
-**Platform:** GitHub
-**Issue:** Copilot code review toggle in rulesets is UI-only. API can create the rule but UI may need manual confirmation.
-**Fix:** After API ruleset creation, manually verify in Settings > Rules > Rulesets. Create a test PR to confirm.
 
 ## 98. Rules Files Over 40k Degrade Session Performance
 
@@ -389,14 +366,6 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Fix:** Remove the User env var: `[Environment]::SetEnvironmentVariable('GITHUB_TOKEN', $null, 'User')`. PATs for CI (e.g., release-please) should only be GitHub Actions secrets, never local env vars. Inline override: `GITHUB_TOKEN= gh <command>`.
 **See also:** AP#120 (secrets distribution)
 
-## 121. MailChannels Free Tier Deprecated
-
-**Added:** 2026-03-14 | **Source:** herbhall.net | **Status:** active
-
-**Platform:** Cloudflare Workers
-**Issue:** MailChannels shut down free Cloudflare Workers integration. `api.mailchannels.net/tx/v1/send` returns 401 Unauthorized.
-**Fix:** Migrate to Cloudflare Email Routing `send_email` binding. See AP#126 for the replacement pattern.
-
 ## 122. Cloudflare Account Token Requires CLOUDFLARE_ACCOUNT_ID for Wrangler
 
 **Added:** 2026-03-14 | **Source:** herbhall.net | **Status:** active
@@ -436,11 +405,6 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Issue:** Gitea REST API calls via the Cloudflare tunnel URL fail with "token is required" because the tunnel strips the `Authorization` header.
 **Fix:** Use the internal URL (e.g., `http://192.168.1.160:3000`) for all Gitea API calls. Token extraction: `printf 'protocol=https\nhost=gitea.example.com\n' | git credential fill | grep password`
 
-### Samverk MCP handler init gated on GitHub env vars (was KG#161, resolved)
-
-**Issue:** Samverk MCP handler init was gated on `GITHUB_TOKEN + SAMVERK_GITHUB_OWNER + SAMVERK_GITHUB_REPO` all being set. If any was missing, all MCP routes and server.yaml projects were skipped.
-**Fix:** Resolved in Samverk refactor/38 -- MCP handler and server.yaml projects now initialize unconditionally. GitHub env vars only needed for GitHub-hosted projects.
-
 ### Force-push rejected with 'stale info' -- fetch first
 
 **Issue:** `git push --force` or `--force-with-lease` to Gitea fails with "stale info" when the local remote-tracking ref is stale or missing (e.g., branch was created remotely via a PR or prior push from another worktree).
@@ -449,12 +413,7 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 ### semantic-release EGITNOPERMISSION via Cloudflare Tunnel -- needs second url.insteadOf
 
 **Issue:** semantic-release uses `repositoryUrl` for both release notes link generation AND the git push target. If `repositoryUrl` points to the public Cloudflare Tunnel URL and Cloudflare strips `Authorization` headers, the tag push fails with `EGITNOPERMISSION`.
-**Fix:** Add a second `url.insteadOf` rule in CI that rewrites the public URL to authenticated localhost -- the first rule covering `localhost:3000` is not enough alone:
-
-```yaml
-git config --global url."http://user:${TOKEN}@localhost:3000/".insteadOf "http://localhost:3000/"
-git config --global url."http://user:${TOKEN}@localhost:3000/".insteadOf "https://gitea.herbhall.net/"
-```
+**Fix:** Add a second `url.insteadOf` rule rewriting the public Cloudflare Tunnel URL to authenticated localhost — the rule for `localhost:3000` alone is not enough. Both must be present: one for `http://localhost:3000/` and one for `https://gitea.herbhall.net/`.
 
 ### Issue creation requires label IDs, not names
 
@@ -479,14 +438,6 @@ git config --global url."http://user:${TOKEN}@localhost:3000/".insteadOf "https:
 **Issue:** Go build cache doesn't detect changes to `go:embed` files when Go source hasn't changed. Embedded SPA files (`web/dist/` -> `internal/server/static/`) stay stale after frontend rebuild, causing deployed binary to serve old JS bundles.
 **Fix:** Always use `make build` or `make redeploy` for projects with embedded SPAs. Consider `go build -a` or touching a Go source file after SPA rebuild to bust cache.
 **Deploy:** Ensure deploy scripts rebuild the SPA before `go build`. Skipping frontend build silently serves stale JS bundles baked in at compile time.
-
-## 126. Tailscale Funnel Rejects Host Header from Within Tailnet
-
-**Added:** 2026-03-14 | **Source:** Samverk | **Status:** active
-
-**Platform:** Tailscale
-**Issue:** Funnel returns "Forbidden: invalid Host header" when accessed from a device within the same tailnet. Intra-tailnet traffic bypasses Funnel's public ingress path via WireGuard. External clients work fine.
-**Fix:** Use Cloudflare Tunnel instead of Tailscale Funnel for universal access (both internal and external clients).
 
 ## 135. MCP Streamable HTTP Requires GET for SSE; OAuth Breaks Custom Connectors
 
@@ -588,16 +539,8 @@ git config --global url."http://user:${TOKEN}@localhost:3000/".insteadOf "https:
 
 **Platform:** Linux deploy scripts
 **Issue:** `scp` to replace a running Go binary fails with `dest open: Failure` even after `systemctl stop` because an orphaned process (launched outside systemd, or that survived the stop signal) keeps the binary mapped as its executable. `lsof /usr/local/bin/<binary>` shows the PID with type `txt`.
-**Fix:** Add a `fuser -k` step to the deploy script before `scp`:
-
-```bash
-# Kill any processes holding the binary open
-ssh "root@${HOST}" 'fuser -k /usr/local/bin/<binary> 2>/dev/null || true'
-sleep 1
-scp bin/<binary>-linux-amd64 "root@${HOST}:/usr/local/bin/<binary>"
-```
-
-Diagnose manually: `ssh root@host 'lsof /usr/local/bin/<binary>'` then kill listed PIDs.
+**Fix:** Add `ssh "root@${HOST}" 'fuser -k /usr/local/bin/<binary> 2>/dev/null || true'` before `scp`, then `sleep 1` to let the process exit before copying the new binary.
+**Diagnose:** `ssh root@host 'lsof /usr/local/bin/<binary>'` -- look for PID with type `txt`.
 
 ## 166. Trivy install.sh Fails With Permission Denied on Pre-Installed Runner Binary
 
@@ -605,19 +548,7 @@ Diagnose manually: `ssh root@host 'lsof /usr/local/bin/<binary>'` then kill list
 
 **Platform:** GitHub Actions (Linux)
 **Issue:** The aquasecurity `trivy` install.sh script fails with `install: cannot remove '/usr/local/bin/trivy': Permission denied` when the runner has trivy pre-installed at a system path. The CI job user cannot write to `/usr/local/bin`.
-**Fix:** Install to a user-writable directory instead:
-
-```yaml
-- name: Install trivy
-  run: |
-    mkdir -p "$HOME/.local/bin"
-    curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
-      | sh -s -- -b "$HOME/.local/bin"
-    echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-    "$HOME/.local/bin/trivy" --version
-```
-
-Note: reference the binary directly (`$HOME/.local/bin/trivy`) in the install step since `$GITHUB_PATH` is not applied to PATH until the **next** step.
+**Fix:** Install to `$HOME/.local/bin` with `curl -sfL .../install.sh | sh -s -- -b "$HOME/.local/bin"`, then `echo "$HOME/.local/bin" >> "$GITHUB_PATH"`. In the SAME step, reference the binary directly as `"$HOME/.local/bin/trivy" --version` — `$GITHUB_PATH` changes only take effect in the NEXT step.
 
 ## 167. markdownlint-cli2 False Positives on Non-.md Files
 
@@ -655,20 +586,7 @@ Full repo management sequence: (1) `POST /api/v1/orgs` -- create org, (2) transf
 
 **Platform:** Claude Code / Samverk MCP
 **Issue:** mcp-proxy.anthropic.com returns 502 Bad Gateway intermittently when calling Samverk MCP `create_issue`. Multiple parallel calls can fail simultaneously. Bash heredocs also fail with unexpected EOF when issue body contains apostrophes.
-**Fix:** Fall back to Gitea API at `http://192.168.1.160:3000/api/v1`. Use Python `urllib.request` inside a PYEOF heredoc for multi-issue creation — bash heredocs break on apostrophes in body text:
-
-````python
-python3 << 'PYEOF'
-import urllib.request, json
-token = open('/dev/stdin').readline().strip()
-data = json.dumps({"title": "...", "body": "it's fine to use apostrophes"}).encode()
-req = urllib.request.Request(
-    "http://192.168.1.160:3000/api/v1/repos/owner/repo/issues",
-    data=data, headers={"Authorization": f"token {token}", "Content-Type": "application/json"}
-)
-urllib.request.urlopen(req)
-PYEOF
-````
+**Fix:** Fall back to Gitea API at `http://192.168.1.160:3000/api/v1`. Use `python3 << 'PYEOF'` heredoc with `urllib.request` + `json.dumps()` for multi-issue creation — bash heredocs break on apostrophes in body text; Python heredocs (`'PYEOF'`) do not.
 
 ## 172. ESLint v9 Requires eslint.config.js — .eslintrc.* Silently Fails
 
@@ -693,28 +611,6 @@ PYEOF
 
 **Platform:** React 18 (production)
 **Issue:** An unhandled `TypeError` in a `useMemo` or render function during re-render (post-loading-state) causes React to unmount the entire component tree if no error boundary exists. Result: completely blank/black page with no error message. Looks identical to a network hang or infinite load. Playwright may not reproduce if it snapshots during loading state before data arrives — misleading diagnosis.
-**Fix:** Add a top-level `ErrorBoundary` component in `App.tsx` wrapping all routes. Use `getDerivedStateFromError` + `componentDidCatch`. Minimum viable:
-
-````tsx
-class ErrorBoundary extends React.Component<
-  { children: React.ReactNode },
-  { error: Error | null }
-> {
-  state = { error: null }
-  static getDerivedStateFromError(error: Error) { return { error } }
-  componentDidCatch(error: Error) { console.error('App crashed:', error) }
-  render() {
-    if (this.state.error) {
-      return (
-        <div style={{padding: '2rem', color: 'red'}}>
-          Error: {(this.state.error as Error).message}
-        </div>
-      )
-    }
-    return this.props.children
-  }
-}
-````
-
+**Fix:** Add a top-level `ErrorBoundary` in `App.tsx` wrapping all routes (`<ErrorBoundary><Routes>...</Routes></ErrorBoundary>`). Minimum viable class: `state = { error: null }`, `getDerivedStateFromError` sets it, `render()` returns error message div when `this.state.error` is set, otherwise `this.props.children`. See AP#143 for full pattern.
 **Note:** This error is silent in production. DevTools console shows the original TypeError.
 **See also:** KG#173 (TypeScript fetch wrapper wrong shape)

@@ -363,3 +363,25 @@ Synapset: pool=devkit, ID=606
 
 Parallel Agent Orchestration legacy stash/pop approach. Superseded by AP#127 (worktree isolation).
 Synapset: pool=devkit, ID=607
+
+## Archived 2026-03-20: Rules compaction (niche/workspace-specific entries)
+
+## AP#50 (archived 2026-03-20)
+
+VS Code Auto-Open File on Workspace Start via tasks.json with runOn: folderOpen.
+Synapset: pool=devkit, ID=690
+
+## AP#51 (archived 2026-03-20)
+
+Two-Tier Session Startup: VS Code folderOpen task + Claude Code SessionStart hook for DASHBOARD.md.
+Synapset: pool=devkit, ID=691
+
+## AP#74 (archived 2026-03-20)
+
+Iterative Bootstrap Debugging on New Machines -- run end-to-end, fix all in single pass.
+Synapset: pool=devkit, ID=692
+
+## AP#110 (archived 2026-03-20)
+
+Docker Desktop Extension Marketplace Submission Checklist. Project-specific to Runbooks. See also KG#77.
+Synapset: pool=devkit, ID=693

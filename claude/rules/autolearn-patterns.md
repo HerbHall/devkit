@@ -1,7 +1,7 @@
 ---
 description: Learned patterns from past sessions. Read when encountering similar situations.
 tier: 2
-entry_count: 71
+entry_count: 67
 last_updated: "2026-03-20"
 ---
 
@@ -166,20 +166,7 @@ Structure as: Research issues -> Implementation issues -> Gate issue (checklist)
 ### Dual-forge rebase requires --onto to replay only feature commits
 
 **Context:** Projects using two forges (e.g., GitHub as `origin` + Gitea as `gitea` remote) have the same logical history but different commit SHAs (squash-merged separately into each). A feature branch based on GitHub `main` cannot fast-forward onto Gitea `main`. Naive `git rebase gitea/main feat/branch` replays 80+ commits from the divergence point, producing conflicts on already-merged unrelated commits.
-**Fix:** Use `--onto` to replay only the feature commits:
-
-```bash
-# Find the last GitHub main commit the branch was based on
-git log --oneline main | head -5  # e.g. d96284e
-
-# Replay only commits after that point onto Gitea main
-git rebase --onto gitea/main d96284e feat/branch
-
-# Fetch first (KG#123: Gitea rejects force-push with stale info)
-git fetch gitea feat/branch
-git push --force-with-lease gitea feat/branch
-```
-
+**Fix:** `git rebase --onto gitea/main <last-github-main-commit> feat/branch` replays only feature commits. Find the fork point with `git log --oneline main | head -5`. Then `git fetch gitea feat/branch && git push --force-with-lease gitea feat/branch`.
 **See also:** KG#123 (Gitea force-push requires fetch first)
 
 ## 23. Go Slice Assignment Creates Alias, Not Copy
@@ -266,22 +253,6 @@ Check CI on ALL PRs first. Merge green sequentially (rebase between each). Close
 **Context:** "Create X" issues may already have deliverables in the codebase. Planning without checking leads to overscoped work.
 **Fix:** Search codebase first: `grep -r "<keyword>" --include="*.svg" --include="*.md" .` Can reduce scope by 90%.
 
-## 50. VS Code Auto-Open File on Workspace Start
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** tooling
-**Context:** Auto-open a file when VS Code loads a workspace without an extension.
-**Fix:** Create `.vscode/tasks.json` with `runOn: folderOpen` task. First open prompts "Allow?" -- permanent after that.
-
-## 51. Two-Tier Session Startup: Static File + Interactive Hook
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** workflow-pattern
-**Context:** Need both IDE and Claude Code oriented on project state at startup.
-**Fix:** Combine: (1) VS Code task (`runOn: folderOpen`) auto-opens DASHBOARD.md, (2) Claude Code SessionStart hook injects `/dashboard` instruction. Static file orients human; hook provides live routing.
-
 ## 57. JSX Short-Circuit with `unknown` Type Is Not ReactNode
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
@@ -348,14 +319,6 @@ Windows Store Python aliases hang forever. `command -v` resolves them as valid b
 ### PowerShell temp file from MSYS bash
 
 Inline PowerShell from MSYS bash breaks with `$env:PATH`, special chars. Write temp `.ps1` file using single-quoted heredoc (`'PSEOF'`), execute with `powershell.exe -NoProfile -File /tmp/cmd.ps1 2>&1`.
-
-## 74. Iterative Bootstrap Debugging on New Machines
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** workflow-pattern
-**Context:** First-time bootstrap surfaces cascading issues. Each phase may expose issues invisible until prior phases complete.
-**Fix:** Run end-to-end, capture full output, fix ALL failures in single pass. Multiple failures may share root cause (e.g., PATH staleness).
 
 ## 77. Small Wave Without Subagent for Focused Changes
 
@@ -512,15 +475,6 @@ Inline PowerShell from MSYS bash breaks with `$env:PATH`, special chars. Write t
 **Category:** workflow-pattern
 **Context:** Sprint achieved zero rework (all CI-green first pass) vs previous 1-3 fix-push cycles per PR.
 **Fix:** Key factors: (1) specific CI commands in prompts, (2) wave ordering respects deps, (3) read-before-write requirement, (4) single responsibility per agent.
-
-## 110. Docker Desktop Extension Marketplace Submission Checklist
-
-**Added:** 2026-03-02 | **Source:** Runbooks, RunNotes | **Status:** active
-
-**Category:** process-pattern
-**Context:** Marketplace submission has multiple prerequisites. Missing any causes rejection.
-**Fix:** Checklist: (1) Dockerfile labels (screenshots JSON, changelog HTML, additional-urls), (2) .hadolint.yaml ignores DL3048/DL3045, (3) multi-arch (amd64+arm64), (4) `docker extension validate`, (5) submit via docker/extensions-submissions.
-**See also:** KG#77
 
 ## 111. React Compiler and MUI Interaction Patterns (Consolidated Reference)
 
@@ -718,27 +672,7 @@ MUI Popper needs `anchorEl` during render. `useRef` + `ref.current` triggers Rea
 
 **Category:** workflow-pattern
 **Context:** When Gitea main drifts far behind GitHub main (dual-forge squash divergence), all Gitea PRs show `mergeable=False` and `force_merge:true` returns 405 "Please try again later". The code is equivalent on both forks but commit SHAs differ from squash-merging separately into each.
-**Fix:** Force-sync procedure:
-
-```bash
-# 1. Verify divergence
-git log gitea/main..origin/main --oneline | wc -l  # commits Gitea is missing
-
-# 2. Enable admin push via Gitea API
-curl -X PATCH "http://GITEA/api/v1/repos/OWNER/REPO/branch_protections/main" \
-  -H "Authorization: token $TOKEN" -H "Content-Type: application/json" \
-  -d '{"enable_push":true,"enable_push_whitelist":true,"enable_force_push":true,"enable_force_push_allowlist":true}'
-
-# 3. Force-sync
-git push gitea origin/main:main --force
-
-# 4. Restore protection
-curl -X PATCH "http://GITEA/api/v1/repos/OWNER/REPO/branch_protections/main" \
-  -H "Authorization: token $TOKEN" -H "Content-Type: application/json" \
-  -d '{"enable_push":false,"enable_force_push":false,"enable_status_check":true}'
-```
-
-After syncing, all Gitea PRs show `mergeable=True`. Note: force-syncing replaces Gitea's squash commits with GitHub's (same code, different history).
+**Fix:** Four-step force-sync: (1) verify with `git log gitea/main..origin/main --oneline | wc -l`; (2) enable admin push via `PATCH /api/v1/repos/OWNER/REPO/branch_protections/main` with `{"enable_push":true,"enable_force_push":true}`; (3) `git push gitea origin/main:main --force`; (4) restore protection with `{"enable_push":false,"enable_force_push":false,"enable_status_check":true}`. After sync, all Gitea PRs show `mergeable=True`.
 **See also:** KG#123 (Gitea API gotchas), AP#22 (Git stash and branch workflows)
 
 ## 141. Go restartCh Channel Pattern for Goroutine Slice Ownership
@@ -747,28 +681,7 @@ After syncing, all Gitea PRs show `mergeable=True`. Note: force-syncing replaces
 
 **Category:** pattern
 **Context:** When a background timer goroutine calls a closure that writes to a local slice (e.g., `watchers[idx].cancel = wcancel`), and the main select loop also reads that slice, the race detector flags a concurrent read/write. This failure mode is flaky -- passes without `-race` and may pass sporadically in CI.
-**Fix:** Add a `restartCh chan int`. The timer goroutine sends the watcher index to `restartCh` instead of calling the closure directly. The main select loop handles the restart:
-
-```go
-// Instead of calling startWatcher(idx) directly from a goroutine:
-go func(idx int, delay time.Duration) {
-    select {
-    case <-ctx.Done():
-        return
-    case <-time.After(delay):
-        select {
-        case restartCh <- idx: // hand ownership back to main loop
-        case <-ctx.Done():
-        }
-    }
-}(idx, backoff)
-
-// In main select:
-case idx := <-restartCh:
-    startWatcher(idx) // safe -- runs on main goroutine, no race
-```
-
-Use channels for ownership transfer between goroutines rather than mutexes for shared local slice access. Idiomatic Go.
+**Fix:** Add `restartCh chan int`. Timer goroutine sends `restartCh <- idx` instead of writing to the slice directly. Main select loop adds `case idx := <-restartCh: startWatcher(idx)` — all slice writes stay on one goroutine. Use channels for goroutine ownership transfer rather than mutexes for shared local slice access.
 
 ## 142. strace FD-Level Diagnosis for Process Hang vs Output Buffering
 
@@ -793,29 +706,16 @@ Active `recvfrom` calls on a network FD confirm the process is receiving data. Z
 **Fix:** Add `ErrorBoundary` in `App.tsx` wrapping all routes:
 
 ```tsx
-class ErrorBoundary extends React.Component<
-  { children: React.ReactNode },
-  { error: Error | null }
-> {
+class ErrorBoundary extends React.Component<{children: React.ReactNode}, {error: Error | null}> {
   state = { error: null }
   static getDerivedStateFromError(error: Error) { return { error } }
   componentDidCatch(error: Error) { console.error('App crashed:', error) }
   render() {
-    if (this.state.error) {
-      return (
-        <div className="flex h-screen items-center justify-center">
-          <div className="rounded border border-red-800 p-6 text-sm">
-            <p className="font-semibold text-red-400">Dashboard Error</p>
-            <p className="font-mono text-gray-400">{(this.state.error as Error).message}</p>
-            <button onClick={() => window.location.reload()}>Reload</button>
-          </div>
-        </div>
-      )
-    }
+    if (this.state.error) return <div style={{padding:'2rem',color:'red'}}>Error: {(this.state.error as Error).message}</div>
     return this.props.children
   }
 }
 ```
 
-Wrap all routes: `return <ErrorBoundary><Routes>...</Routes></ErrorBoundary>`. Must wrap at router level to cover all routes. Also add to `react-frontend-development` skill on next pass.
+Wrap at router level: `<ErrorBoundary><Routes>...</Routes></ErrorBoundary>`.
 **See also:** AP#111 (React Compiler and MUI patterns)

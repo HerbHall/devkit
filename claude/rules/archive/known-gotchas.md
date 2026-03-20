@@ -643,3 +643,25 @@ Synapset: pool=devkit, ID=617
 
 Auto-merge requires explicit repo setting -- gh api PATCH allow_auto_merge=true.
 Synapset: pool=devkit, ID=618
+
+## Archived 2026-03-20: Rules compaction (niche/resolved/superseded entries)
+
+## KG#77 (archived 2026-03-20)
+
+Docker Desktop Extension development gotchas (marketplace, hadolint, Vitest, labels, multi-arch, MUI v5). Project-specific to Runbooks.
+Synapset: pool=devkit, ID=686
+
+## KG#97 (archived 2026-03-20)
+
+Copilot Auto-Review Is UI-Only -- API can create rule but UI needs manual confirmation. Superseded by KG#99.
+Synapset: pool=devkit, ID=687
+
+## KG#121 (archived 2026-03-20)
+
+MailChannels Free Tier Deprecated -- returns 401, migrate to Cloudflare Email Routing (see AP#126). Resolved.
+Synapset: pool=devkit, ID=688
+
+## KG#126 (archived 2026-03-20)
+
+Tailscale Funnel Rejects Host Header from Within Tailnet -- use Cloudflare Tunnel instead. Site-specific.
+Synapset: pool=devkit, ID=689
