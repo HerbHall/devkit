@@ -1,6 +1,6 @@
 ---
 phase: execution
-updated: 2026-03-17T22:00:00Z
+updated: 2026-03-20T19:50:00Z
 updated_by: claude-code
 managed_by: samverk
 ---
@@ -15,7 +15,7 @@ Active maintenance and execution. AI tooling methodology, Claude Code configurat
 ## What Is Running
 
 - Symlinked rules loaded by all Claude Code sessions via ~/.claude/
-- 27 skills, 7 agents, 11 rules files, 112 active patterns (AP: 66, KG: 46)
+- 27 skills, 7 agents, 11 rules files, 136 active patterns (AP: 71 entries up to AP#143; KG: 52 entries up to KG#174)
 - 3 Claude Code hooks (SessionStart, SessionStop, SubagentVerify) + 3 git hooks (pre-push, pre-commit, commit-msg)
 - Credentials migrated to PowerShell SecretStore vault (HomeLabVault)
 
@@ -25,10 +25,11 @@ None.
 
 ## Queued
 
-- **Issue ingestion** (#418, #419, #422-#426): 7 autolearn patterns from Samverk/Synapset sessions — in this PR
+- **URGENT: Rules compaction** -- known-gotchas.md 45.4k, autolearn-patterns.md 44.2k (both >40k threshold). Run /rules-compact before next pattern ingest.
 
 ## Recently Completed
 
+- **20-issue batch ingest** (2026-03-20): KG#171-174, AP#140-143, KG#25/115/123 updates, AP#127 extensions, [FE-CI]/[GO-CI] fixes, review-policy and systematic-debugging updates (PRs #464, #467)
 - **KG#156 correction** (2026-03-17): CI validator scope (PR #420)
 - **KG#162 ingestion** (2026-03-17): GitHub issues-disabled API quirk (PR #417)
 - **Rules compaction** (2026-03-17): KG 63->52 entries, AP 72->66 entries (39.8k/38.6k -> 35.1k/35.9k), Synapset SYN#595-602
