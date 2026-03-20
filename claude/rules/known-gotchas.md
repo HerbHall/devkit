@@ -152,6 +152,16 @@ All parallel agents write to the same working directory. Sort into branches via 
 **Issue:** When launching 5+ parallel agents with `isolation: "worktree"`, not all agents receive isolated worktrees. In observed sessions, only 2-3 of 5 agents got proper worktree directories. The other agents worked in the shared main working directory, causing cross-contamination (commits appearing in wrong branches, agents needing stash-based sorting).
 **Fix:** After launching 5+ parallel agents, verify worktree-agent-{id} branches exist before assuming isolation (`git branch -r | grep worktree-agent`). Fallback: stash-based sorting from AP#22. Limit parallel worktree agents to 3 when isolation is critical.
 
+### Parallel agents contaminate main worktree when feature branch is checked out
+
+**Issue:** When parallel worktree agents are launched while the main worktree has a feature branch checked out, agents' commits can land on the main worktree's current branch in addition to their isolated worktree branches. Causes duplicate PRs and stacked commits on the wrong branch.
+**Fix:** Before launching parallel agents, run `git checkout main` in the main worktree to avoid contaminating a feature branch.
+
+### After worktree agent completes, main working dir may be on agent's feature branch
+
+**Issue:** After a worktree-isolated Agent tool call completes, the main working directory may be on the agent's feature branch rather than main. Silent failure modes: cherry-pick returns "no changes added to commit", git commit creates commit on wrong branch, git push pushes wrong branch.
+**Fix:** Always run `git branch --show-current` before any post-agent git operations. Run `git checkout main` (or your intended base branch) before cherry-picking, committing, or pushing.
+
 ## 26. Sequential Same-File PR Merge Requires Rebase Between Each
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
@@ -230,6 +240,7 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Platform:** Claude Code (all)
 **Issue:** Rules files over 40k cause context to be silently dropped at task transitions.
 **Fix:** Run `/rules-compact` to stay below 35k per file. `/conformance-audit` check #17 flags violations.
+**Note:** DevKit CI (`lint.yml`) does NOT enforce these thresholds. Files over 40k will still pass CI — the limits are self-enforced performance guidelines only. Do not treat file size as a hard CI prerequisite when planning issue batches.
 
 ## 99. Copilot Cannot Approve PRs -- Review Is Informational Only (Consolidated Reference)
 
