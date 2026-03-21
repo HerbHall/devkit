@@ -1,0 +1,92 @@
+# Re-trigger CI (Gitea)
+#
+# Gitea-compatible equivalent of retrigger-ci.yml.
+# Uses Gitea REST API (curl) in place of the gh CLI.
+#
+# Triggers when release-please pushes to a release branch. If CI checks
+# are not yet present on the open release PR, closes and reopens it to
+# force CI re-evaluation.
+#
+# Note: Gitea act_runner may not support the workflow_run trigger used
+# by the GitHub variant. This template uses a push trigger on the
+# release-please branch pattern instead, which fires reliably.
+#
+# Prerequisites:
+#   - release-please-gitea.yml deployed
+#   - RELEASE_PLEASE_TOKEN secret (PAT with repo scope)
+
+name: Re-trigger CI
+
+on:
+  push:
+    branches:
+      - "release-please--**"
+
+permissions:
+  pull-requests: write
+
+jobs:
+  retrigger:
+    name: Re-trigger Release PR CI
+    runs-on: ubuntu-latest
+    steps:
+      - name: Find and re-trigger release PR
+        env:
+          GITEA_API: ${{ gitea.server_url }}/api/v1
+          GITEA_REPO: ${{ github.repository }}
+          GITEA_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          # Find the open release-please PR for this branch
+          PR_NUMBER=$(curl -s "$GITEA_API/repos/$GITEA_REPO/pulls?state=open&limit=50" \
+            -H "Authorization: token $GITEA_TOKEN" \
+            | python3 -c "
+import sys, json
+prs = json.load(sys.stdin)
+branch = '$BRANCH'
+match = [p['number'] for p in prs if p.get('head', {}).get('label', '') == branch
+         or p.get('head', {}).get('ref', '') == branch]
+print(match[0] if match else '')
+")
+
+          if [ -z "$PR_NUMBER" ]; then
+            echo "No open release-please PR found for branch $BRANCH"
+            exit 0
+          fi
+
+          echo "Found release-please PR #$PR_NUMBER for branch $BRANCH"
+
+          # Check if CI status checks are present on the PR's current HEAD
+          # Gitea returns statuses via the commit status API.
+          PR_SHA=$(curl -s "$GITEA_API/repos/$GITEA_REPO/pulls/$PR_NUMBER" \
+            -H "Authorization: token $GITEA_TOKEN" \
+            | python3 -c "import sys,json; print(json.load(sys.stdin)['head']['sha'])")
+
+          STATUS_COUNT=$(curl -s "$GITEA_API/repos/$GITEA_REPO/statuses/$PR_SHA" \
+            -H "Authorization: token $GITEA_TOKEN" \
+            | python3 -c "import sys,json; print(len(json.load(sys.stdin)))" 2>/dev/null || echo "0")
+
+          if [ "$STATUS_COUNT" -gt 0 ]; then
+            echo "CI checks already present ($STATUS_COUNT statuses), no action needed"
+            exit 0
+          fi
+
+          echo "No CI checks found on $PR_SHA, re-triggering via close/reopen..."
+
+          # Close PR
+          curl -s -X PATCH "$GITEA_API/repos/$GITEA_REPO/pulls/$PR_NUMBER" \
+            -H "Authorization: token $GITEA_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"state": "closed"}' > /dev/null
+
+          sleep 3
+
+          # Reopen PR
+          curl -s -X PATCH "$GITEA_API/repos/$GITEA_REPO/pulls/$PR_NUMBER" \
+            -H "Authorization: token $GITEA_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"state": "open"}' > /dev/null
+
+          echo "PR #$PR_NUMBER reopened — CI should now trigger"
