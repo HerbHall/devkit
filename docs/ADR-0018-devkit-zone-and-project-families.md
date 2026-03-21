@@ -48,42 +48,47 @@ Each family folder contains a `.devkit-family.json` declaring the default
 compliance tier for its children.
 
 ```text
-DevSpace/
-├── devkit/            ← depth-1 special: root governance layer
+D:\DevSpace\
+├── devkit/                  ← depth-1 temporary: moves to Toolkit/ after symlink migration
 │
-├── Toolkit/           ← meta-tools: devkit, Synapset, Samverk
-│   ├── .devkit-family.json  (tier: toolkit)
-│   ├── devkit/        ← development copy (live = ~/.devkit-stable/ worktree)
-│   ├── Synapset/      ← MCP memory server
-│   └── samverk/       ← project lifecycle manager
+├── Toolkit/                 ← meta-tools (tier: toolkit)
+│   ├── .devkit-family.json
+│   ├── samverk/             ← Samverk app (live = CT 202 deployed binary)
+│   ├── Synapset/            ← MCP memory server (live = CT 202 deployed binary)
+│   └── devkit/              ← PENDING: devkit moves here after sync.ps1 -LinkStable
 │
-├── Samverk/           ← Samverk-managed product projects
-│   ├── .devkit-family.json  (tier: full, managed_by: samverk)
+├── Samverk/                 ← Samverk-managed product projects (tier: full)
+│   ├── .devkit-family.json
 │   ├── SubNetree/
 │   ├── RunNotes/
 │   ├── Runbooks/
 │   ├── DockPulse/
 │   └── PacketDeck/
 │
-├── Websites/          ← web and hosting projects
-│   ├── .devkit-family.json  (tier: web)
+├── Websites/                ← web and hosting projects (tier: web)
+│   ├── .devkit-family.json
 │   └── herbhall.net/
 │
-├── Personal/          ← standalone projects not in the Samverk workflow
-│   ├── .devkit-family.json  (tier: full or minimal, per project)
+├── Personal/                ← standalone projects, not Samverk-managed (tier: per-project)
+│   ├── .devkit-family.json
 │   ├── DigitalRain/
 │   ├── IPScan/
-│   └── CLI-Play/
+│   ├── CLI-Play/
+│   ├── ClaudeTokenStats/
+│   └── claude-sync/
 │
-└── Games/             ← game mods
-    ├── .devkit-family.json  (tier: minimal)
-    └── Timberborn-Mods/
+├── Games/                   ← game mods (tier: minimal)
+│   ├── .devkit-family.json
+│   └── Timberborn-Mods/
+│
+└── Unity/                   ← Unity and game dev (tier: minimal)
+    ├── .devkit-family.json
+    └── mccrl21/
 ```
 
-**Why devkit stays at depth-1 during the transition period:** devkit is the
-root governance layer. Its symlinks into `~/.claude/` must remain stable during
-the Toolkit/ family setup. Once the stable-branch worktree is established,
-devkit moves into `Toolkit/devkit/` as its development copy.
+**devkit stays at depth-1 until the stable-branch worktree migration completes.**
+Once `sync.ps1 -LinkStable` is run to redirect `~/.claude/` to `~/.devkit-stable/`,
+devkit can move to `Toolkit/devkit/` without breaking running Claude Code sessions.
 
 ### 3. Compliance Tiers
 
