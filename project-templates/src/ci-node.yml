@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@{{ACTIONS_CHECKOUT_VERSION}}
+      - uses: actions/setup-node@{{ACTIONS_SETUP_NODE_VERSION}}
+        with:
+          node-version: {{NODE_VERSION}}
+      - uses: pnpm/action-setup@{{PNPM_ACTION_SETUP_VERSION}}
+        with:
+          version: {{PNPM_VERSION}}
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run lint
+
+  typecheck:
+    name: Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@{{ACTIONS_CHECKOUT_VERSION}}
+      - uses: actions/setup-node@{{ACTIONS_SETUP_NODE_VERSION}}
+        with:
+          node-version: {{NODE_VERSION}}
+      - uses: pnpm/action-setup@{{PNPM_ACTION_SETUP_VERSION}}
+        with:
+          version: {{PNPM_VERSION}}
+      - run: pnpm install --frozen-lockfile
+      - run: npx tsc --noEmit
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@{{ACTIONS_CHECKOUT_VERSION}}
+      - uses: actions/setup-node@{{ACTIONS_SETUP_NODE_VERSION}}
+        with:
+          node-version: {{NODE_VERSION}}
+      - uses: pnpm/action-setup@{{PNPM_ACTION_SETUP_VERSION}}
+        with:
+          version: {{PNPM_VERSION}}
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run test
+
+  build:
+    name: Build
+    needs: [lint, typecheck, test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@{{ACTIONS_CHECKOUT_VERSION}}
+      - uses: actions/setup-node@{{ACTIONS_SETUP_NODE_VERSION}}
+        with:
+          node-version: {{NODE_VERSION}}
+      - uses: pnpm/action-setup@{{PNPM_ACTION_SETUP_VERSION}}
+        with:
+          version: {{PNPM_VERSION}}
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build
+
+  markdown:
+    name: Markdown Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@{{ACTIONS_CHECKOUT_VERSION}}
+      - uses: DavidAnson/markdownlint-cli2-action@{{MARKDOWNLINT_CLI2_ACTION_VERSION}}
+        with:
+          globs: "**/*.md"

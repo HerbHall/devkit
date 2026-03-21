@@ -1,0 +1,72 @@
+# Re-trigger CI
+#
+# Fixes a GitHub Actions race condition where release-please branch
+# updates don't always trigger CI (pull_request: synchronize event
+# sometimes doesn't fire on workflow-generated commits).
+#
+# How it works:
+#   1. Triggers after Release Please workflow completes
+#   2. Finds the open release-please PR (if any)
+#   3. Checks if CI checks are present on the current HEAD
+#   4. If missing, closes and reopens the PR to force CI re-trigger
+#
+# Prerequisites:
+#   - release-please configured (see release-please-config.json template)
+#   - Auto-merge enabled on the repo:
+#     gh api repos/OWNER/REPO -X PATCH -f allow_auto_merge=true
+
+name: Re-trigger CI
+
+on:
+  workflow_run:
+    workflows: ["Release Please"]
+    types: [completed]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  retrigger:
+    name: Re-trigger Stale Release PR
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success'
+    steps:
+      - name: Find and re-trigger release PR
+        run: |
+          set -euo pipefail
+
+          # Find open release-please PR
+          PR_NUMBER=$(gh pr list \
+            --repo "${{ github.repository }}" \
+            --head "release-please--branches--main" \
+            --state open \
+            --json number \
+            --jq '.[0].number // empty')
+
+          if [ -z "$PR_NUMBER" ]; then
+            echo "No open release-please PR found"
+            exit 0
+          fi
+
+          echo "Found release-please PR #$PR_NUMBER"
+
+          # Check if CI checks exist on current HEAD
+          # Replace "Build" with your CI job name
+          CI_STATUS=$(gh pr view "$PR_NUMBER" \
+            --repo "${{ github.repository }}" \
+            --json statusCheckRollup \
+            --jq '[.statusCheckRollup[] | select(.name == "Build")] | length')
+
+          if [ "$CI_STATUS" -gt 0 ]; then
+            echo "CI checks already present, no action needed"
+            exit 0
+          fi
+
+          echo "No CI checks found, re-triggering via close/reopen..."
+          gh pr close "$PR_NUMBER" --repo "${{ github.repository }}"
+          sleep 2
+          gh pr reopen "$PR_NUMBER" --repo "${{ github.repository }}"
+          echo "PR #$PR_NUMBER re-opened, CI should trigger"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,8 +1,8 @@
 ---
 description: Learned patterns from past sessions. Read when encountering similar situations.
 tier: 2
-entry_count: 67
-last_updated: "2026-03-20"
+entry_count: 68
+last_updated: "2026-03-21"
 ---
 
 # Learned Patterns
@@ -719,3 +719,29 @@ class ErrorBoundary extends React.Component<{children: React.ReactNode}, {error:
 
 Wrap at router level: `<ErrorBoundary><Routes>...</Routes></ErrorBoundary>`.
 **See also:** AP#111 (React Compiler and MUI patterns)
+
+## 144. Tauri 2 Multi-Window Label Routing Pattern
+
+**Added:** 2026-03-21 | **Source:** claude-token-stats | **Status:** active
+
+**Category:** frontend-pattern
+**Context:** Tauri 2 apps with multiple windows sharing one frontend bundle need to render different root components per window without React Router or URL-based routing.
+**Fix:** Detect window identity at the entry point via `getCurrentWindow().label` (synchronous), then conditionally render root components:
+
+```tsx
+// main.tsx
+import { getCurrentWindow } from '@tauri-apps/api/window';
+
+const windowLabel = getCurrentWindow().label;
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  windowLabel === 'dashboard' ? <Dashboard /> : <App />
+);
+```
+
+Each window gets the correct UI with zero navigation overhead. Typical window config:
+
+- Popup (`main`): 380×500, `decorations: false`, `visible: false`, `skipTaskbar: true`
+- Dashboard (`dashboard`): 1100×700, `decorations: true`, `visible: false`, `skipTaskbar: false`
+
+Backend opens a named window: `app.get_webview_window("dashboard").show()`
+**See also:** KG#176 (Tauri 2 API gotchas — getCurrentWindow import path)

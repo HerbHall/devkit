@@ -1,0 +1,57 @@
+name: CodeQL
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "0 6 * * 1"
+
+permissions:
+  security-events: write
+  contents: read
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Keep this job for Go projects (go-cli, go-web profiles).
+  # Remove if this project has no Go source.
+  analyze-go:
+    name: Analyze Go
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@{{ACTIONS_CHECKOUT_VERSION}}
+
+      - name: Set up Go
+        uses: actions/setup-go@{{ACTIONS_SETUP_GO_VERSION}}
+        with:
+          go-version-file: go.mod
+
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: go
+
+      - uses: github/codeql-action/autobuild@v3
+
+      - uses: github/codeql-action/analyze@v3
+        with:
+          category: /language:go
+
+  # Keep this job for React/TypeScript projects (go-web profile or standalone frontend).
+  # Remove if this project has no JavaScript or TypeScript source.
+  analyze-javascript:
+    name: Analyze JavaScript/TypeScript
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@{{ACTIONS_CHECKOUT_VERSION}}
+
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+
+      - uses: github/codeql-action/analyze@v3
+        with:
+          category: /language:javascript-typescript

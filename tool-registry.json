@@ -1,0 +1,238 @@
+{
+  "schema_version": 1,
+  "last_updated": "2026-03-21",
+  "notes": "Single source of truth for tool version pins across all DevKit-managed projects. Update via scripts/Invoke-VersionUpdate.ps1 -Mode Bump. See ADR-0019 for schema and workflow.",
+  "tools": {
+    "actions-checkout": {
+      "id": "actions-checkout",
+      "action": "actions/checkout",
+      "current": "v4",
+      "previous": "v3",
+      "min_supported": "v3",
+      "token": "ACTIONS_CHECKOUT_VERSION",
+      "changelog_url": "https://github.com/actions/checkout/releases",
+      "pinned_reason": null,
+      "notes": "v6 does NOT exist. Several nightly templates incorrectly reference v6 — corrected to v4 on first render pass."
+    },
+    "actions-setup-go": {
+      "id": "actions-setup-go",
+      "action": "actions/setup-go",
+      "current": "v5",
+      "previous": "v4",
+      "min_supported": "v4",
+      "token": "ACTIONS_SETUP_GO_VERSION",
+      "changelog_url": "https://github.com/actions/setup-go/releases",
+      "pinned_reason": null,
+      "notes": "v6 does NOT exist. SubNetree nightly templates reference v6 — corrected to v5."
+    },
+    "actions-setup-node": {
+      "id": "actions-setup-node",
+      "action": "actions/setup-node",
+      "current": "v4",
+      "previous": "v3",
+      "min_supported": "v3",
+      "token": "ACTIONS_SETUP_NODE_VERSION",
+      "changelog_url": "https://github.com/actions/setup-node/releases",
+      "pinned_reason": null,
+      "notes": "v6 does NOT exist. SubNetree nightly templates reference v6 — corrected to v4."
+    },
+    "actions-setup-dotnet": {
+      "id": "actions-setup-dotnet",
+      "action": "actions/setup-dotnet",
+      "current": "v4",
+      "previous": "v3",
+      "min_supported": "v3",
+      "token": "ACTIONS_SETUP_DOTNET_VERSION",
+      "changelog_url": "https://github.com/actions/setup-dotnet/releases",
+      "pinned_reason": null,
+      "notes": null
+    },
+    "actions-setup-python": {
+      "id": "actions-setup-python",
+      "action": "actions/setup-python",
+      "current": "v5",
+      "previous": "v4",
+      "min_supported": "v4",
+      "token": "ACTIONS_SETUP_PYTHON_VERSION",
+      "changelog_url": "https://github.com/actions/setup-python/releases",
+      "pinned_reason": null,
+      "notes": null
+    },
+    "actions-upload-artifact": {
+      "id": "actions-upload-artifact",
+      "action": "actions/upload-artifact",
+      "current": "v4",
+      "previous": "v3",
+      "min_supported": "v3",
+      "token": "ACTIONS_UPLOAD_ARTIFACT_VERSION",
+      "changelog_url": "https://github.com/actions/upload-artifact/releases",
+      "pinned_reason": null,
+      "notes": "v7 does NOT exist. Nightly templates incorrectly reference v7 — corrected to v4 on first render pass."
+    },
+    "actions-cache": {
+      "id": "actions-cache",
+      "action": "actions/cache",
+      "current": "v4",
+      "previous": "v3",
+      "min_supported": "v3",
+      "token": "ACTIONS_CACHE_VERSION",
+      "changelog_url": "https://github.com/actions/cache/releases",
+      "pinned_reason": null,
+      "notes": null
+    },
+    "actions-github-script": {
+      "id": "actions-github-script",
+      "action": "actions/github-script",
+      "current": "v7",
+      "previous": "v6",
+      "min_supported": "v6",
+      "token": "ACTIONS_GITHUB_SCRIPT_VERSION",
+      "changelog_url": "https://github.com/actions/github-script/releases",
+      "pinned_reason": null,
+      "notes": null
+    },
+    "markdownlint-cli2-action": {
+      "id": "markdownlint-cli2-action",
+      "action": "DavidAnson/markdownlint-cli2-action",
+      "current": "v19",
+      "previous": "v18",
+      "min_supported": "v17",
+      "token": "MARKDOWNLINT_CLI2_ACTION_VERSION",
+      "changelog_url": "https://github.com/DavidAnson/markdownlint-cli2/releases",
+      "pinned_reason": "v20+ changed glob behavior; requires validation against all project markdown configs before upgrade. v22 is latest stable — bump after validation.",
+      "notes": "Local npx install is v0.21.0. Run validation before bumping to v22."
+    },
+    "golangci-lint-action": {
+      "id": "golangci-lint-action",
+      "action": "golangci/golangci-lint-action",
+      "current": "v7",
+      "previous": "v6",
+      "min_supported": "v6",
+      "token": "GOLANGCI_LINT_ACTION_VERSION",
+      "changelog_url": "https://github.com/golangci/golangci-lint-action/releases",
+      "pinned_reason": null,
+      "notes": "v7 enforces strict JSON schema for golangci config. See KG#65."
+    },
+    "golangci-lint-cli": {
+      "id": "golangci-lint-cli",
+      "action": null,
+      "current": "v2.10.1",
+      "previous": "v2.9.0",
+      "min_supported": "v2.0.0",
+      "token": "GOLANGCI_LINT_CLI_VERSION",
+      "changelog_url": "https://github.com/golangci/golangci-lint/releases",
+      "pinned_reason": null,
+      "notes": "Used in ci-go-gitea.yml inline install and profiles/. Must stay in sync with golangci-lint-action major version series."
+    },
+    "pnpm-action-setup": {
+      "id": "pnpm-action-setup",
+      "action": "pnpm/action-setup",
+      "current": "v4",
+      "previous": "v3",
+      "min_supported": "v3",
+      "token": "PNPM_ACTION_SETUP_VERSION",
+      "changelog_url": "https://github.com/pnpm/action-setup/releases",
+      "pinned_reason": null,
+      "notes": null
+    },
+    "docker-setup-buildx-action": {
+      "id": "docker-setup-buildx-action",
+      "action": "docker/setup-buildx-action",
+      "current": "v3",
+      "previous": "v2",
+      "min_supported": "v2",
+      "token": "DOCKER_SETUP_BUILDX_VERSION",
+      "changelog_url": "https://github.com/docker/setup-buildx-action/releases",
+      "pinned_reason": null,
+      "notes": null
+    },
+    "docker-login-action": {
+      "id": "docker-login-action",
+      "action": "docker/login-action",
+      "current": "v3",
+      "previous": "v2",
+      "min_supported": "v2",
+      "token": "DOCKER_LOGIN_ACTION_VERSION",
+      "changelog_url": "https://github.com/docker/login-action/releases",
+      "pinned_reason": null,
+      "notes": null
+    },
+    "docker-build-push-action": {
+      "id": "docker-build-push-action",
+      "action": "docker/build-push-action",
+      "current": "v6",
+      "previous": "v5",
+      "min_supported": "v5",
+      "token": "DOCKER_BUILD_PUSH_ACTION_VERSION",
+      "changelog_url": "https://github.com/docker/build-push-action/releases",
+      "pinned_reason": null,
+      "notes": null
+    },
+    "release-please-action": {
+      "id": "release-please-action",
+      "action": "googleapis/release-please-action",
+      "current": "v4",
+      "previous": "v3",
+      "min_supported": "v4",
+      "token": "RELEASE_PLEASE_ACTION_VERSION",
+      "changelog_url": "https://github.com/googleapis/release-please-action/releases",
+      "pinned_reason": null,
+      "notes": "v4 is a major rewrite; v3 configs are incompatible. min_supported is v4."
+    },
+    "dtolnay-rust-toolchain": {
+      "id": "dtolnay-rust-toolchain",
+      "action": "dtolnay/rust-toolchain",
+      "current": "1.85",
+      "previous": "1.84",
+      "min_supported": "1.80",
+      "token": "RUST_TOOLCHAIN_VERSION",
+      "changelog_url": "https://blog.rust-lang.org/",
+      "pinned_reason": null,
+      "notes": "Use pinned version (e.g. 1.85), NOT @stable floating ref. Rust Cargo.toml rust-version field also pins minimum — keep in sync."
+    },
+    "node-version": {
+      "id": "node-version",
+      "action": null,
+      "current": "22",
+      "previous": "20",
+      "min_supported": "20",
+      "token": "NODE_VERSION",
+      "changelog_url": "https://nodejs.org/en/blog/release",
+      "pinned_reason": null,
+      "notes": "LTS version. Used as node-version: value in setup-node steps. Do not use lts/* (floating)."
+    },
+    "pnpm-version": {
+      "id": "pnpm-version",
+      "action": null,
+      "current": "10",
+      "previous": "9",
+      "min_supported": "8",
+      "token": "PNPM_VERSION",
+      "changelog_url": "https://github.com/pnpm/pnpm/releases",
+      "pinned_reason": null,
+      "notes": "Used as version: value in pnpm/action-setup steps."
+    },
+    "dotnet-version": {
+      "id": "dotnet-version",
+      "action": null,
+      "current": "9.0.x",
+      "previous": "8.0.x",
+      "min_supported": "8.0.x",
+      "token": "DOTNET_VERSION",
+      "changelog_url": "https://dotnet.microsoft.com/en-us/download/dotnet",
+      "pinned_reason": null,
+      "notes": "x suffix means latest patch. 9.0 is current release (not LTS); LTS is 8.0."
+    },
+    "python-version": {
+      "id": "python-version",
+      "action": null,
+      "current": "3.12",
+      "previous": "3.11",
+      "min_supported": "3.10",
+      "token": "PYTHON_VERSION",
+      "changelog_url": "https://www.python.org/downloads/",
+      "pinned_reason": null,
+      "notes": "Used in validation/utility CI steps (not runtime dependency)."
+    }
+  }
+}
