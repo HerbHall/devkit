@@ -1,6 +1,6 @@
 ---
 phase: execution
-updated: 2026-03-21T18:00:00Z
+updated: 2026-03-21T22:00:00Z
 updated_by: claude-code
 managed_by: samverk
 ---
@@ -14,9 +14,10 @@ Active maintenance and execution. AI tooling methodology, Claude Code configurat
 
 ## What Is Running
 
-- Symlinked rules loaded by all Claude Code sessions via ~/.claude/ (pointing to dev copy at D:\DevSpace\devkit\)
-- `~/.devkit-stable/` worktree exists on `stable` branch — ready for symlink migration
-- 27 skills, 7 agents, 11 rules files, 136 active patterns (AP: 71 entries up to AP#143; KG: 52 entries up to KG#174)
+- `~/.claude/` symlinks pointing to `~/.devkit-stable/` (stable worktree, branch: stable)
+  `-LinkStable` ran 2026-03-21 -- dev copy at D:\DevSpace\devkit\ no longer serves live rules
+- `~/.devkit-stable/` worktree on `stable` branch — current live rules source
+- 27 skills, 7 agents, 11 rules files, 95 active patterns (AP: 58 entries last AP#143; KG: 37 entries last KG#177)
 - 3 Claude Code hooks (SessionStart, SessionStop, SubagentVerify) + 3 git hooks (pre-push, pre-commit, commit-msg)
 - Credentials migrated to PowerShell SecretStore vault (HomeLabVault)
 - **Samverk dispatcher STOPPED** (2026-03-21) -- stopped to prevent file conflicts during restructuring.
@@ -26,15 +27,23 @@ Active maintenance and execution. AI tooling methodology, Claude Code configurat
 
 - **PR #494** (feature/devkit-zone-infrastructure) -- OPEN on GitHub. Contains:
   - ADR-0018: DevKit Zone convention + project family structure
-  - `tool-registry.json`: centralized tool version registry (initial versions, not yet wired to templates)
+  - ADR-0019: Centralized tool version registry
+  - `tool-registry.json`: centralized tool version registry (wired to src/ templates via tokens)
+  - `scripts/Invoke-VersionUpdate.ps1`: 5-mode version update script
+  - `scripts/check-registry-drift.py`: CI drift detector (in lint.yml)
+  - Conformance check #21: Tool Version Currency
   - `.devkit-family.json` files for all 6 families: Toolkit, Samverk, Personal, Games, Unity, Websites
   - VS Code workspace files updated for all moved projects
+  - KG#176, KG#177, AP#144: Tauri 2 and Recharts patterns ingested
+  - Rules compaction: KG 51→37, AP 68→58 (24 entries archived to Synapset IDs 728-751)
 
 ## DevSpace Structure (as of 2026-03-21)
 
 ```text
 D:\DevSpace\
-├── devkit\                  ← TEMP at root; moves to Toolkit\ after sync.ps1 -LinkStable
+├── devkit\                  ← TEMP at root; move to Toolkit\ AFTER this CC session exits
+│                              (Windows blocks mv while CC session has CWD = devkit)
+│                              Command: Move-Item D:\DevSpace\devkit D:\DevSpace\Toolkit\devkit
 ├── Toolkit\samverk\         ← Samverk app (was D:\DevSpace\Samverk\)
 ├── Toolkit\Synapset\        ← MCP memory server (was D:\DevSpace\Synapset\)
 ├── Samverk\SubNetree\       ← network monitoring platform
@@ -56,30 +65,30 @@ D:\ root is now clean: bots\, Websites\, Timberborn-Mods\, UnityDev\ all removed
 
 ## Queued (do in order)
 
-1. **Wave 4: devkit move to Toolkit/** (fresh session, do first)
-   - Run `pwsh D:\DevSpace\devkit\setup\sync.ps1 -LinkStable` to redirect ~/.claude/ to ~/.devkit-stable/
-   - Then `mv D:/DevSpace/devkit D:/DevSpace/Toolkit/devkit`
-   - Verify ~/.claude/ symlinks still resolve correctly
+1. **Wave 4: devkit move to Toolkit/** (NEXT SESSION, do first thing)
+   - symlinks ALREADY pointing to stable worktree (-LinkStable done 2026-03-21)
+   - In a terminal outside CC: `Move-Item D:\DevSpace\devkit D:\DevSpace\Toolkit\devkit`
+   - Reopen CC from D:\DevSpace\Toolkit\devkit
+   - Update ~/.devkit-config.json devspacePath if needed (or add devkitPath field)
 
-2. **Rules compaction** -- known-gotchas.md ~42k, autolearn-patterns.md ~41k (both above 40k threshold)
-   - Run `/rules-compact` before next pattern ingest
+2. **Merge PR #494** -- merge the zone infrastructure PR after move completes
+   - After merge, promote stable: `pwsh setup/sync.ps1 -Promote`
+   - Restart Samverk dispatcher
 
-3. **Ingest issues #476, #477, #478** (after compaction)
-   - #476: Tauri 2 API gotchas → KG#176
-   - #477: Tauri 2 multi-window label routing → AP#144
-   - #478: Recharts 3 Tooltip formatter → KG#177
-
-4. **Version management tooling** (new major feature, see ADR-0019 to be written)
-   - `project-templates/src/` tokenized templates
-   - `scripts/Invoke-VersionUpdate.ps1` (Render/Bump/Rollback/Propagate modes)
-   - `scripts/check-registry-drift.py` + CI validation job
-   - Conformance check #21 (tool version drift)
-   - Propagate updated versions to all projects
-
-5. **Restart Samverk dispatcher** after PR #494 merges and devkit move completes
+3. **Propagate tool versions to managed projects** (operational, not tooling)
+   - `pwsh scripts/Invoke-VersionUpdate.ps1 -Mode Propagate -Projects all -DryRun`
+   - Review and apply updates project by project
 
 ## Recently Completed
 
+- **PR #494 prep complete** (2026-03-21): All deliverables committed to feature branch.
+  Zone infrastructure, ADR-0018 + ADR-0019, version management tooling, rules compaction.
+- **Rules compaction** (2026-03-21): KG 46.8k→36.9k (-21%), AP 42.8k→37.0k (-14%).
+  24 entries archived to Synapset pool:devkit (IDs 728-751). Both files under 40k.
+- **Ingest #476, #477, #478** (2026-03-21): KG#176 (Tauri 2 API), KG#177 (Recharts),
+  AP#144 (Tauri 2 multi-window) -- all in commit f63f1e8 on feature branch.
+- **sync.ps1 -LinkStable** (2026-03-21): 50 symlinks redirected to ~/.devkit-stable/.
+  Dev copy no longer serves live rules. Safe to move devkit after CC session exits.
 - **DevSpace restructuring** (2026-03-21): Full project family infrastructure implemented.
   All 12 projects moved into correct families. 6 family folders created with .devkit-family.json.
   VS Code workspace files updated. D:\ root cleaned up (PR #494, in progress).
