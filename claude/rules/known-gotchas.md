@@ -323,6 +323,11 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Issue:** Agent markdown tables have MD056 errors: pipes in code spans parsed as separators, or missing columns.
 **Fix:** Run `npx markdownlint-cli2` on agent `.md` files. Use `&#124;` for pipes in cells. Verify column counts.
 
+### `extends: "../.markdownlint.json"` breaks when project moves to a family subfolder
+
+**Issue:** Projects with `.markdownlint.json` using a relative `extends` path break silently after workspace restructuring. A project that was at `DevSpace/Project/` (where `../` = `DevSpace/`) and moves to `DevSpace/Family/Project/` (where `../` = `DevSpace/Family/`) will fail with `ENOENT` on the now-missing family-level config. The pre-push hook fails.
+**Fix:** Update the relative path in each project's `.markdownlint.json` to match the new depth. One extra nesting level requires changing `../` to `../../`. Audit all projects after any workspace restructuring: `find . -name ".markdownlint.json" | xargs grep "extends"`
+
 ## 115. TypeScript API Interface Phantom Field Drift from Go Backend
 
 **Added:** 2026-03-09 | **Source:** Samverk | **Status:** active
