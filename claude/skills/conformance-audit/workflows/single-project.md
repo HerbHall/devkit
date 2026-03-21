@@ -89,13 +89,31 @@ else
 fi
 ```
 
+**Forge Detection** (run once before Check 3, reuse `WF_DIR` in all subsequent workflow checks)
+
+```bash
+# Detect which workflows directory this project uses.
+# GitHub-hosted projects use .github/workflows/; Gitea-hosted use .gitea/workflows/.
+if [ -d "$PROJECT/.github/workflows" ]; then
+    WF_DIR="$PROJECT/.github/workflows"
+    FORGE="github"
+elif [ -d "$PROJECT/.gitea/workflows" ]; then
+    WF_DIR="$PROJECT/.gitea/workflows"
+    FORGE="gitea"
+else
+    WF_DIR=""
+    FORGE="unknown"
+fi
+echo "Forge: $FORGE ($WF_DIR)"
+```
+
 **Check 3 -- CI Workflow**
 
 ```bash
-if ls "$PROJECT/.github/workflows/"*.yml 2>/dev/null | grep -qiE 'ci|lint|test|build'; then
-    echo "PASS: CI workflow found"
+if [ -n "$WF_DIR" ] && ls "$WF_DIR/"*.yml 2>/dev/null | grep -qiE 'ci|lint|test|build'; then
+    echo "PASS: CI workflow found ($FORGE)"
 else
-    echo "FAIL: No CI workflow found in .github/workflows/"
+    echo "FAIL: No CI workflow found in .github/workflows/ or .gitea/workflows/"
 fi
 ```
 
@@ -154,9 +172,13 @@ fi
 MISSING=""
 [ ! -f "$PROJECT/.release-please-manifest.json" ] && MISSING="$MISSING manifest"
 [ ! -f "$PROJECT/release-please-config.json" ] && MISSING="$MISSING config"
-[ ! -f "$PROJECT/.github/workflows/release-please.yml" ] && MISSING="$MISSING workflow"
+# Accept release-please.yml in either .github/workflows/ (GitHub) or .gitea/workflows/ (Gitea)
+RP_WF_FOUND=false
+[ -f "$PROJECT/.github/workflows/release-please.yml" ] && RP_WF_FOUND=true
+[ -f "$PROJECT/.gitea/workflows/release-please.yml" ] && RP_WF_FOUND=true
+[ "$RP_WF_FOUND" = "false" ] && MISSING="$MISSING workflow"
 if [ -z "$MISSING" ]; then
-    echo "PASS: release-please fully configured"
+    echo "PASS: release-please fully configured ($FORGE)"
 else
     echo "FAIL: release-please missing:$MISSING"
 fi
@@ -200,10 +222,10 @@ fi
 **Check 12 -- Nightly Workflow** (skip for .NET desktop)
 
 ```bash
-if ls "$PROJECT/.github/workflows/"*nightly* 2>/dev/null | grep -q .; then
-    echo "PASS: Nightly workflow found"
-elif grep -qlr 'schedule:' "$PROJECT/.github/workflows/"*.yml 2>/dev/null; then
-    echo "PASS: Scheduled workflow found"
+if [ -n "$WF_DIR" ] && ls "$WF_DIR/"*nightly* 2>/dev/null | grep -q .; then
+    echo "PASS: Nightly workflow found ($FORGE)"
+elif [ -n "$WF_DIR" ] && grep -qlr 'schedule:' "$WF_DIR/"*.yml 2>/dev/null; then
+    echo "PASS: Scheduled workflow found ($FORGE)"
 else
     echo "FAIL: No nightly or scheduled workflow found"
 fi
@@ -212,8 +234,13 @@ fi
 **Check 13 -- Release Gate** (only if check 8 passed)
 
 ```bash
-if [ -f "$PROJECT/.github/workflows/release-gate.yml" ]; then
-    echo "PASS: release-gate.yml exists"
+# Accept release-gate.yml in either forge's workflows directory.
+# Note: Gitea variant (project-templates/release-gate-gitea.yml) may not exist yet — see DevKit #489.
+RG_FOUND=false
+[ -f "$PROJECT/.github/workflows/release-gate.yml" ] && RG_FOUND=true
+[ -f "$PROJECT/.gitea/workflows/release-gate.yml" ] && RG_FOUND=true
+if [ "$RG_FOUND" = "true" ]; then
+    echo "PASS: release-gate.yml exists ($FORGE)"
 else
     echo "FAIL: release-gate.yml not found"
 fi
@@ -224,12 +251,14 @@ fi
 ```bash
 # FAIL if any non-release-please workflow has 'tags: v*' or "tags: ['v*']"
 TRIGGER_FAIL=""
-for wf in "$PROJECT/.github/workflows/"*.yml; do
-    [ "$(basename "$wf")" = "release-please.yml" ] && continue
-    if grep -q "tags:.*v\*" "$wf" 2>/dev/null; then
-        TRIGGER_FAIL="$TRIGGER_FAIL $(basename "$wf")"
-    fi
-done
+if [ -n "$WF_DIR" ]; then
+    for wf in "$WF_DIR/"*.yml; do
+        [ "$(basename "$wf")" = "release-please.yml" ] && continue
+        if grep -q "tags:.*v\*" "$wf" 2>/dev/null; then
+            TRIGGER_FAIL="$TRIGGER_FAIL $(basename "$wf")"
+        fi
+    done
+fi
 if [ -z "$TRIGGER_FAIL" ]; then
     echo "PASS: No conflicting tag triggers found"
 else
@@ -240,8 +269,8 @@ fi
 **Check 15 -- Retrigger CI** (only if check 8 passed)
 
 ```bash
-if ls "$PROJECT/.github/workflows/"*retrigger* 2>/dev/null | grep -q .; then
-    echo "PASS: Retrigger CI workflow found"
+if [ -n "$WF_DIR" ] && ls "$WF_DIR/"*retrigger* 2>/dev/null | grep -q .; then
+    echo "PASS: Retrigger CI workflow found ($FORGE)"
 else
     echo "FAIL: No retrigger-ci workflow found"
 fi
