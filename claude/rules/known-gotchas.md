@@ -1,7 +1,7 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 37
+entry_count: 39
 last_updated: "2026-03-21"
 ---
 
@@ -558,3 +558,41 @@ formatter={(value, _name, props) => {
 ```
 
 Applies to both AreaChart and BarChart Tooltip formatters in Recharts 3.x.
+
+## 178. Git Worktree `.git` Pointer Breaks When Main Repo Is Moved
+
+**Added:** 2026-03-21 | **Source:** devkit | **Status:** active
+
+**Platform:** Git (all) / Windows
+**Issue:** A git worktree has a `.git` file (not directory) containing `gitdir: <absolute-path>/.git/worktrees/<name>`. When the main repository is moved to a new directory, this absolute path becomes stale. `git status` in the worktree fails with `fatal: not a git repository: <old-path>/.git/worktrees/<name>`. Any script that calls `git -C <worktree>` also fails silently or with that error.
+**Fix:** Update the `.git` file in the worktree to point to the new location:
+
+```bash
+# Old: gitdir: D:/DevSpace/devkit/.git/worktrees/-devkit-stable
+# New:
+echo "gitdir: D:/DevSpace/Toolkit/devkit/.git/worktrees/-devkit-stable" > ~/.devkit-stable/.git
+```
+
+**Detect:** `cat <worktree>/.git` — if the path after `gitdir:` no longer exists, the pointer is stale.
+**Verify fix:** `git -C <worktree> status` should return branch info, not a fatal error.
+**See also:** AP#22 (Git stash and branch workflows)
+
+## 179. PowerShell Pipeline to `$null` -- `.Count` Throws on Zero Results
+
+**Added:** 2026-03-21 | **Source:** devkit | **Status:** active
+
+**Platform:** PowerShell (all)
+**Issue:** `Get-ChildItem | Where-Object { ... }` returns `$null` (not an empty array `@()`) when no items match. Calling `.Count` on `$null` throws `The property 'Count' cannot be found on this object`. Also affects `ForEach-Object` and other pipeline cmdlets. Note: `.Count` on a single non-null object also throws since most objects lack this property.
+**Fix:** Always wrap pipeline output in `@()` when the result will be tested with `.Count` or iterated:
+
+```powershell
+# Bad -- crashes when 0 or 1 results
+$dirs = Get-ChildItem -Path $path -Directory | Where-Object { Test-Path (Join-Path $_.FullName '.git') }
+if ($dirs.Count -eq 0) { ... }  # throws on $null
+
+# Good
+$dirs = @(Get-ChildItem -Path $path -Directory | Where-Object { Test-Path (Join-Path $_.FullName '.git') })
+if ($dirs.Count -eq 0) { ... }  # always safe
+```
+
+**See also:** KG#104 (PowerShell tool and variable gotchas)

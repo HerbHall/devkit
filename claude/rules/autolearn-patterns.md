@@ -1,7 +1,7 @@
 ---
 description: Learned patterns from past sessions. Read when encountering similar situations.
 tier: 2
-entry_count: 58
+entry_count: 60
 last_updated: "2026-03-21"
 ---
 
@@ -661,3 +661,42 @@ Each window gets the correct UI with zero navigation overhead. Typical window co
 
 Backend opens a named window: `app.get_webview_window("dashboard").show()`
 **See also:** KG#176 (Tauri 2 API gotchas — getCurrentWindow import path)
+
+## 145. DevKit Promote Workflow: Reset Stable to `origin/main` After PR Merge
+
+**Added:** 2026-03-21 | **Source:** devkit | **Status:** active
+
+**Category:** workflow-pattern
+**Context:** `sync.ps1 -Promote` does `git merge --ff-only <dev-branch>` in the stable worktree. This updates stable to the dev branch tip. But GitHub may have additional commits on `main` from other PRs merged before or after yours (e.g., the PR's own squash/merge commit has a different SHA than the feature branch tip). After any PR merge to GitHub main, stable ends up behind `origin/main`.
+**Fix:** After `-Promote` succeeds, always reset stable to `origin/main`:
+
+```bash
+git -C ~/.devkit-stable fetch origin
+git -C ~/.devkit-stable reset --hard origin/main
+```
+
+Then verify: `git -C ~/.devkit-stable log --oneline -1` should show the merge commit from GitHub.
+**Why:** `-Promote` is designed for dev→stable promotion. GitHub's merge creates a new commit (merge or squash) not present in the dev branch. Stable only gets that commit via `origin/main` reset.
+
+## 146. Two-Level Project Discovery for Family-Folder Directory Structures
+
+**Added:** 2026-03-21 | **Source:** devkit | **Status:** active
+
+**Category:** pattern
+**Context:** When a workspace is restructured from flat (`D:\DevSpace\Project\`) to family-folder layout (`D:\DevSpace\Family\Project\`), any script that discovers projects with a flat one-level `Get-ChildItem` stops finding projects entirely. Fails silently (zero projects found) unless `.Count` is checked first.
+**Fix:** Search two levels deep — check if the direct child has `.git`, and if not, check its children:
+
+```powershell
+$projectDirs = @(Get-ChildItem -Path $devspacePath -Directory | ForEach-Object {
+    $direct = $_
+    if (Test-Path (Join-Path $direct.FullName '.git')) {
+        $direct
+    } else {
+        Get-ChildItem -Path $direct.FullName -Directory |
+            Where-Object { Test-Path (Join-Path $_.FullName '.git') }
+    }
+})
+```
+
+**Combine with:** Always wrap in `@()` (see KG#179). Check for family-folder structure any time DevSpace path conventions change.
+**See also:** AP#138 (Two-org Gitea lifecycle model), KG#179 (PowerShell null Count)
