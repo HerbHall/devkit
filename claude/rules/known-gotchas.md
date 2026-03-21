@@ -1,7 +1,7 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 51
+entry_count: 37
 last_updated: "2026-03-21"
 ---
 
@@ -72,14 +72,6 @@ Platform-specific issues, tool quirks, and surprising behaviors discovered throu
 
 **Issue:** ANY change to Go types in swagger-annotated handlers requires regenerating the swagger spec.
 **Fix:** Always run `swag init` (or `make swagger`) after modifying handlers/structs. Commit regenerated files alongside Go changes.
-
-## 17. websocket.Dial Response Body Must Be Closed
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Platform:** Go (all) / coder/websocket library
-**Issue:** `websocket.Dial` returns `(*Conn, *http.Response, error)`. The `bodyclose` linter requires the response body closed.
-**Fix:** Always capture and close: `if resp != nil && resp.Body != nil { resp.Body.Close() }`.
 
 ## 18. Windows PowerShell Process and JSON Quirks (Consolidated Reference)
 
@@ -331,14 +323,6 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Issue:** Agent markdown tables have MD056 errors: pipes in code spans parsed as separators, or missing columns.
 **Fix:** Run `npx markdownlint-cli2` on agent `.md` files. Use `&#124;` for pipes in cells. Verify column counts.
 
-## 114. Set-StrictMode in Dot-Sourced PS Lib Pollutes Caller Scope
-
-**Added:** 2026-03-09 | **Source:** DevKit | **Status:** active
-
-**Platform:** PowerShell (all)
-**Issue:** `Set-StrictMode -Version Latest` at the top level of a dot-sourced `.ps1` lib file propagates to the calling script's scope and all subsequently dot-sourced files.
-**Fix:** Do NOT put `Set-StrictMode` in dot-sourced library files. Set it only in the entry-point script that owns its own execution context.
-
 ## 115. TypeScript API Interface Phantom Field Drift from Go Backend
 
 **Added:** 2026-03-09 | **Source:** Samverk | **Status:** active
@@ -375,15 +359,7 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Platform:** Windows (MSYS_NT) / GitHub CLI
 **Issue:** A fine-grained PAT set as Windows User env var `GITHUB_TOKEN` shadows `gh` CLI's keyring-stored OAuth token. Token precedence: `GITHUB_TOKEN` env > keyring OAuth > `GH_TOKEN` env. Fine-grained PATs often lack `issues:write` scope, causing 403 on `gh issue close/create`.
 **Fix:** Remove the User env var: `[Environment]::SetEnvironmentVariable('GITHUB_TOKEN', $null, 'User')`. PATs for CI (e.g., release-please) should only be GitHub Actions secrets, never local env vars. Inline override: `GITHUB_TOKEN= gh <command>`.
-**See also:** AP#120 (secrets distribution)
-
-## 122. Cloudflare Account Token Requires CLOUDFLARE_ACCOUNT_ID for Wrangler
-
-**Added:** 2026-03-14 | **Source:** herbhall.net | **Status:** active
-
-**Platform:** Cloudflare / Wrangler
-**Issue:** Account API tokens fail on `/memberships` (error 10001) and `/user/tokens/verify` (error 9109). Wrangler calls `/memberships` on startup and fails with "Unable to authenticate request."
-**Fix:** Set `CLOUDFLARE_ACCOUNT_ID` env var alongside Account API token. Wrangler skips memberships lookup when account ID is explicit. User API tokens work without this workaround.
+**See also:** secrets distribution via `~/.devkit-config.json` (archived pattern AP120)
 
 ## 123. Gitea API and Actions Gotchas (Consolidated Reference)
 
@@ -467,23 +443,6 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Fix:** Register without method prefix: `mux.Handle("/mcp", handler)` when the handler routes methods internally.
 **See also:** AP#28 (Go 1.22+ ServeMux route patterns)
 
-## 150. Go MCP SDK Rejects Non-Localhost Host Headers Behind Reverse Proxy
-
-**Added:** 2026-03-17 | **Source:** Samverk | **Status:** active
-
-**Platform:** Go (mcp-go SDK) / Cloudflare Tunnel
-**Issue:** Go MCP SDK `StreamableHTTPHandler` rejects requests with non-localhost `Host` headers, returning 403 "Forbidden: invalid Host header". Reverse proxies (Cloudflare Tunnel, nginx) forward the original hostname, triggering the rejection.
-**Fix:** Add `httpHostHeader: localhost:PORT` to cloudflared ingress config. For other proxies, rewrite the Host header to `localhost:PORT` before forwarding.
-**Debugging tip:** Cloudflare Security Analytics "Mitigation: Not mitigated" immediately shows the block is from the origin server, not Cloudflare edge. Check this FIRST before investigating WAF rules.
-
-## 151. Cloudflare Free Plan WAF Managed Ruleset Cannot Be Disabled
-
-**Added:** 2026-03-17 | **Source:** Samverk | **Status:** active
-
-**Platform:** Cloudflare (Free plan)
-**Issue:** Cloudflare Free plan has an "Always active" managed WAF ruleset that cannot be disabled or skipped. WAF skip rules only affect user-deployed managed rules, not the built-in ones.
-**Fix:** No workaround for disabling built-in rules. If built-in rules block legitimate traffic, use a different ingress method or upgrade to a paid plan with full WAF rule control.
-
 ## 152. Background Agents (`run_in_background`) Cannot Use MCP Tools
 
 **Added:** 2026-03-17 | **Source:** DevKit | **Status:** active
@@ -509,95 +468,6 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Platform:** Claude Code (all)
 **Issue:** stdio-based MCP servers (sqlite, memory, sequential-thinking, context7, ms365-onenote) hang indefinitely when they fail to initialize (wrong path, missing auth, process crash). Tool calls never return and the session must be manually cancelled. The "If unavailable, skip" instruction in workflows has no way to detect unavailability before attempting the call.
 **Fix:** Before calling any stdio MCP tool, verify it appears in the available tools list. If not listed, skip the call entirely. For workflows, add explicit pre-check instructions. HTTP-based MCP servers (Synapset) fail fast with connection errors instead of hanging.
-
-## 156. DevKit CI Metadata Validator Checks See-Also Lines and Added Metadata
-
-**Added:** 2026-03-17 | **Source:** DevKit | **Status:** active
-
-**Platform:** DevKit CI (lint.yml)
-**Issue:** The metadata validator (`Validate rule metadata` job) checks two things: (1) lines matching `^\*\*See also:\*\*` are scanned for `KG#N` and `AP#N` references -- each referenced entry must exist as `## N.` in the target file; (2) `**Added:**` lines must have exactly 3 pipe-separated fields (Added, Source, Status). Prose references like "(was KG#117)" in headings and body text do NOT trigger failures -- only `**See also:**` lines are validated.
-**Fix:** When referencing archived entries in `**See also:**` lines, omit the `KG#`/`AP#` prefix or remove the reference. Prose labels (e.g., "(was KG#117)") anywhere else in the entry are safe. Never add extra pipe fields to `**Added:**` lines.
-
-## 162. GitHub Issues-Disabled Repo: PRs Closeable but Regular Issues Need Re-Enable
-
-**Added:** 2026-03-17 | **Source:** Samverk | **Status:** active
-
-**Platform:** GitHub API / gh CLI
-**Issue:** When `has_issues=false` on a GitHub repo, individual issue GETs return 410 and PATCH on regular issues returns 403. However, PRs (which share the `/issues` endpoint) can still be closed via PATCH even with issues disabled.
-**Fix:** To close regular issues when issues are disabled: (1) re-enable: `GITHUB_TOKEN= gh api repos/OWNER/REPO -X PATCH -f has_issues=true`, (2) close the issues, (3) re-disable. The `GITHUB_TOKEN=` prefix clears any fine-grained PAT that lacks repo settings scope.
-**See also:** KG#120 (fine-grained PAT shadows gh CLI OAuth)
-
-## 163. semantic-release/git Incompatible With Branch Protection Requiring PR Status Checks
-
-**Added:** 2026-03-17 | **Source:** Synapset | **Status:** active
-
-**Platform:** Gitea / GitHub Actions
-**Issue:** `@semantic-release/git` and `@semantic-release/changelog` push commits directly to the default branch. Branch protection requiring `(pull_request)` status checks always rejects these -- direct commits can never have a `pull_request` CI context. Error: "Protected branch update failed: changes must be made through a pull request".
-**Fix:** Remove `@semantic-release/git` and `@semantic-release/changelog` from the plugin chain. Keep: `@semantic-release/commit-analyzer`, `@semantic-release/release-notes-generator`, and the release plugin. Semantic-release still creates the git tag and platform release without the direct-commit plugins.
-
-## 164. Gitea act_runner actcache Grows Unboundedly, Causes ENOSPC
-
-**Added:** 2026-03-17 | **Source:** Synapset | **Status:** active
-
-**Platform:** Gitea Actions (act_runner / Linux)
-**Issue:** act_runner caches workflow artifacts at `/home/git/.cache/actcache/cache/`. No built-in eviction. Can consume 20+ GB on a 40GB disk, causing ENOSPC in all running CI workflows.
-**Fix:** (1) Immediate cleanup: `rm -rf /home/git/.cache/actcache/cache/*`. (2) Daily pruning cron (run as `git` user): `0 3 * * * find /home/git/.cache/actcache/cache -mindepth 1 -maxdepth 1 -mtime +7 -exec rm -rf {} +`. (3) Disk alert at >80% usage via `logger`.
-**Infrastructure note:** `proxmox.herbhall.net` resolves to the dns-proxy LXC, NOT the Proxmox host. Actual Proxmox host is `192.168.1.203`. `pct resize` and `pvesm` are only available on the Proxmox host itself.
-
-## 165. Lingering Process Blocks Binary Replacement During Deploy
-
-**Added:** 2026-03-18 | **Source:** Samverk | **Status:** active
-
-**Platform:** Linux deploy scripts
-**Issue:** `scp` to replace a running Go binary fails with `dest open: Failure` even after `systemctl stop` because an orphaned process (launched outside systemd, or that survived the stop signal) keeps the binary mapped as its executable. `lsof /usr/local/bin/<binary>` shows the PID with type `txt`.
-**Fix:** Add `ssh "root@${HOST}" 'fuser -k /usr/local/bin/<binary> 2>/dev/null || true'` before `scp`, then `sleep 1` to let the process exit before copying the new binary.
-**Diagnose:** `ssh root@host 'lsof /usr/local/bin/<binary>'` -- look for PID with type `txt`.
-
-## 166. Trivy install.sh Fails With Permission Denied on Pre-Installed Runner Binary
-
-**Added:** 2026-03-18 | **Source:** Samverk | **Status:** active
-
-**Platform:** GitHub Actions (Linux)
-**Issue:** The aquasecurity `trivy` install.sh script fails with `install: cannot remove '/usr/local/bin/trivy': Permission denied` when the runner has trivy pre-installed at a system path. The CI job user cannot write to `/usr/local/bin`.
-**Fix:** Install to `$HOME/.local/bin` with `curl -sfL .../install.sh | sh -s -- -b "$HOME/.local/bin"`, then `echo "$HOME/.local/bin" >> "$GITHUB_PATH"`. In the SAME step, reference the binary directly as `"$HOME/.local/bin/trivy" --version` — `$GITHUB_PATH` changes only take effect in the NEXT step.
-
-## 167. markdownlint-cli2 False Positives on Non-.md Files
-
-**Added:** 2026-03-18 | **Source:** DevKit | **Status:** active
-
-**Platform:** markdownlint-cli2 (all)
-**Issue:** Running `npx markdownlint-cli2` with a glob that accidentally includes non-`.md` files (e.g. `.gitignore`, `.sh` scripts) produces false positives. `#` comment lines are parsed as H1 headings, triggering MD022 (no blank line around headings), MD025 (multiple H1), and MD032 (no blank line around lists).
-**Fix:** Always scope markdownlint globs to `**/*.md` only. CI lint job already does this correctly — the issue only appears in manual local runs where a non-md file is passed directly or included via a broad glob.
-
-## 168. Gitea Repo Transfer Does Not Rename -- Separate PATCH Required
-
-**Added:** 2026-03-18 | **Source:** DevKit | **Status:** active
-
-**Platform:** Gitea REST API
-**Issue:** `POST /api/v1/repos/{owner}/{repo}/transfer` moves a repo to a new org but keeps the original name. There is no `new_name` field in the transfer payload -- the request silently succeeds with the old name intact.
-**Fix:** Always follow transfer with a rename step:
-
-```bash
-# Step 1: Transfer org
-curl -X POST "$GITEA_URL/api/v1/repos/old-org/my-repo/transfer" \
-  -H "Authorization: token $TOKEN" \
-  -d '{"new_owner": "new-org"}'
-
-# Step 2: Rename (separate call, after transfer completes)
-curl -X PATCH "$GITEA_URL/api/v1/repos/new-org/my-repo" \
-  -H "Authorization: token $TOKEN" \
-  -d '{"name": "new-name"}'
-```
-
-Full repo management sequence: (1) `POST /api/v1/orgs` -- create org, (2) transfer, (3) rename, (4) `PATCH` description.
-
-## 171. Samverk MCP Proxy 502 — Gitea API Fallback Pattern
-
-**Added:** 2026-03-20 | **Source:** Synapset | **Status:** active
-
-**Platform:** Claude Code / Samverk MCP
-**Issue:** mcp-proxy.anthropic.com returns 502 Bad Gateway intermittently when calling Samverk MCP `create_issue`. Multiple parallel calls can fail simultaneously. Bash heredocs also fail with unexpected EOF when issue body contains apostrophes.
-**Fix:** Fall back to Gitea API at `http://192.168.1.160:3000/api/v1`. Use `python3 << 'PYEOF'` heredoc with `urllib.request` + `json.dumps()` for multi-issue creation — bash heredocs break on apostrophes in body text; Python heredocs (`'PYEOF'`) do not.
 
 ## 172. ESLint v9 Requires eslint.config.js — .eslintrc.* Silently Fails
 

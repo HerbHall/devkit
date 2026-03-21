@@ -1,7 +1,7 @@
 ---
 description: Learned patterns from past sessions. Read when encountering similar situations.
 tier: 2
-entry_count: 68
+entry_count: 58
 last_updated: "2026-03-21"
 ---
 
@@ -277,14 +277,6 @@ Check CI on ALL PRs first. Merge green sequentially (rebase between each). Close
 **Context:** E2E tests asserting specific widget names or exact data values break when UI changes labels or seed data differs.
 **Fix:** Assert stable structural elements: page headings, primary action buttons, navigation links, generic data labels. Avoid exact numeric values or feature-specific section names.
 
-## 69. GitHub API as CLI Template Fallback
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** tooling-workaround
-**Context:** CLI scaffold/init commands fail on Windows MSYS (hanging prompts, Unicode crashes).
-**Fix:** Fetch templates via `gh api repos/{owner}/{repo}/contents/{path} --jq '.content' | base64 -d`.
-
 ## 71. Scope CI Lint to Maintained Files on First Introduction
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
@@ -416,13 +408,6 @@ Inline PowerShell from MSYS bash breaks with `$env:PATH`, special chars. Write t
 **Context:** Parallel agents modifying same file + linter/hook can merge both changes. Committing includes other agent's additions.
 **Fix:** After stash/pop sorting, diff shared file against main. Remove cross-branch additions before committing.
 
-## 88. Agent-Generated Markdown Needs MD038 Check
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** correction
-**Fix:** Subagents produce code spans with trailing spaces triggering MD038. Run `npx markdownlint-cli2 file.md` on agent-generated markdown before committing.
-
 ## 90. golangci-lint v2 Migration (Consolidated Reference)
 
 **Added:** 2026-02-17 | **Source:** Multiple | **Status:** active
@@ -451,14 +436,6 @@ Inline PowerShell from MSYS bash breaks with `$env:PATH`, special chars. Write t
 **Category:** workflow-pattern
 **Context:** `agent:human` issues need design decisions before implementation. One at a time wastes attention.
 **Fix:** Batch into single interactive pass with focused questions, capture decisions, launch background agents in parallel.
-
-## 97. Combine Complementary Issues Into Single PR
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** workflow-pattern
-**Context:** Two issues where one's research feeds the other's requirements.
-**Fix:** Single PR with both deliverables. Use `Closes #X, Closes #Y`. Reduces CI runs and merge conflict risk.
 
 ## 100. Vitest Setup for React + Vite Projects
 
@@ -519,23 +496,6 @@ MUI Popper needs `anchorEl` during render. `useRef` + `ref.current` triggers Rea
 **Category:** process-pattern
 **Fix:** Always update `entry_count` and `last_updated` in YAML frontmatter when adding or removing entries from `known-gotchas.md` or `autolearn-patterns.md`.
 
-## 120. Secrets Block in ~/.devkit-config.json for PAT Distribution
-
-**Added:** 2026-03-08 | **Source:** DevKit | **Status:** active
-
-**Category:** scaffolding-pattern
-**Context:** New repos need PATs (e.g., `RELEASE_PLEASE_TOKEN`) as GitHub Actions secrets.
-**Fix:** Store in `~/.devkit-config.json` under `.Secrets`. `new-project.ps1` auto-sets them. Use `Set-DevkitSecrets.ps1` to backfill. See KG#94.
-
-## 121. Periodic Project Audit via Explore Subagent
-
-**Added:** 2026-03-08 | **Source:** DevKit | **Status:** active
-
-**Category:** process-pattern
-**Context:** Documentation, skill lists, CI coverage, and setup scripts drift from reality without automated validation.
-**Fix:** Run structured Explore subagent audit periodically covering 10 dimensions: docs accuracy, skill routing, agent templates, rules metadata, CI jobs, setup scripts, project templates, hooks, sync manifest, cross-references.
-**See also:** AP#47, AP#83, AP#85
-
 ## 122. Python UTF-8 I/O on Windows for Unicode-Heavy Scripts
 
 **Added:** 2026-03-09 | **Source:** Samverk | **Status:** active
@@ -570,14 +530,6 @@ MUI Popper needs `anchorEl` during render. `useRef` + `ref.current` triggers Rea
 **Category:** process-pattern
 **Context:** Copilot adds NEW review comments to already-merged PRs, days after merge. These need a second pass.
 **Fix:** Fetch via `gh api repos/{o}/{r}/pulls/{n}/comments`, filter by `created_at` post-merge. Implement clear fixes on a followup branch referencing the original PR number. Flag questionable changes for user decision.
-
-## 126. Cloudflare Email Routing Replaces MailChannels for Workers
-
-**Added:** 2026-03-14 | **Source:** herbhall.net | **Status:** active
-
-**Category:** pattern
-**Context:** MailChannels shut down free Cloudflare Workers integration. Replacement is Cloudflare Email Routing `send_email` binding.
-**Fix:** Enable Email Routing on zone, add `[[send_email]]` binding in wrangler.toml with `destination_address`, use `EmailMessage` from `cloudflare:email` + `mimetext` for MIME. Requires `nodejs_compat` flag. Note: mimetext `setHeader('Reply-To', ...)` is broken -- inject into raw MIME directly.
 
 ## 127. Worktree Isolation for Parallel Code-Gen Agents
 
@@ -623,23 +575,6 @@ MUI Popper needs `anchorEl` during render. `useRef` + `ref.current` triggers Rea
 **Context:** Release-please generates CHANGELOG.md with asterisk list markers (`*`) and double blank lines. These violate MD004 and MD012 but cannot be fixed -- the file is regenerated on each release.
 **Fix:** Add `"CHANGELOG.md"` to the `ignores` array in `.markdownlint-cli2.jsonc`. Do not attempt `replace_all` on asterisk-space -- it corrupts bold markers (`**text:**`) inside list items.
 
-## 133. Prefer Dynamic MCP Discovery Over Static Prompt Files
-
-**Added:** 2026-03-17 | **Source:** Samverk | **Status:** active
-
-**Category:** process-pattern
-**Context:** Hand-written `.samverk/prompts/*.md` files listed issues as critical that were already implemented. MCP calls (`get_digest`, `list_open_prs`) at session start already provide live state. Static prompts duplicate and contradict.
-**Fix:** Use dynamic MCP discovery for session orientation. If static prompts are used, they should be generated (not hand-written) and include a staleness warning with a generation timestamp.
-**See also:** AP#85 (roadmap drift)
-
-## 134. Issue Specs Must Reference Verified Exported API
-
-**Added:** 2026-03-17 | **Source:** Samverk | **Status:** active
-
-**Category:** process-pattern
-**Context:** Issue spec said "call into existing `dispatcher.Claim()`" but no such public method existed, and the caller and callee were in separate processes. A 2-minute codebase check would have caught both problems.
-**Fix:** Before writing implementation specs that reference internal methods, verify: (1) the method exists and is exported, (2) the caller and callee are in the same process. Extends AP#47 (check existing assets before scoping) and AP#83 (sprint scope reduction via exploration).
-
 ## 136. Go Interface Extension Requires Updating All Test Mocks
 
 **Added:** 2026-03-17 | **Source:** Samverk | **Status:** active
@@ -655,25 +590,6 @@ MUI Popper needs `anchorEl` during render. `useRef` + `ref.current` triggers Rea
 **Category:** gotcha
 **Context:** Tests asserting exact counts (e.g., `len(tools) != 41`) fail whenever a new item is added. Common in tool-discovery tests, route-registration tests, and enum exhaustiveness checks.
 **Fix:** Before creating a PR that adds tools/routes/handlers, search for `len(...) != N` or `assert.Equal(t, N, len(...))` patterns and update the expected count. For non-correctness counts, prefer `>= N` over exact equality.
-
-## 138. Two-Org Gitea Lifecycle Model for Samverk Projects
-
-**Added:** 2026-03-18 | **Source:** DevKit | **Status:** active
-
-**Category:** architecture-pattern
-**Context:** Gitea server hosts both dispatcher-managed production work and pre-intake exploratory research. Without org separation, research repos mix with production ones and become confusing.
-**Fix:** Use two orgs: (1) `samverk-research` -- new ideas, exploratory work, pre-viability repos; (2) `samverk` -- dispatcher-managed production projects (devkit, samverk, synapset). When a research project proves viable, transfer once from `samverk-research` to `samverk` and set `lifecycle.phase: intake` in `.samverk/project.yaml`. No further org transfers -- phase progression stays within the `samverk` org.
-**Why:** Keeps unmanaged exploratory repos from cluttering the dispatcher's project registry. Org membership signals management status at a glance.
-**See also:** KG#168 (Gitea transfer + rename sequence)
-
-## 140. Dual-Forge Force-Sync Procedure (GitHub -> Gitea)
-
-**Added:** 2026-03-20 | **Source:** Samverk | **Status:** active
-
-**Category:** workflow-pattern
-**Context:** When Gitea main drifts far behind GitHub main (dual-forge squash divergence), all Gitea PRs show `mergeable=False` and `force_merge:true` returns 405 "Please try again later". The code is equivalent on both forks but commit SHAs differ from squash-merging separately into each.
-**Fix:** Four-step force-sync: (1) verify with `git log gitea/main..origin/main --oneline | wc -l`; (2) enable admin push via `PATCH /api/v1/repos/OWNER/REPO/branch_protections/main` with `{"enable_push":true,"enable_force_push":true}`; (3) `git push gitea origin/main:main --force`; (4) restore protection with `{"enable_push":false,"enable_force_push":false,"enable_status_check":true}`. After sync, all Gitea PRs show `mergeable=True`.
-**See also:** KG#123 (Gitea API gotchas), AP#22 (Git stash and branch workflows)
 
 ## 141. Go restartCh Channel Pattern for Goroutine Slice Ownership
 
