@@ -665,3 +665,77 @@ Synapset: pool=devkit, ID=688
 
 Tailscale Funnel Rejects Host Header from Within Tailnet -- use Cloudflare Tunnel instead. Site-specific.
 Synapset: pool=devkit, ID=689
+
+## Archived 2026-03-21: Rules compaction (size reduction)
+
+### Infrastructure and project-specific entries
+
+## KG#17 (archived 2026-03-21)
+
+websocket.Dial response body must be closed with bodyclose linter -- capture and check resp before closing.
+Synapset: pool=devkit, ID=728
+
+## KG#114 (archived 2026-03-21)
+
+Set-StrictMode in dot-sourced PS lib pollutes caller scope -- only set StrictMode in entry-point scripts.
+Synapset: pool=devkit, ID=729
+
+## KG#122 (archived 2026-03-21)
+
+Cloudflare Account Token requires CLOUDFLARE_ACCOUNT_ID env var for Wrangler to skip /memberships lookup.
+Synapset: pool=devkit, ID=730
+
+## KG#150 (archived 2026-03-21)
+
+Go MCP SDK rejects non-localhost Host headers behind reverse proxy -- rewrite Host header to localhost:PORT.
+Synapset: pool=devkit, ID=731
+
+## KG#151 (archived 2026-03-21)
+
+Cloudflare Free plan WAF managed ruleset cannot be disabled -- no workaround for built-in rules.
+Synapset: pool=devkit, ID=732
+
+## KG#156 (archived 2026-03-21)
+
+DevKit CI metadata validator checks See-Also lines for valid KG#/AP# references and Added field pipe count.
+Synapset: pool=devkit, ID=733
+
+## KG#162 (archived 2026-03-21)
+
+GitHub issues-disabled repo: PRs closeable via PATCH but regular issues need has_issues re-enabled first.
+Synapset: pool=devkit, ID=734
+
+## KG#163 (archived 2026-03-21)
+
+semantic-release/git incompatible with branch protection requiring pull_request status checks -- remove plugin.
+Synapset: pool=devkit, ID=735
+
+## KG#164 (archived 2026-03-21)
+
+Gitea act_runner actcache grows unboundedly causing ENOSPC -- add daily cron pruning for actcache directory.
+Synapset: pool=devkit, ID=736
+
+## KG#165 (archived 2026-03-21)
+
+Lingering process blocks binary replacement during deploy -- use fuser -k before scp to clear file locks.
+Synapset: pool=devkit, ID=737
+
+## KG#166 (archived 2026-03-21)
+
+Trivy install.sh fails with permission denied on pre-installed runner binary -- install to $HOME/.local/bin.
+Synapset: pool=devkit, ID=738
+
+## KG#167 (archived 2026-03-21)
+
+markdownlint-cli2 false positives on non-.md files -- always scope globs to **/*.md only.
+Synapset: pool=devkit, ID=739
+
+## KG#168 (archived 2026-03-21)
+
+Gitea repo transfer does not rename -- requires separate PATCH call after transfer completes.
+Synapset: pool=devkit, ID=740
+
+## KG#171 (archived 2026-03-21)
+
+Samverk MCP Proxy 502 -- fall back to Gitea API directly; use Python heredocs for bodies with apostrophes.
+Synapset: pool=devkit, ID=741

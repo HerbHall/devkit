@@ -28,11 +28,11 @@ jobs:
     name: Release Please
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@{{ACTIONS_CHECKOUT_VERSION}}
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@{{ACTIONS_SETUP_NODE_VERSION}}
         with:
-          node-version: "22"
+          node-version: "{{NODE_VERSION}}"
 
       - name: Run release-please
         env:

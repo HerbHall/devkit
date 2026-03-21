@@ -42,7 +42,7 @@ jobs:
       version_from: ${{ steps.gate.outputs.version_from }}
       version_to: ${{ steps.gate.outputs.version_to }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@{{ACTIONS_CHECKOUT_VERSION}}
         with:
           fetch-depth: 0
 
