@@ -18,8 +18,8 @@ jobs:
     name: Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@1.85
+      - uses: actions/checkout@{{ACTIONS_CHECKOUT_VERSION}}
+      - uses: dtolnay/rust-toolchain@{{RUST_TOOLCHAIN_VERSION}}
         with:
           components: clippy
       - run: cargo clippy -- -D warnings
@@ -28,8 +28,8 @@ jobs:
     name: Format
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@1.85
+      - uses: actions/checkout@{{ACTIONS_CHECKOUT_VERSION}}
+      - uses: dtolnay/rust-toolchain@{{RUST_TOOLCHAIN_VERSION}}
         with:
           components: rustfmt
       - run: cargo fmt --check
@@ -38,8 +38,8 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@1.85
+      - uses: actions/checkout@{{ACTIONS_CHECKOUT_VERSION}}
+      - uses: dtolnay/rust-toolchain@{{RUST_TOOLCHAIN_VERSION}}
       - run: cargo test
 
   build:
@@ -47,15 +47,15 @@ jobs:
     needs: [lint, fmt, test]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@1.85
+      - uses: actions/checkout@{{ACTIONS_CHECKOUT_VERSION}}
+      - uses: dtolnay/rust-toolchain@{{RUST_TOOLCHAIN_VERSION}}
       - run: cargo build --release
 
   markdown:
     name: Markdown Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: DavidAnson/markdownlint-cli2-action@v19
+      - uses: actions/checkout@{{ACTIONS_CHECKOUT_VERSION}}
+      - uses: DavidAnson/markdownlint-cli2-action@{{MARKDOWNLINT_CLI2_ACTION_VERSION}}
         with:
           globs: "**/*.md"

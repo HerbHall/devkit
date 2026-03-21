@@ -1,0 +1,65 @@
+# GitHub Actions CI workflow for Go projects.
+# Copy to .github/workflows/ci.yml and update the build path.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@{{ACTIONS_CHECKOUT_VERSION}}
+
+      - uses: actions/setup-go@{{ACTIONS_SETUP_GO_VERSION}}
+        with:
+          go-version-file: go.mod
+
+      - uses: golangci/golangci-lint-action@{{GOLANGCI_LINT_ACTION_VERSION}}
+        with:
+          version: {{GOLANGCI_LINT_CLI_VERSION}}
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@{{ACTIONS_CHECKOUT_VERSION}}
+
+      - uses: actions/setup-go@{{ACTIONS_SETUP_GO_VERSION}}
+        with:
+          go-version-file: go.mod
+
+      - run: go build ./cmd/{{PROJECT_NAME}}/
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@{{ACTIONS_CHECKOUT_VERSION}}
+
+      - uses: actions/setup-go@{{ACTIONS_SETUP_GO_VERSION}}
+        with:
+          go-version-file: go.mod
+
+      - run: go test -race ./...
+
+  markdown:
+    name: Markdown Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@{{ACTIONS_CHECKOUT_VERSION}}
+
+      - uses: DavidAnson/markdownlint-cli2-action@{{MARKDOWNLINT_CLI2_ACTION_VERSION}}
+        with:
+          globs: "**/*.md"

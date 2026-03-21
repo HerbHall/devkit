@@ -4,9 +4,16 @@
 # ~/.claude/rules/foo.md actually edit devkit/claude/rules/foo.md,
 # and `git diff` in the DevKit clone shows changes instantly.
 #
+# Dev/Live separation (Option C -- stable branch worktree):
+#   ~/.devkit-stable/ is a git worktree tracking the 'stable' branch.
+#   Use -LinkStable so ~/.claude/ symlinks point to the stable worktree
+#   instead of the dev copy. Changes take effect only after -Promote.
+#
 # Usage:
-#   pwsh -File sync.ps1 -Link                        # create symlinks
+#   pwsh -File sync.ps1 -Link                        # symlink to dev copy (immediate changes)
 #   pwsh -File sync.ps1 -Link -DevKitPath D:\DevKit  # explicit clone path
+#   pwsh -File sync.ps1 -LinkStable                  # symlink to stable worktree (safe)
+#   pwsh -File sync.ps1 -Promote                     # merge dev branch -> stable, update live
 #   pwsh -File sync.ps1 -Unlink                      # replace symlinks with copies
 #   pwsh -File sync.ps1 -Status                      # show current state
 #   pwsh -File sync.ps1 -Verify                      # full validation
@@ -17,6 +24,12 @@
 param(
     [Parameter(ParameterSetName = 'Link', Mandatory)]
     [switch]$Link,
+
+    [Parameter(ParameterSetName = 'LinkStable', Mandatory)]
+    [switch]$LinkStable,
+
+    [Parameter(ParameterSetName = 'Promote', Mandatory)]
+    [switch]$Promote,
 
     [Parameter(ParameterSetName = 'Unlink', Mandatory)]
     [switch]$Unlink,
@@ -670,12 +683,87 @@ function Invoke-Verify {
 }
 
 # ---------------------------------------------------------------------------
+# -LinkStable: Symlink ~/.claude/ to the stable worktree (~/.devkit-stable/)
+# ---------------------------------------------------------------------------
+
+function Invoke-LinkStable {
+    $stableWorktree = Join-Path $HOME '.devkit-stable'
+    if (-not (Test-Path $stableWorktree)) {
+        Write-Fail "Stable worktree not found at: $stableWorktree"
+        Write-Fail 'Run: git worktree add ~/.devkit-stable stable'
+        return
+    }
+
+    $branch = & git -C $stableWorktree branch --show-current 2>$null
+    if ($branch -ne 'stable') {
+        Write-Fail "Worktree at $stableWorktree is on branch '$branch', expected 'stable'"
+        return
+    }
+
+    Write-Section 'Sync: LinkStable -- linking ~/.claude/ to stable worktree'
+    Write-Step "Stable worktree: $stableWorktree (branch: stable)"
+    Invoke-Link -DevKitPathParam $stableWorktree
+}
+
+# ---------------------------------------------------------------------------
+# -Promote: Merge current dev branch into stable, live instance updates
+# ---------------------------------------------------------------------------
+
+function Invoke-Promote {
+    $stableWorktree = Join-Path $HOME '.devkit-stable'
+    if (-not (Test-Path $stableWorktree)) {
+        Write-Fail "Stable worktree not found at: $stableWorktree"
+        Write-Fail 'Run: git worktree add ~/.devkit-stable stable'
+        return
+    }
+
+    $devKit = Resolve-DevKitPath -Explicit ''
+    if (-not $devKit) { return }
+
+    $devBranch = & git -C $devKit branch --show-current 2>$null
+    Write-Section "Sync: Promote -- merging '$devBranch' into stable"
+
+    # Verify dev branch is clean
+    $dirty = & git -C $devKit status --porcelain 2>$null
+    if ($dirty) {
+        Write-Fail "Dev working tree has uncommitted changes. Commit or stash before promoting."
+        return
+    }
+
+    # Fast-forward stable to dev branch
+    $result = & git -C $stableWorktree merge --ff-only $devBranch 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        Write-Fail "Merge failed (not fast-forwardable). Rebase dev onto stable first."
+        Write-Fail $result
+        return
+    }
+
+    Write-OK "Stable updated: $(& git -C $stableWorktree log --oneline -1)"
+    Write-Step 'Live ~/.claude/ symlinks updated automatically (stable worktree refreshed).'
+
+    # Confirm symlinks still point to stable worktree
+    $rulesLink = Join-Path -Path $HOME -ChildPath '.claude' | Join-Path -ChildPath 'rules'
+    if (Test-IsSymlink $rulesLink) {
+        $target = Get-SymlinkTarget $rulesLink
+        if ($target -like "*devkit-stable*") {
+            Write-OK "Symlinks confirmed pointing to stable worktree."
+        } else {
+            Write-Warn "Symlinks point to: $target (not stable worktree). Run -LinkStable to fix."
+        }
+    } else {
+        Write-Warn '~/.claude/rules is not a symlink. Run -LinkStable to set up stable linking.'
+    }
+}
+
+# ---------------------------------------------------------------------------
 # Dispatch
 # ---------------------------------------------------------------------------
 
 switch ($PSCmdlet.ParameterSetName) {
-    'Link'   { Invoke-Link -DevKitPathParam $DevKitPath }
-    'Unlink' { Invoke-Unlink }
-    'Status' { Invoke-Status }
-    'Verify' { Invoke-Verify }
+    'Link'        { Invoke-Link -DevKitPathParam $DevKitPath }
+    'LinkStable'  { Invoke-LinkStable }
+    'Promote'     { Invoke-Promote }
+    'Unlink'      { Invoke-Unlink }
+    'Status'      { Invoke-Status }
+    'Verify'      { Invoke-Verify }
 }

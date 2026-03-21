@@ -1,8 +1,8 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 49
-last_updated: "2026-03-20"
+entry_count: 51
+last_updated: "2026-03-21"
 ---
 
 # Known Gotchas
@@ -635,3 +635,56 @@ Full repo management sequence: (1) `POST /api/v1/orgs` -- create org, (2) transf
 **Symptom:** `TS1131: Property or signature expected` at the line where the next interface begins.
 **Fix:** After any automated conflict resolution in `.ts` files, always run `npx tsc --noEmit` before committing. Visually inspect boundaries between adjacent interface or type declarations.
 **See also:** KG#153 (cherry-pick conflict resolution truncates functions at marker boundaries)
+
+## 176. Tauri 2 API Gotchas (Consolidated Reference)
+
+**Added:** 2026-03-21 | **Source:** claude-token-stats | **Status:** active
+
+**Platform:** Tauri 2 (all)
+
+### tauri-plugin-positioner v2 has no tray-relative Position variants
+
+**Issue:** `Position` enum in v2.3.1 only has screen-edge variants (TopLeft, TopRight, TopCenter, BottomLeft, BottomRight, BottomCenter, LeftCenter, RightCenter, Center). `TrayCenter`, `TrayBottomCenter`, etc. do not exist — compiler error: "no variant or associated item named TrayCenter found".
+**Fix:** Use `Position::BottomRight` as the fallback for Windows system tray apps.
+
+### TrayIconBuilder::menu_on_left_click renamed to show_menu_on_left_click
+
+**Issue:** Method renamed in Tauri 2. Produces a deprecation warning pointing to the correct name.
+**Fix:** Direct rename to `show_menu_on_left_click`. No behavior change.
+
+### getCurrentWindow and WebviewWindow come from different modules
+
+**Issue:** `getCurrentWindow()` is from `@tauri-apps/api/window`. `WebviewWindow` class (for `getByLabel`) is from `@tauri-apps/api/webviewWindow`. Mixing import sources causes TS2305.
+**Fix:** Use two separate imports:
+
+```ts
+import { getCurrentWindow } from '@tauri-apps/api/window';
+import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
+```
+
+## 177. Recharts 3 Tooltip formatter Typed as ValueType | undefined
+
+**Added:** 2026-03-21 | **Source:** claude-token-stats | **Status:** active
+
+**Platform:** TypeScript / Recharts 3.x
+**Issue:** Recharts 3.x Tooltip `formatter` callback parameter is typed as `ValueType | undefined` (where `ValueType = string | number | undefined`), not as `number`. Writing `(value: number) => ...` causes TS2322.
+**Fix:** Guard the value before using numeric operations:
+
+```ts
+formatter={(value) => {
+  const v = typeof value === 'number' ? value : Number(value ?? 0);
+  return [`$${v.toFixed(4)}`, 'Cost'];
+}}
+```
+
+For BarChart with custom payload fields (e.g. `tokens`, `sessions` added to chart data), cast `props.payload`:
+
+```ts
+formatter={(value, _name, props) => {
+  const v = typeof value === 'number' ? value : Number(value ?? 0);
+  const tokens = (props.payload as { tokens?: number } | undefined)?.tokens ?? 0;
+  return [`$${v.toFixed(4)} · ${tokens} tokens`, 'Cost'];
+}}
+```
+
+Applies to both AreaChart and BarChart Tooltip formatters in Recharts 3.x.
