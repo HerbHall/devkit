@@ -211,12 +211,38 @@ This project is NOT worth pursuing if:
 **Process**:
 
 1. Write/update README
-2. Create GitHub release with changelog
+2. Tag and publish release (see forge selection guide below)
 3. Submit to relevant lists/directories (if applicable)
 4. Run `/autolearn` (session review) to capture all learnings
 5. Update devkit repo if new patterns or skills were created
 
 **Gate**: Is the README honest about what's shipped? Are the learnings captured? Ship it.
+
+#### Forge Selection Guide
+
+DevKit provides two release-please templates. Choose based on where `origin` points:
+
+| Primary forge | Workflow template | Fix reference |
+|--------------|-------------------|---------------|
+| GitHub | `project-templates/release-please.yml` | Uses `googleapis/release-please-action@v4` |
+| Gitea | `project-templates/release-please-gitea.yml` | Uses `npx release-please` CLI directly |
+
+**Dual-forge projects** (origin on one forge, mirror on another):
+
+- Run release-please on the **primary forge only**
+- Tags created by release-please propagate to the secondary forge via `devkit-sync` or manual `git push --tags <remote>`
+- Do not run release-please on both forges — it will create duplicate release PRs and conflicting tags
+
+**Supporting workflows** (also forge-specific):
+
+| Workflow | GitHub template | Gitea template |
+|----------|----------------|----------------|
+| Release gating | `release-gate.yml` | `release-gate-gitea.yml` |
+| CI retrigger | `retrigger-ci.yml` | `retrigger-ci-gitea.yml` |
+
+All four templates use the same conventions: conventional commits, `VERSION` file as source of truth, `CHANGELOG.md` updated on each release. The user experience is identical regardless of forge.
+
+**Required secret**: `RELEASE_PLEASE_TOKEN` — a PAT with repo scope. Set via `scripts/Set-DevkitSecrets.ps1` (reads from `~/.devkit-config.json` `.Secrets` block).
 
 ---
 
