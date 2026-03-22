@@ -1,8 +1,8 @@
 ---
 description: Learned patterns from past sessions. Read when encountering similar situations.
 tier: 2
-entry_count: 58
-last_updated: "2026-03-21"
+entry_count: 61
+last_updated: "2026-03-22"
 ---
 
 # Learned Patterns
@@ -661,3 +661,70 @@ Each window gets the correct UI with zero navigation overhead. Typical window co
 
 Backend opens a named window: `app.get_webview_window("dashboard").show()`
 **See also:** KG#176 (Tauri 2 API gotchas — getCurrentWindow import path)
+
+## 145. Use WIP Branch Instead of Stash for Branch-Switching Work
+
+**Added:** 2026-03-22 | **Source:** samverk | **Status:** active
+
+**Category:** workflow-pattern
+**Context:** When in-progress work exists and a multi-step task requires switching between multiple branches (e.g., rebasing, merging, resolving stacked PRs), `git stash` carries risk: `git stash drop` is irreversible and easy to run accidentally during cleanup. A WIP branch is safer — it survives branch switches, can be inspected later, and is trivially recoverable.
+**Fix:** Before any multi-branch operation when uncommitted work exists:
+
+```bash
+# Instead of: git stash push -m "..."
+git add -A
+git commit -m "wip: [description] -- branch-switching work in progress"
+# Do your multi-branch work
+# Afterwards, soft-reset to un-commit and restore working state:
+git reset HEAD~1
+```
+
+If you must use stash, inspect before dropping:
+
+```bash
+git stash show -p stash@{0}   # always inspect before dropping
+# prefer git stash pop over git stash drop
+```
+
+**Why:** `git stash drop` permanently deletes staged and tracked-but-modified files with no recovery path. In the samverk migration session, AGENTS.md and CLAUDE.md edits were permanently lost this way.
+
+## 146. Cherry-Pick Only Unique Commits for Stacked PRs
+
+**Added:** 2026-03-22 | **Source:** samverk | **Status:** active
+
+**Category:** workflow-pattern
+**Context:** When parallel feature branches are stacked (branch B was created on top of branch A, so B contains A's commit plus its own), simple rebase fails after A is squash-merged to main. Git cannot recognize the squashed version of A as equivalent to the original commit, causing conflicts.
+**Fix:**
+
+```bash
+# 1. Identify the unique commit in branch B (first line is unique, second is A's)
+git log --oneline origin/feature/B | head -2
+
+# 2. Reset branch B to current main and replay only the unique commit
+git checkout --track origin/feature/B -B feature/B
+git reset --hard origin/main
+git cherry-pick <tip-commit-of-B>
+
+# 3. Push and enable auto-merge
+git push --force origin feature/B
+gh pr merge N --squash --auto
+```
+
+If the cherry-pick still conflicts (A and B both touched the same file), resolve as additive — keep both sides. Conflicts from stacked PRs are always additive, never destructive.
+
+## 147. Sequential Auto-Merge Requires Manual Branch Updates Between Merges
+
+**Added:** 2026-03-22 | **Source:** samverk | **Status:** active
+
+**Category:** workflow-pattern
+**Context:** When N PRs all have auto-merge enabled and one merges, the remaining N-1 PRs enter "BEHIND" state. GitHub's auto-merge does NOT auto-update behind branches — it waits indefinitely even if all CI checks passed on the most recent push.
+**Fix:** After each merge in a batch, manually update remaining behind PRs:
+
+```bash
+# After PR N merges:
+gh pr update-branch <remaining-pr-1>
+gh pr update-branch <remaining-pr-2>
+# ...
+```
+
+This triggers new CI runs via merge commits; auto-merge fires once CI passes. For N sequential PRs, expect O(N²/2) total update-branch calls. If running many PRs, consider a workflow that auto-updates behind branches on push to main.
