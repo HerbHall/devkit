@@ -24,6 +24,11 @@ These rules cannot be overridden by any learning, optimization, or time pressure
 Foreground subagents inherit MCP tool access. Prefer MCP tools over CLI when available:
 - **GitHub/project ops**: Use Samverk MCP (list_issues, create_pr, merge_pr, get_diff, etc.)
   over gh CLI. Samverk provides richer context and avoids PAT scope issues.
+- **Forge detection first**: Before any forge operation, detect the forge:
+  - If `.samverk/project.yaml` exists in repo root → read `forge` field
+  - Otherwise check `git remote get-url origin`: `gitea.herbhall.net` or `192.168.1.160`
+    → Gitea forge: use Samverk MCP or Gitea REST API (NEVER `gh` CLI for Gitea)
+  - `github.com` in URL → GitHub forge: use `gh` CLI
 - **Knowledge lookup**: Use Synapset search_memory/query_memory before grepping rules files.
 - **Documentation**: Use Context7 resolve-library-id + query-docs for library docs.
 - If an MCP tool is not in your available tools list, fall back to CLI equivalents.
@@ -133,6 +138,10 @@ Run these checks and fix any errors:
    `go run github.com/swaggo/swag/cmd/swag@v1.16.4 init -g cmd/<app>/main.go -o api/swagger --parseDependency --parseInternal`
    Include the regenerated api/swagger/ files with your other changes.
 6. If you added a new persistence mechanism (file write, database insert, cache write), write a test that exercises the full read->write->restart->read cycle. Verify data survives a simulated restart (recreate the struct from the file/DB). Verify stale/expired data is not loaded.
+7. If this PR introduces a new abstraction superseding an existing one (new interface,
+   new registry, new wrapper): grep for ALL direct uses of the old abstraction and either
+   update them, or document in the PR description why they remain on the old path.
+   Add to PR description: "Consumer audit: `[old abstraction]` usages reviewed -- [N/A or list]"
 
 Common Go CI failures to watch for:
 - gosec G101: Constants near credential code get flagged. Add `//nolint:gosec // G101: <reason>`

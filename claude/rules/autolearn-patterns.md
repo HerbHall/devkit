@@ -1,7 +1,7 @@
 ---
 description: Learned patterns from past sessions. Read when encountering similar situations.
 tier: 2
-entry_count: 61
+entry_count: 68
 last_updated: "2026-03-22"
 ---
 
@@ -759,3 +759,145 @@ gh pr update-branch <remaining-pr-2>
 ```
 
 This triggers new CI runs via merge commits; auto-merge fires once CI passes. For N sequential PRs, expect O(N²/2) total update-branch calls. If running many PRs, consider a workflow that auto-updates behind branches on push to main.
+
+## 148. Go Multi-Project API Aggregation Pattern
+
+**Added:** 2026-03-22 | **Source:** Samverk | **Status:** active
+
+**Category:** pattern
+**Context:** Go REST API handlers that aggregate results from multiple backends (e.g., multiple forge trackers registered in a project registry) need concurrent fetching with correct linter compliance. Fetching from a single tracker silently ignores all other registered projects.
+**Fix:** Use WaitGroup + fixed-size results slice indexed by backend position (avoids mutex on append). Pre-compute total capacity before flattening (satisfies prealloc linter). Apply pagination AFTER aggregation — per-backend pagination is meaningless across backends. Fetch up to `maxLimit` per backend to bound memory.
+
+```go
+results := make([]result, len(projects))
+var wg sync.WaitGroup
+for i, p := range projects {
+    wg.Add(1)
+    go func(idx int, proj *Project) {
+        defer wg.Done()
+        items, err := proj.Tracker.List(ctx, opts)
+        if err != nil { return }
+        results[idx] = result{items: items}
+    }(i, p)
+}
+wg.Wait()
+
+// Pre-compute capacity (satisfies prealloc linter)
+totalCount := 0
+for i := range results { totalCount += len(results[i].items) }
+all := make([]responseType, 0, totalCount)
+for i := range results { all = append(all, results[i].items...) }
+// Apply pagination to all[offset:end]
+```
+
+Use for-index-range (not for-val-range) when iterating results to avoid rangeValCopy on large structs. Discovered when fixing `handleListIssues()` which only queried `a.tracker` even when `a.projectRegistry` had 3 projects registered.
+
+## 149. Agent-Facing Outputs Must Be Data-Driven
+
+**Added:** 2026-03-22 | **Source:** Samverk | **Status:** active
+
+**Category:** architecture-pattern
+
+**Context:** Any function that generates text consumed directly by an agent (prompt templates, issue URLs, CLI commands, file paths, forge slugs) is infrastructure — not UI copy. Hardcoded project names, repo slugs, or paths in these functions produce wrong output as soon as multi-project support is added.
+
+**Real example:** `buildAgentPrompt()` in `MyQueue.tsx` hardcoded the project name, GitHub URL, and `gh` commands. When devkit and synapset issues appeared in My Queue, agents received prompts pointing to the wrong project directory and running `gh` against a repo with issues disabled.
+
+**Fix:** Pull project name, forge URL, and repo slug from the issue/project object at runtime. Build URLs from `project.forgeURL + issue.number`. Pass forge type to generate the correct CLI command (`gh` vs Gitea API vs Samverk MCP).
+
+**How to apply:** Before adding any hardcoded project/repo/URL string to an agent-facing output function, ask "what happens when this runs for a different project?" If the answer is "wrong output," parameterize it.
+
+## 150. go build -buildvcs=false in Non-Git Temp Dirs
+
+**Added:** 2026-03-22 | **Source:** Samverk | **Status:** active
+
+**Category:** gotcha
+**Context:** `go build ./...` fails with "error obtaining VCS status: exit status 128 / Use -buildvcs=false to disable VCS stamping" when run inside a directory that is not part of a git repository. Affects agent validator subprocesses, worktree temp dirs, and any subprocess running `go build` in an isolated temp dir.
+**Fix:** Add `-buildvcs=false` to `go build` calls in non-repo contexts:
+
+```go
+buildOut, buildErr := runInDir(ctx, workDir, "go", "build", "-buildvcs=false", "./...")
+```
+
+The flag is harmless in normal git repos — it only skips embedding VCS metadata (commit hash, dirty flag) into the binary. Safe to always use in test/validation contexts.
+
+## 151. sync.Mutex to sync.RWMutex Is a Drop-In Fix for Read-Heavy Race
+
+**Added:** 2026-03-22 | **Source:** Samverk | **Status:** active
+
+**Category:** pattern
+**Context:** When `-race` detects that a shared-state method reads without holding a lock while writes always hold `mu.Lock()`, the minimal correct fix is to upgrade to `sync.RWMutex` and add `RLock/RUnlock` on readers. This is a drop-in replacement — all existing `Lock()/Unlock()` calls still compile unchanged.
+
+**Diagnostic pattern:** (1) check if ALL write callers already hold `Lock()`, (2) check if ALL read callers hold nothing. If so, `sync.Mutex → sync.RWMutex + RLock on readers` is the minimal correct fix with zero behavior change.
+
+```go
+// Before:
+mu sync.Mutex
+
+// After (drop-in: all existing Lock/Unlock calls still compile):
+mu sync.RWMutex
+
+// In read-only methods:
+func (d *Dispatcher) trackerFor(...) forge.IssueTracker {
+    d.mu.RLock()
+    defer d.mu.RUnlock()
+    // ...
+}
+```
+
+## 152. Forge Detection and Tool-Selection Hierarchy
+
+**Added:** 2026-03-22 | **Source:** DevKit | **Status:** active
+
+**Category:** workflow-pattern
+
+### Detection algorithm (run before any forge operation)
+
+1. If `.samverk/project.yaml` exists in repo root → read `forge` and `repo` fields
+2. Otherwise → parse `git remote get-url origin`:
+   - `github.com` in URL → GitHub forge
+   - `192.168.1.160` or `gitea.herbhall.net` in URL → Gitea forge
+
+### Tool-selection hierarchy
+
+| Forge | Primary | Fallback | Never |
+|-------|---------|----------|-------|
+| **Gitea** (Samverk-managed) | Samverk MCP (`list_issues`, `create_pr`, `get_diff`, etc.) | Gitea REST API (`http://192.168.1.160:3000/api/v1/` or `https://gitea.herbhall.net/api/v1/`) | `gh` CLI |
+| **GitHub** | `gh` CLI | GitHub REST API | Samverk MCP |
+
+**`gh` CLI is GitHub-only.** Using `gh pr list --repo HerbHall/devkit` on a Gitea project silently queries the read-only GitHub mirror, not the active Gitea forge. This caused a regression in session 2026-03-18.
+
+### Applies to
+
+All forge operations: PR list, issue list, PR create, issue create, CI status, labels, milestones.
+
+## 153. Every Project Needs a Non-Release PR Auto-Merge Trigger
+
+**Added:** 2026-03-22 | **Source:** DevKit | **Status:** active
+
+**Category:** ci-config
+
+**Context:** `release-gate.yml` only auto-merges PRs with the `autorelease: pending` label (release-please PRs only). Agent-created PRs (`feat:`, `fix:`, `chore:`) have no automated merge path and sit open indefinitely even after CI passes.
+
+**Fix by forge:**
+
+- **GitHub:** Add `.github/workflows/auto-merge.yml` — on PR open with conventional title, run `gh pr merge --auto --squash`. Skip `release-please--` branches.
+- **Gitea:** Add a `merge` job to CI workflow with `needs: [all-ci-jobs]` — after all checks pass, call `POST /api/v1/repos/{owner}/{repo}/pulls/{n}/merge` with `Do: squash`. HTTP 200/204 = merged, 405 = already merged (both are success).
+
+**How to apply:** When setting up CI for any new project, verify there is a merge trigger for non-release PRs, not just for release-please.
+
+## 154. Dual-Forge Auto-Merge Cannot Share Implementation
+
+**Added:** 2026-03-22 | **Source:** DevKit | **Status:** active
+
+**Category:** ci-config
+
+**Context:** Projects mirrored across GitHub and Gitea need separate auto-merge implementations for each forge because the APIs and trigger mechanisms differ.
+
+| Forge | Mechanism | Notes |
+|-------|-----------|-------|
+| GitHub | `gh pr merge --auto --squash` on PR open | Fire-and-forget; merges when branch protection checks pass |
+| Gitea | `merge` job in CI with `needs: [all-jobs]` | Calls `POST /api/v1/repos/{repo}/pulls/{n}/merge` with `Do:squash` |
+
+**Gitea merge API:** HTTP 200/204 = merged, 405 = already merged — both success states. Use `CI_GITEA_TOKEN` (NOT `GITEA_TOKEN` — reserved prefix, silently empty at runtime; see KG#123).
+
+**Side effect:** Squash-merge on GitHub with dual-push `origin` causes local `git pull` to produce a merge commit instead of fast-forward. Expected; use `git pull --rebase` locally if preferred.
