@@ -32,8 +32,37 @@ every shell session:
 | `GITEA_TOKEN` | `gitea/pat-homelab` | Gitea PAT for gitea.herbhall.net |
 | `GITEA_DISPATCHER_TOKEN` | `gitea/pat-dispatcher` | Gitea dispatcher service token |
 | `CLOUDFLARE_API_TOKEN` | `cloudflare/api-token` | Cloudflare DNS API token |
+| *(not an env var)* | `cloudflare/cf-access-client-id` | CF Access service token Client ID — injected into MCP configs |
+| *(not an env var)* | `cloudflare/cf-access-client-secret` | CF Access service token Client Secret — injected into MCP configs |
 | `HOME_ASSISTANT_TOKEN` | `homeassistant/token` | Home Assistant long-lived access token |
 | `SAMVERK_AUTH_TOKEN` | `samverk/auth-token` | Samverk MCP bearer token |
+
+## Cloudflare Access — MCP Client Configuration
+
+MCP endpoints (`samverk.herbhall.net/mcp`, `synapset.herbhall.net/mcp`) are
+protected by Cloudflare Access service token policy. Every MCP client —
+including Claude Code — must send two additional headers on all requests:
+
+```text
+CF-Access-Client-Id: <cloudflare/cf-access-client-id>
+CF-Access-Client-Secret: <cloudflare/cf-access-client-secret>
+```
+
+These are stored in the vault (not environment variables — injected directly
+into client configs). The authoritative Claude Code MCP config is
+`~/.claude.json`. Both Samverk and Synapset entries use `mcp-remote` with
+`--header` flags to supply these credentials.
+
+**When setting up a new machine**, retrieve from the vault and inject manually
+until `Setup-Claude.ps1` (issue #487) automates this:
+
+```powershell
+$cfId     = gvs 'cloudflare/cf-access-client-id'
+$cfSecret = gvs 'cloudflare/cf-access-client-secret'
+```
+
+**The `~/.claude/mcp.json` file** is a secondary config kept in sync with
+`~/.claude.json`. Both must be updated together when tokens rotate.
 
 ## Common Operations
 
