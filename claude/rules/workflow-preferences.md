@@ -75,6 +75,8 @@ This catches runtime issues (missing embeds, config collisions, broken routes) t
 - Main context reserved for orchestration only (~5-10% usage per plan)
 - Proven on Phase 01-topology: 3 plans, 7 tasks, 10 new files + 5 modified, 37 tests -- all clean on first pass
 - **Wave execution**: Launch up to 3 agents in parallel per wave when files don't overlap. Sort changes into correct branches via stash/pop after all agents complete (see gotcha #25). Proven: v0.4.1 sprint, 2 waves x 3 agents = 6 PRs, 12 issues, all CI-green first pass.
+- **Pre-wave hot-file audit**: Before launching parallel agents, read each issue's acceptance criteria and predict which files each agent will touch. Files that appear in 2+ agents' expected changes are "hot". Pass `[HOT-FILES]` block (from `subagent-ci-checklist.md`) to ALL agents listing hot files -- agents report bugs in hot files but do NOT fix them. Also run tests on current main and tell agents which tests are already failing so multiple agents don't independently fix the same pre-existing failure.
+- **Post-wave worktree cleanup**: After all parallel agents complete, run `git worktree list` and `git worktree remove <path> --force` for each stale entry, then `git worktree prune` -- BEFORE any git push. Stale worktrees from agent isolation cause pre-push hooks to fail (see AP#127).
 
 ## 9. Global CLAUDE.md Scope
 
@@ -128,6 +130,7 @@ Every Task tool invocation for code-writing agents MUST include:
 - Relevant CI checklist from `subagent-ci-checklist.md` ([GO-CI], [FE-CI], or [COMBO-CI])
 - Git Safety block ([GIT-SAFE])
 - Shared File Guard ([SHARED-FILE]) if running parallel agents
+- Hot File Guard ([HOT-FILES]) if any files are touched by 2+ parallel agents -- fill in the file list before pasting
 - Core principles reminder (Tier 0 rules are unconditional)
 - Failure to include checklists is a DevKit policy violation
 

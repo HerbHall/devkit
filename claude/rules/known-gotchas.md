@@ -1,7 +1,7 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 41
+entry_count: 43
 last_updated: "2026-03-22"
 ---
 
@@ -612,3 +612,32 @@ git push gitea main               # fast-forward from Gitea's perspective
 git push origin main              # sync merge commit back to GitHub
 git push gitea v1.2.3            # also push tags if any
 ```
+
+## 182. Samverk MCP Tools Are Project-Scoped -- Call set_project Before Querying
+
+**Added:** 2026-03-22 | **Source:** Samverk | **Status:** active
+
+**Platform:** Samverk MCP (all)
+**Issue:** `get_issue`, `list_issues`, `create_issue`, `get_pr`, `list_open_prs`, `search_issues`, and other project-scoped tools default to the **active** project. With multiple projects registered (e.g., samverk, devkit, synapset), the tool returns results for the active project silently — no error or warning — when the intended target is a different project. Example: `get_issue(20)` returned Samverk issue #20 when DevKit issue #20 was intended.
+**Fix:** Always call `set_project(name)` before any project-scoped tool call when the target is not the currently active project. Use `list_projects()` first to check which project is active.
+
+## 183. GitHub Squash PR Shows CONFLICTING Despite Clean Local Fast-Forward
+
+**Added:** 2026-03-22 | **Source:** Samverk | **Status:** active
+
+**Platform:** Git / GitHub (all)
+**Issue:** After `git rebase`, GitHub shows `mergeStateStatus: DIRTY / mergeable: CONFLICTING` even when `git merge origin/main` locally shows "Fast-forward" with zero conflicts. Root cause: GitHub squash-merge computes the squashed diff from the ORIGINAL pre-rebase base commit, not current main. The squashed patch no longer applies cleanly. This persists even after closing and reopening the PR.
+**Fix:** Create a fresh branch from current main and cherry-pick only unique commits:
+
+```bash
+git checkout main && git reset --hard origin/main
+git checkout -b fix/issue-N-fresh
+# Verify which commits are NOT already in main before cherry-picking:
+git show origin/main:path/to/file.go | grep 'the change'
+git cherry-pick <hash>  # skip any already merged via concurrent PRs
+git push origin fix/issue-N-fresh
+gh pr create ...
+```
+
+**Critical:** Before cherry-picking, verify each commit's changes are not already in main from parallel PRs. Cherry-picking an already-merged commit introduces a new conflict.
+**See also:** AP#146 (cherry-pick for stacked PRs), KG#178 (stacked PR branches)

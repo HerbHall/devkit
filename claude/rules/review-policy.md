@@ -67,6 +67,8 @@ agents review their own work using specialized review agents.
 | Before opening a PR | Code review (if not already done) | `/code-review` |
 | Any change to authentication, authorization, or secrets handling | Security review | `security-analyzer` agent |
 | Any PR adding, removing, or modifying authentication/session handling | Workflow continuity assessment | Review manually |
+| PR introducing a new abstraction that supersedes an existing one | Consumer audit documented in PR description | Code review |
+| PR modifying any function that generates agent prompts, CLI commands, or forge URLs | Check for hardcoded project/repo/path references | Code review |
 
 ### Workflow Continuity Assessment (auth/session PRs)
 
