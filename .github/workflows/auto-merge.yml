@@ -3,12 +3,17 @@ name: Auto-merge
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+  push:
+    branches: [main]
 
 jobs:
-  auto-merge:
-    name: Enable auto-merge
+  enable-auto-merge:
+    name: Enable auto-merge on PR open
     runs-on: ubuntu-latest
-    if: github.event.pull_request.draft == false
+    if: github.event_name == 'pull_request' && github.event.pull_request.draft == false
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - name: Enable auto-merge for conventional PRs
         run: |
@@ -22,5 +27,39 @@ jobs:
 
           echo "Enabling auto-merge for PR #${PR}: $TITLE"
           gh pr merge --auto --squash "$PR"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  update-behind-prs:
+    name: Update BEHIND PRs after merge
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Update all BEHIND PRs with auto-merge enabled
+        run: |
+          echo "Push to main detected — checking for BEHIND PRs with auto-merge enabled..."
+
+          UPDATED=0
+          FAILED=0
+
+          while IFS= read -r pr; do
+            [ -z "$pr" ] && continue
+            echo "Updating PR #$pr (BEHIND, auto-merge enabled)"
+            if gh pr update-branch "$pr" 2>&1; then
+              UPDATED=$((UPDATED + 1))
+            else
+              echo "  Warning: update-branch failed for PR #$pr (may already be up to date)"
+              FAILED=$((FAILED + 1))
+            fi
+          done < <(
+            gh pr list --state open \
+              --json number,autoMergeRequest,mergeStateStatus \
+              --jq '.[] | select(.autoMergeRequest != null) | select(.mergeStateStatus == "BEHIND") | .number'
+          )
+
+          echo "Done: updated=$UPDATED, skipped/failed=$FAILED"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
