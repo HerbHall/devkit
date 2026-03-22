@@ -27,13 +27,32 @@ every shell session:
 |---------|------------|---------|
 | `ANTHROPIC_API_KEY` | `anthropic/api-key` | Anthropic Claude API key |
 | `OPENAI_API_KEY` | `openai/api-key` | OpenAI API key |
-| `GITHUB_TOKEN` | `github/pat-personal` | GitHub fine-grained PAT (repos, actions, gh CLI) |
+| `GITHUB_TOKEN` | `github/pat-personal` | GitHub fine-grained PAT — **see exception below** |
 | `GITHUB_MCP_TOKEN` | `github/pat-mcp` | GitHub classic PAT (MCP servers, Docker MCP) |
 | `GITEA_TOKEN` | `gitea/pat-homelab` | Gitea PAT for gitea.herbhall.net |
 | `GITEA_DISPATCHER_TOKEN` | `gitea/pat-dispatcher` | Gitea dispatcher service token |
 | `CLOUDFLARE_API_TOKEN` | `cloudflare/api-token` | Cloudflare DNS API token |
 | `HOME_ASSISTANT_TOKEN` | `homeassistant/token` | Home Assistant long-lived access token |
 | `SAMVERK_AUTH_TOKEN` | `samverk/auth-token` | Samverk MCP bearer token |
+
+## GITHUB_TOKEN Exception
+
+**Do not set `GITHUB_TOKEN` as a persistent user env var on dev machines.**
+
+`gh` CLI uses keyring-stored OAuth by default. When `GITHUB_TOKEN` is set
+in the environment, it takes precedence over the keyring token (precedence:
+`GITHUB_TOKEN` env > keyring OAuth > `GH_TOKEN` env). Fine-grained PATs
+often lack the scopes needed for `gh issue` and `gh pr` operations, causing
+403 errors. See KG#120.
+
+The vault map entry (`github/pat-personal` → `GITHUB_TOKEN`) is retained
+for edge cases (e.g., CI scripts that need an explicit token), but
+`sync-secrets` should not be used to populate it in normal dev sessions.
+
+The PS profile startup check (`[vault] Warning: missing env vars`) does
+**not** include `GITHUB_TOKEN` — its absence is the correct state. Use the
+inline override `GITHUB_TOKEN= gh <command>` to clear any accidentally-set
+token in a specific command.
 
 ## Common Operations
 
