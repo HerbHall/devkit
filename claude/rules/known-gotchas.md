@@ -1,8 +1,8 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 37
-last_updated: "2026-03-21"
+entry_count: 41
+last_updated: "2026-03-22"
 ---
 
 # Known Gotchas
@@ -558,3 +558,57 @@ formatter={(value, _name, props) => {
 ```
 
 Applies to both AreaChart and BarChart Tooltip formatters in Recharts 3.x.
+
+## 178. Stacked PR Branches Contain Prior Branch Commits — Cherry-Pick Required
+
+**Added:** 2026-03-22 | **Source:** samverk | **Status:** active
+
+**Platform:** Git / GitHub (all)
+**Issue:** When feature branches are created by stacking (branch B based on branch A, so B contains A's commit + its own), after squash-merging A, a plain `git rebase origin/main` on B fails. Git replays A's original commit, which now conflicts with the squashed version already in main. The PR shows as "dirty" (conflicted) with no obvious cause.
+**Fix:** Identify B's unique commit with `git log --oneline origin/feature/B | head -1`, reset to `origin/main`, then `git cherry-pick <that-commit>`. Force-push. See AP#146.
+
+## 179. Dual-Remote Checkout Ambiguity With Same Branch Names
+
+**Added:** 2026-03-22 | **Source:** samverk | **Status:** active
+
+**Platform:** Git (dual-forge repos)
+**Issue:** In repos with two remotes (e.g., `origin`=GitHub and `gitea`=Gitea) that both track identical branch names, `git checkout feature/foo` fails: `fatal: 'feature/foo' matched multiple (2) remote tracking branches`. Common in dual-forge setups where feature branches are mirrored to both remotes.
+**Fix:** Always specify the remote explicitly: `git checkout --track origin/feature/foo -B feature/foo`. The `-B` flag creates or resets the local branch cleanly.
+
+## 180. Gitea Protected Branch Blocks All Direct Pushes Including Admin Token
+
+**Added:** 2026-03-22 | **Source:** samverk | **Status:** active
+
+**Platform:** Gitea (all)
+**Issue:** Unlike GitHub where admin users can bypass branch protection, Gitea's protection blocks ALL direct pushes — even with an admin token. Error: `Not allowed to push to protected branch main`. This affects migration syncs and emergency patches.
+**Fix:** Temporarily delete the rule, push, then re-create:
+
+```bash
+# Delete
+curl -X DELETE http://GITEA_INTERNAL/api/v1/repos/{owner}/{repo}/branch_protections/main \
+  -H "Authorization: token TOKEN"
+# Push
+git push gitea main
+# Re-create
+curl -X POST http://GITEA_INTERNAL/api/v1/repos/{owner}/{repo}/branch_protections \
+  -H "Authorization: token TOKEN" -H "Content-Type: application/json" \
+  -d '{"branch_name":"main","rule_name":"main","enable_push":false}'
+```
+
+Use internal URL (not Cloudflare tunnel) — tunnel strips the Authorization header. See KG#123.
+
+## 181. Dual-Forge Diverged Mains: Use Merge Commit, Not Force-Push
+
+**Added:** 2026-03-22 | **Source:** samverk | **Status:** active
+
+**Platform:** Git (dual-forge repos)
+**Issue:** When GitHub and Gitea mains diverge (each has unique commits the other lacks), force-pushing one forge's main to the other destroys the unique commits on the receiving side. This is irreversible.
+**Fix:** Use a merge commit — it preserves both sides and is accepted as a fast-forward by the receiving forge (because its current tip becomes a parent of the merge commit):
+
+```bash
+git fetch origin && git fetch gitea
+git merge gitea/main --no-edit   # runs on local main tracking GitHub
+git push gitea main               # fast-forward from Gitea's perspective
+git push origin main              # sync merge commit back to GitHub
+git push gitea v1.2.3            # also push tags if any
+```
