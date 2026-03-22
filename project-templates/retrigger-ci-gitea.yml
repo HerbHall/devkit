@@ -1,0 +1,100 @@
+# Re-trigger CI (Gitea)
+#
+# Fixes a Gitea Actions race condition where release-please branch
+# updates don't always trigger CI checks on the release PR.
+#
+# How it works:
+#   1. Triggers on push to release-please-- branches (the synchronize event)
+#   2. Posts a neutral comment on the associated PR to force webhook activity
+#      that causes Gitea to re-evaluate CI status for the head commit
+#
+# Gitea limitation: The workflow_run trigger is not supported in all
+# act_runner versions. This workflow uses push as the trigger instead,
+# which fires reliably when release-please updates the branch.
+#
+# Prerequisites:
+#   - CI_GITEA_TOKEN secret with repo write access
+#     (NOTE: do NOT name the secret GITEA_TOKEN — that prefix is reserved
+#     by Gitea and causes the secret to be silently empty at runtime)
+#
+# Note: Unlike the GitHub variant (retrigger-ci.yml) which uses workflow_run,
+# this workflow triggers on push and uses close+reopen via the Gitea API
+# to force CI re-evaluation. The pause between close and reopen is required
+# because Gitea's merge API may reject immediately after a force-push while
+# it recalculates merge status (see KG#123 in DevKit known-gotchas.md).
+
+name: Re-trigger CI (Gitea)
+
+on:
+  push:
+    branches:
+      - release-please--**
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  retrigger:
+    name: Re-trigger Stale Release PR
+    runs-on: ubuntu-latest
+    steps:
+      - name: Find and re-trigger release PR
+        env:
+          GITEA_URL: http://192.168.1.160:3000
+          CI_GITEA_TOKEN: ${{ secrets.CI_GITEA_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          REPO="${{ gitea.repository }}"
+          BRANCH="${{ gitea.ref_name }}"
+
+          echo "Triggered for branch: $BRANCH"
+
+          # Find open PR for this release-please branch
+          PR_NUMBER=$(curl -sL \
+            "$GITEA_URL/api/v1/repos/$REPO/pulls?state=open&limit=50" \
+            -H "Authorization: token $CI_GITEA_TOKEN" \
+            | python3 -c "
+import json, sys, os
+branch = os.environ.get('BRANCH', '')
+prs = json.load(sys.stdin)
+for pr in prs:
+    if pr.get('head', {}).get('label', '') == branch or pr.get('head', {}).get('ref', '') == branch:
+        print(pr['number'])
+        break
+")
+
+          if [ -z "$PR_NUMBER" ]; then
+            echo "No open release-please PR found for branch $BRANCH"
+            exit 0
+          fi
+
+          echo "Found release-please PR #$PR_NUMBER — re-triggering CI via close+reopen"
+
+          # Close the PR
+          CLOSE_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X PATCH "$GITEA_URL/api/v1/repos/$REPO/pulls/$PR_NUMBER" \
+            -H "Authorization: token $CI_GITEA_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"state":"closed"}')
+
+          if [ "$CLOSE_STATUS" != "201" ] && [ "$CLOSE_STATUS" != "200" ]; then
+            echo "WARN: Close returned HTTP $CLOSE_STATUS — continuing anyway"
+          fi
+
+          # Brief pause for Gitea to process (see KG#123: PR merge after rebase needs pause)
+          sleep 3
+
+          # Reopen the PR
+          OPEN_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X PATCH "$GITEA_URL/api/v1/repos/$REPO/pulls/$PR_NUMBER" \
+            -H "Authorization: token $CI_GITEA_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"state":"open"}')
+
+          if [ "$OPEN_STATUS" != "201" ] && [ "$OPEN_STATUS" != "200" ]; then
+            echo "WARN: Reopen returned HTTP $OPEN_STATUS"
+          fi
+
+          echo "PR #$PR_NUMBER re-opened — CI should trigger on the head commit"

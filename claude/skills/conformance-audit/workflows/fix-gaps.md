@@ -165,7 +165,10 @@ if [ ! -f "$PROJECT/release-please-config.json" ]; then
     cp "$DEVKIT_ROOT/project-templates/release-please-config.json" "$PROJECT/release-please-config.json"
     MISSING="$MISSING config"
 fi
-if [ ! -f "$PROJECT/.github/workflows/release-please.yml" ]; then
+RELEASE_PLEASE_WF_EXISTS=false
+[ -f "$PROJECT/.github/workflows/release-please.yml" ] && RELEASE_PLEASE_WF_EXISTS=true
+[ -f "$PROJECT/.gitea/workflows/release-please.yml" ] && RELEASE_PLEASE_WF_EXISTS=true
+if [ "$RELEASE_PLEASE_WF_EXISTS" = "false" ]; then
     mkdir -p "$PROJECT/.github/workflows"
     cp "$DEVKIT_ROOT/project-templates/release-please.yml" "$PROJECT/.github/workflows/release-please.yml"
     MISSING="$MISSING workflow"

@@ -86,8 +86,9 @@ A project may match multiple stacks (e.g., Go backend + Node frontend). Apply ch
 - **Pass criteria**: All three files exist:
   - `.release-please-manifest.json`
   - `release-please-config.json`
-  - `.github/workflows/release-please.yml`
+  - `.github/workflows/release-please.yml` **or** `.gitea/workflows/release-please.yml`
 - **Fail indicators**: Any of the three files missing
+- **Note**: Gitea projects use `.gitea/workflows/release-please.yml` — both paths are accepted
 - **Fix reference**: `project-templates/release-please-manifest.json`, `project-templates/release-please-config.json`, `project-templates/release-please.yml`
 
 ### 9. LICENSE
