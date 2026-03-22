@@ -4,8 +4,10 @@ Reusable VS Code setting snippets for project workspace files. These are **NOT a
 
 ## How to Use
 
+**Manual (copy-paste):**
+
 1. Open the fragment file relevant to your project type
-2. Copy the settings you need into your project's `.code-workspace` file or `.vscode/settings.json`
+2. Copy the settings you need into your project's `.code-workspace` file
 3. Adjust paths and project-specific values
 
 ```jsonc
@@ -15,10 +17,16 @@ Reusable VS Code setting snippets for project workspace files. These are **NOT a
         // Paste from typescript.jsonc, go.jsonc, etc.
     },
     "extensions": {
-        // Paste from extensions.jsonc
+        "recommendations": [
+            // Paste from extensions.jsonc for your stack
+        ]
     }
 }
 ```
+
+**Automated (DevKit skill):**
+
+Use `/workspace scaffold` to create a new workspace file with the correct fragment merged in automatically, or `/workspace sync-all` to sync extension recommendations across all registered projects. See `docs/vscode-workspaces.md` for full details on the workspace convention and automation tools.
 
 ## Important
 
@@ -32,4 +40,6 @@ Reusable VS Code setting snippets for project workspace files. These are **NOT a
 |----------|--------------------|
 | `typescript.jsonc` | TypeScript, React, Node.js |
 | `go.jsonc` | Go |
-| `extensions.jsonc` | Common extension recommendations by project type |
+| `extensions.jsonc` | Common extension recommendations by project type (all stacks) |
+
+Rust and C# projects fall back to base extensions only — no settings fragment exists yet. See `docs/vscode-workspaces.md` for the stack detection heuristic.
