@@ -567,6 +567,37 @@ MUI Popper needs `anchorEl` during render. `useRef` + `ref.current` triggers Rea
 **Context:** When a worktree agent returns a truncated response (mid-sentence, no PR created), do NOT re-run from scratch. The agent may have completed all code changes and only failed at the final summary/PR step.
 **Fix:** First inspect the worktree directory at `.claude/worktrees/agent-*/`. Review what files were changed with `git diff main...HEAD` inside the worktree. If substantial work exists, continue via `SendMessage` to the same agent or run a targeted agent for only the missing piece. This can save 70k+ tokens compared to a full re-run.
 
+### Identify hot files before launching a parallel wave
+
+**Context:** Parallel worktree agents work in isolation and cannot see each other's changes. When two agents both encounter the same pre-existing bug (e.g., a failing test) in the same file, both fix it independently. When the first PR merges, the second becomes CONFLICTING on that file. Discovered in samverk: two agents both added `-buildvcs=false` to `validator.go`.
+**Fix:** Before launching N agents in parallel, do a pre-launch hot-file audit:
+
+```bash
+# For each issue being paralleled, predict which files it will touch
+# (read the issue body / acceptance criteria)
+# Find overlaps -- those are hot files
+
+# List files each branch would realistically modify
+# If a file appears in 2+ agents' expected changes: it's hot
+```
+
+Pass the `[HOT-FILES]` block from `subagent-ci-checklist.md` to ALL agents in the wave, listing the hot files. Agents that encounter bugs in hot files should report but not fix them. After all PRs merge sequentially, check that the hot file fix landed exactly once.
+
+Also check for known pre-existing bugs before launching: run `go test ./...` or `pnpm test` on current main and note any failing tests. Tell all agents: "The following tests are already failing on main: [...]. Do not attempt to fix them -- they are pre-existing." This prevents multiple agents from independently applying the same fix.
+
+### Prune stale worktrees after parallel wave before any git push
+
+**Context:** Agent tool calls with `isolation: "worktree"` leave worktree directories behind after the agent finishes. These stale entries appear in `git worktree list`. Pre-push hooks that run `go test ./...` or `go build` may traverse into these non-git temp directories and fail with "error obtaining VCS status: exit status 128".
+**Fix:** After any parallel agent wave completes and before any `git push`:
+
+```bash
+git worktree list           # identify stale entries
+git worktree remove <path> --force   # for each stale worktree
+git worktree prune          # remove stale administrative files
+```
+
+Make this a standard post-wave step in wave orchestration. All agent-created worktrees should be removed before the first push of the merging sequence.
+
 ## 132. Exclude Release-Please CHANGELOG From Markdownlint
 
 **Added:** 2026-03-17 | **Source:** DevKit | **Status:** active
