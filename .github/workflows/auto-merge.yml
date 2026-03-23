@@ -1,0 +1,26 @@
+name: Auto-merge
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  auto-merge:
+    name: Enable auto-merge
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    steps:
+      - name: Enable auto-merge for conventional PRs
+        run: |
+          TITLE="${{ github.event.pull_request.title }}"
+          PR="${{ github.event.pull_request.number }}"
+
+          if ! echo "$TITLE" | grep -qE '^(chore|docs|ci|style|fix|refactor|test|feat|autolearn)(\(.+\))?(!)?: '; then
+            echo "Skipping: '$TITLE' does not match conventional commit prefix"
+            exit 0
+          fi
+
+          echo "Enabling auto-merge for PR #${PR}: $TITLE"
+          gh pr merge --auto --squash "$PR"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

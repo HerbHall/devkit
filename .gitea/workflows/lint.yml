@@ -224,3 +224,34 @@ jobs:
               sys.exit(1)
           print('All ' + str(len(files)) + ' JSON templates valid')
           PYEOF
+
+  merge:
+    name: Auto-merge
+    needs: [markdown, validate-skills, verify-skill-count, validate-rule-metadata, validate-templates]
+    if: gitea.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Merge safe PR types after CI passes
+        run: |
+          TITLE="${{ gitea.event.pull_request.title }}"
+          PR="${{ gitea.event.pull_request.number }}"
+          REPO="${{ gitea.repository }}"
+
+          if ! echo "$TITLE" | grep -qE '^(chore|docs|ci|style|fix|refactor|test|feat|autolearn)(\(.+\))?(!)?: '; then
+            echo "Skipping: '$TITLE' does not match a conventional commit prefix"
+            exit 0
+          fi
+
+          echo "Safe prefix detected -- merging PR #${PR}: $TITLE"
+          HTTP=$(curl -sw "%{http_code}" -o /dev/null -X POST \
+            -H "Authorization: token ${{ secrets.CI_GITEA_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{"Do":"squash","delete_branch_after_merge":true}' \
+            "https://gitea.herbhall.net/api/v1/repos/${REPO}/pulls/${PR}/merge")
+
+          if [ "$HTTP" = "200" ] || [ "$HTTP" = "204" ] || [ "$HTTP" = "405" ]; then
+            echo "Merge result: HTTP $HTTP (200/204=merged, 405=already merged)"
+          else
+            echo "Merge failed: HTTP $HTTP"
+            exit 1
+          fi
