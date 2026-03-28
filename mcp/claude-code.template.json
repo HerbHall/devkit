@@ -1,0 +1,26 @@
+{
+  "_comment": [
+    "Copy to ~/.claude/mcp.json for Claude Code CLI local MCP servers.",
+    "These servers connect directly over LAN -- no Cloudflare tunnel or OAuth required.",
+    "Replace <SAMVERK_HOST> with your Samverk/Synapset server IP (e.g., 192.168.1.162).",
+    "Replace <BEARER_TOKEN> with the shared MCP Bearer token from your credential vault.",
+    "Corresponding remote Claude.ai connectors are denied in settings.template.json",
+    "to prevent OAuth redirect conflicts in autonomous sessions."
+  ],
+  "mcpServers": {
+    "synapset": {
+      "type": "http",
+      "url": "http://<SAMVERK_HOST>:6464/mcp",
+      "headers": {
+        "Authorization": "Bearer <BEARER_TOKEN>"
+      }
+    },
+    "samverk": {
+      "type": "http",
+      "url": "http://<SAMVERK_HOST>:8080/mcp",
+      "headers": {
+        "Authorization": "Bearer <BEARER_TOKEN>"
+      }
+    }
+  }
+}

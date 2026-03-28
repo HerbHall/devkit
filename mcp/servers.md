@@ -19,6 +19,15 @@ Servers configured for Claude Desktop and Claude Code. Install in priority order
 | **sqlite** | `mcp-sqlite` | Local SQL database for persistent data | Node.js |
 | **docker-local** | `mcp-server-docker` | Local Docker container management | Python (uv) + Docker |
 
+## LAN-Direct (local network, Claude Code CLI only)
+
+| Server | Endpoint | Purpose | Requires |
+|--------|----------|---------|----------|
+| **samverk** | `http://<HOST>:8080/mcp` | Project management, issues, PRs, workers | Samverk server on LAN |
+| **synapset** | `http://<HOST>:6464/mcp` | Semantic memory and structured retrieval | Synapset server on LAN |
+
+These servers also have remote Claude.ai Custom Connectors for phone/web access via Cloudflare tunnels. The remote connectors use OAuth which fails in autonomous CLI sessions. Local config in `~/.claude/mcp.json` uses Bearer token auth directly. The `deny` list in `settings.template.json` prevents the remote connectors from interfering with local sessions.
+
 ## Optional (project-specific)
 
 | Server | Package | Purpose | Requires |
@@ -49,10 +58,11 @@ powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | ie
 ### Setup
 
 1. Copy `claude-desktop.template.json` to `%APPDATA%\Claude\claude_desktop_config.json`
-2. Replace all `<PLACEHOLDER>` values with your actual paths and tokens
-3. On Windows, replace `npx` with full path: `C:\Program Files\nodejs\npx.cmd`
-4. On Windows, replace `uvx` with full path: `C:\Users\<YOU>\.local\bin\uvx.exe`
-5. Restart Claude Desktop
+2. Copy `claude-code.template.json` to `~/.claude/mcp.json`
+3. Replace all `<PLACEHOLDER>` values with your actual paths and tokens
+4. On Windows, replace `npx` with full path: `C:\Program Files\nodejs\npx.cmd`
+5. On Windows, replace `uvx` with full path: `C:\Users\<YOU>\.local\bin\uvx.exe`
+6. Restart Claude Desktop / restart Claude Code sessions
 
 ### MCP_DOCKER Gateway
 
