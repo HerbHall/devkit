@@ -40,7 +40,7 @@ Clone into your workspace root directory. All DevKit paths are relative to this 
 # Choose your workspace root (examples)
 # Windows: ~/DevSpace, Linux/macOS: ~/workspace
 cd "$HOME/DevSpace"  # or wherever your projects live
-git clone https://github.com/HerbHall/devkit.git
+git clone https://gitea.herbhall.net/samverk/devkit.git
 ```
 
 ### Step 2: Create symlinks
@@ -71,8 +71,8 @@ Create `~/.devkit-config.json` with your machine-specific settings:
   "claudeHome": "/home/you/.claude",
   "os": "linux",
   "forge": {
-    "primary": "github",
-    "giteaUrl": null
+    "primary": "gitea",
+    "giteaUrl": "http://192.168.1.160:3000"
   },
   "installedProfiles": [],
   "lastSync": null
@@ -149,7 +149,7 @@ Setting up a second (or third, or fourth) machine follows the same steps with on
 
 ```bash
 cd "$HOME/workspace"
-git clone https://github.com/HerbHall/devkit.git
+git clone https://gitea.herbhall.net/samverk/devkit.git
 pwsh -NoProfile -File devkit/setup/sync.ps1 -Link
 ```
 
@@ -182,7 +182,7 @@ Check the pull log at `~/.claude/.devkit-pull.log` for recent activity.
 Once multiple machines are set up, the sync cycle looks like this:
 
 ```text
-                    GitHub (main branch)
+                   Gitea (main branch)
                    /         |         \
                   /          |          \
      auto-pull  /   merge PR |           \  auto-pull
@@ -199,6 +199,17 @@ Once multiple machines are set up, the sync cycle looks like this:
      sync/desktop-main ------+------ sync/laptop-dev
           (PR to main)                (PR to main)
 ```
+
+### Auto-managed files
+
+The `SessionStart.sh` hook auto-manages these files on every session start. Do not edit them manually -- changes will be overwritten.
+
+| File | Source | What it does |
+|------|--------|-------------|
+| `~/.claude/mcp.json` | `mcp/claude-code.template.json` + env vars | MCP server config with tokens from `$SAMVERK_AUTH_TOKEN` |
+| `~/.claude/settings.json` | Reconciled with `settings.template.json` | Deny rules and hooks merged from template |
+| `~/.devkit-config.json` | Auto-patched | `forge.primary` corrected to `"gitea"` if set to `"github"` |
+| Git origin remote | Auto-rewritten | Rewritten from GitHub to Gitea if still pointing to GitHub |
 
 ### Auto-pull on session start
 

@@ -113,8 +113,27 @@ Skills follow the same scoping principle as settings: **generic skills at user l
 
 DevKit's `claude/skills/` directory contains user-level skills. When scaffolding a new project, create project-specific skills directly in `<project>/.claude/skills/`.
 
+## Automated Reconciliation
+
+The `SessionStart.sh` hook automatically merges structural keys from `settings.template.json` into the live `~/.claude/settings.json` on every session start. This closes the gap where template changes (new `deny` rules, new hooks) never reached machines because `settings.json` was a one-time copy.
+
+**What gets reconciled:**
+
+- `permissions.deny` entries from template are added if missing
+- `allow` entries matching new deny wildcards are removed
+- Missing hook event types (UserPromptSubmit, Stop, SubagentStop) are added
+- Missing top-level keys (`enableAllProjectMcpServers`, `autoUpdatesChannel`) are added
+
+**What is preserved:**
+
+- All accumulated `allow` entries (interactive approvals)
+- All `enabledPlugins` customizations
+- All existing hooks (only missing event types are added)
+- A `.bak` backup is created before any modification
+
+**Propagation flow:** Template change committed to DevKit -> pulled on next session start -> reconciled into live settings automatically. Zero manual intervention.
+
 ## Background
 
 - [KG#61](../claude/rules/known-gotchas.md) -- Discovery that Claude Code settings do not cascade from parent directories
 - [AP#86](../claude/rules/autolearn-patterns.md) -- Archived pattern on linter/hook leaking cross-branch changes in settings files
-- [DevKit issue #131](https://github.com/HerbHall/devkit/issues/131) -- Project scaffolding should include `.claude/settings.json`

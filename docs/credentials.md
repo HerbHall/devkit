@@ -135,6 +135,21 @@ store secrets in plaintext files.
 - **Always** run `sync-secrets` after rotating a secret in the vault
 - Template files use `<PLACEHOLDER>` markers or `${ENV_VAR}` references, never real values
 
+## MCP Configuration Auto-Generation
+
+The `SessionStart.sh` hook generates `~/.claude/mcp.json` on every session start from `mcp/claude-code.template.json`. The template contains env var placeholders -- no secrets are stored in the repo.
+
+**Env vars used:**
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `SAMVERK_AUTH_TOKEN` | (required) | Bearer token for Samverk and Synapset MCP servers |
+| `SAMVERK_HOST` | `192.168.1.162` | LAN IP of the Samverk/Synapset server |
+
+If `SAMVERK_AUTH_TOKEN` is not set, mcp.json generation is skipped with a log message.
+
+**Adding a new MCP server:** Edit `mcp/claude-code.template.json` in the DevKit repo. The change propagates to all machines on next session start via git pull + regeneration.
+
 ## SSH Configuration
 
 Host aliases are configured in `~/.ssh/config` for common targets:

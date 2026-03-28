@@ -9,7 +9,7 @@ Personal development methodology and Claude Code configuration. Clone this repo 
 ```powershell
 # 1. Clone into your workspace root
 cd ~/workspace  # or wherever your projects live
-git clone https://github.com/HerbHall/devkit.git
+git clone https://gitea.herbhall.net/samverk/devkit.git
 
 # 2. Install everything
 pwsh -File devkit/setup/setup.ps1
