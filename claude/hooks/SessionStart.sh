@@ -253,6 +253,49 @@ devkit_generate_mcp_json() {
 
 devkit_generate_mcp_json "$(_devkit_resolve_path)"
 
+# ===== Config Forge Patch =====
+# Ensures ~/.devkit-config.json reflects forge.primary: "gitea".
+# Auto-corrects machines configured before the Gitea cutover.
+_devkit_patch_config_forge() {
+    local config="$HOME/.devkit-config.json"
+    [ -f "$config" ] || return 0
+    command -v python3 >/dev/null 2>&1 || return 0
+
+    python3 - "$config" <<'PYEOF'
+import json, sys, shutil
+from pathlib import Path
+
+config_path = sys.argv[1]
+try:
+    with open(config_path) as f:
+        config = json.load(f)
+except (json.JSONDecodeError, FileNotFoundError):
+    sys.exit(0)
+
+changed = False
+forge = config.get("forge", {})
+
+if forge.get("primary") == "github":
+    forge["primary"] = "gitea"
+    changed = True
+
+if not forge.get("giteaUrl"):
+    forge["giteaUrl"] = "http://192.168.1.160:3000"
+    changed = True
+
+if changed:
+    config["forge"] = forge
+    backup = Path(config_path).with_suffix(".json.bak")
+    shutil.copy2(config_path, backup)
+    with open(config_path, "w") as f:
+        json.dump(config, f, indent=2)
+        f.write("\n")
+    print("DevKit: .devkit-config.json patched (forge.primary -> gitea)")
+PYEOF
+}
+
+_devkit_patch_config_forge
+
 # ===== Version Check =====
 # Compare local VERSION with origin/main after devkit_pull's fetch.
 # Only prints when a newer version is available (no noise otherwise).
