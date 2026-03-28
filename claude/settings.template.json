@@ -14,7 +14,12 @@
       "Skill",
       "mcp__*"
     ],
-    "_comment_permissions": "These are broad permissions. For tighter control, replace with granular rules like: Bash(git add:*), Bash(gh run watch:*), Read(/path/to/project/**)"
+    "deny": [
+      "mcp__claude_ai_Samverk_MCP__*",
+      "mcp__claude_ai_Synapset_MCP__*"
+    ],
+    "_comment_permissions": "These are broad permissions. For tighter control, replace with granular rules like: Bash(git add:*), Bash(gh run watch:*), Read(/path/to/project/**)",
+    "_comment_deny": "Deny remote Claude.ai connectors that duplicate locally-configured MCP servers. Local servers (in ~/.claude/mcp.json) take precedence -- they use direct LAN connections with Bearer auth instead of OAuth through Cloudflare tunnels. Add entries here for any MCP server that has both a local and remote configuration."
   },
   "hooks": {
     "UserPromptSubmit": [
