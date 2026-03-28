@@ -106,6 +106,100 @@ devkit_pull() {
 
 devkit_pull
 
+# ===== Settings Reconciliation =====
+# Merges structural keys from settings.template.json into live settings.json.
+# Preserves all accumulated allow entries and local customizations.
+# Only adds keys present in template but missing from live settings.
+devkit_settings_reconcile() {
+    local devkit_path="$1"
+    local claude_dir="$HOME/.claude"
+    local live="$claude_dir/settings.json"
+    local template="$claude_dir/settings.template.json"
+
+    # Both files must exist
+    [ -f "$live" ] || return 0
+    [ -f "$template" ] || return 0
+
+    # Require python3 for JSON merge (bash can't safely parse JSON)
+    command -v python3 >/dev/null 2>&1 || return 0
+
+    python3 - "$template" "$live" <<'PYEOF'
+import json, sys, shutil
+from pathlib import Path
+
+template_path, live_path = sys.argv[1], sys.argv[2]
+
+try:
+    with open(template_path) as f:
+        template = json.load(f)
+    with open(live_path) as f:
+        live = json.load(f)
+except (json.JSONDecodeError, FileNotFoundError):
+    sys.exit(0)
+
+changed = False
+
+# --- Merge permissions.deny from template ---
+# Template deny entries are authoritative (fleet-wide policy).
+# Add any template deny entries missing from live settings.
+tmpl_deny = template.get("permissions", {}).get("deny", [])
+if tmpl_deny:
+    live.setdefault("permissions", {})
+    live_deny = live["permissions"].get("deny", [])
+    for entry in tmpl_deny:
+        if entry not in live_deny:
+            live_deny.append(entry)
+            changed = True
+    if live_deny:
+        live["permissions"]["deny"] = live_deny
+
+# --- Remove allow entries that are now denied ---
+# If template added a deny wildcard, remove matching specific allows.
+# e.g., deny "mcp__claude_ai_Samverk_MCP__*" removes
+#        allow "mcp__claude_ai_Samverk_MCP__list_issues"
+if tmpl_deny:
+    import fnmatch
+    live_allow = live.get("permissions", {}).get("allow", [])
+    filtered = []
+    for entry in live_allow:
+        denied = any(fnmatch.fnmatch(entry, pat) for pat in tmpl_deny)
+        if not denied:
+            filtered.append(entry)
+        else:
+            changed = True
+    if len(filtered) != len(live_allow):
+        live["permissions"]["allow"] = filtered
+
+# --- Merge hooks from template ---
+# Add hook event types (UserPromptSubmit, Stop, etc.) that exist in
+# template but are completely missing from live settings.
+tmpl_hooks = template.get("hooks", {})
+if tmpl_hooks:
+    live.setdefault("hooks", {})
+    for event_type, hooks_list in tmpl_hooks.items():
+        if event_type not in live["hooks"]:
+            live["hooks"][event_type] = hooks_list
+            changed = True
+
+# --- Merge enableAllProjectMcpServers from template ---
+for key in ["enableAllProjectMcpServers", "autoUpdatesChannel"]:
+    if key in template and key not in live:
+        live[key] = template[key]
+        changed = True
+
+if changed:
+    # Backup before modifying
+    backup = Path(live_path).with_suffix(".json.bak")
+    shutil.copy2(live_path, backup)
+    with open(live_path, "w") as f:
+        json.dump(live, f, indent=2)
+        f.write("\n")
+    print(f"DevKit: settings.json reconciled with template ({backup.name} backup created)")
+PYEOF
+}
+
+devkit_settings_reconcile "$(_devkit_resolve_path)"
+
 # ===== Version Check =====
 # Compare local VERSION with origin/main after devkit_pull's fetch.
 # Only prints when a newer version is available (no noise otherwise).
