@@ -41,6 +41,7 @@
         "project-templates/",
         "devspace/",
         "machine/",
+        "mcp/",
         "docs/",
         "scripts/",
         "METHODOLOGY.md"

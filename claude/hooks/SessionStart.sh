@@ -216,6 +216,43 @@ PYEOF
 
 devkit_settings_reconcile "$(_devkit_resolve_path)"
 
+# ===== MCP Config Generation =====
+# Generates ~/.claude/mcp.json from template with env var substitution.
+# Runs on every session start -- template is source of truth.
+# No secrets in repo -- tokens resolved from environment at runtime.
+devkit_generate_mcp_json() {
+    local devkit_path="$1"
+    local claude_dir="$HOME/.claude"
+    local target="$claude_dir/mcp.json"
+
+    [ -z "$devkit_path" ] && return 0
+
+    # Template may be symlinked or at the DevKit clone path
+    local template=""
+    if [ -f "$claude_dir/mcp/claude-code.template.json" ]; then
+        template="$claude_dir/mcp/claude-code.template.json"
+    elif [ -f "$devkit_path/mcp/claude-code.template.json" ]; then
+        template="$devkit_path/mcp/claude-code.template.json"
+    fi
+    [ -z "$template" ] && return 0
+
+    # Require auth token -- skip if not set
+    local auth_token="${SAMVERK_AUTH_TOKEN:-}"
+    if [ -z "$auth_token" ]; then
+        echo "DevKit: mcp.json skipped -- SAMVERK_AUTH_TOKEN not set"
+        return 0
+    fi
+
+    local host="${SAMVERK_HOST:-192.168.1.162}"
+
+    # Generate mcp.json from template with env var substitution
+    sed -e "s|\${SAMVERK_AUTH_TOKEN}|$auth_token|g" \
+        -e "s|\${SAMVERK_HOST}|$host|g" \
+        "$template" > "$target"
+}
+
+devkit_generate_mcp_json "$(_devkit_resolve_path)"
+
 # ===== Version Check =====
 # Compare local VERSION with origin/main after devkit_pull's fetch.
 # Only prints when a newer version is available (no noise otherwise).
