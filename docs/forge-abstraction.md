@@ -64,16 +64,16 @@ The `forge` field in `~/.devkit-config.json` (machine tier, per [ADR-0012](ADR-0
 ```json
 {
   "forge": {
-    "primary": "github",
-    "giteaUrl": null
+    "primary": "gitea",
+    "giteaUrl": "http://192.168.1.160:3000"
   }
 }
 ```
 
-- **primary** -- `"github"` or `"gitea"`. Overrides auto-detection when set.
-- **giteaUrl** -- Base URL of the Gitea instance (e.g., `https://git.example.com`). Required for `tea` login.
+- **primary** -- `"gitea"` (default) or `"github"`. Overrides auto-detection when set.
+- **giteaUrl** -- Base URL of the Gitea instance. Required for `tea` login and API calls.
 
-GitHub repos need no configuration. Gitea repos require `giteaUrl` to be set once per machine.
+**GitHub is deprecated as a forge.** The SessionStart hook automatically rewrites the `origin` remote from GitHub to Gitea and patches `forge.primary` to `"gitea"` on all fleet machines. GitHub references in older configs are auto-corrected on the next session start.
 
 ## Affected Skills
 

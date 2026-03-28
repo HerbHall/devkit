@@ -70,6 +70,22 @@ devkit_pull() {
         return 0
     fi
 
+    # Ensure origin points to Gitea (self-healing forge cutover)
+    local origin_url
+    origin_url=$(git -C "$devkit_path" remote get-url origin 2>/dev/null)
+    if [[ "$origin_url" == *"github.com"* ]]; then
+        git -C "$devkit_path" remote set-url origin "https://gitea.herbhall.net/samverk/devkit.git" 2>/dev/null
+        _devkit_log "REMOTE_REWRITTEN_TO_GITEA"
+        echo "DevKit: origin rewritten from GitHub to Gitea"
+        # Remove duplicate gitea remote if it points to the same URL
+        local gitea_url
+        gitea_url=$(git -C "$devkit_path" remote get-url gitea 2>/dev/null || true)
+        if [ "$gitea_url" = "https://gitea.herbhall.net/samverk/devkit.git" ]; then
+            git -C "$devkit_path" remote remove gitea 2>/dev/null || true
+            _devkit_log "REMOVED_DUPLICATE_GITEA_REMOTE"
+        fi
+    fi
+
     # Fetch with timeout (5s) to avoid blocking on network issues
     if ! timeout 5 git -C "$devkit_path" fetch origin 2>/dev/null; then
         _devkit_log "SKIPPED_OFFLINE"
