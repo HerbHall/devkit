@@ -70,10 +70,12 @@ The `forge` field in `~/.devkit-config.json` (machine tier, per [ADR-0012](ADR-0
 }
 ```
 
-- **primary** -- `"gitea"` (default) or `"github"`. Overrides auto-detection when set.
+- **primary** -- `"gitea"` (default) or `"github"`. Sets the default forge for new projects and DevKit itself. Does NOT override per-project forge detection.
 - **giteaUrl** -- Base URL of the Gitea instance. Required for `tea` login and API calls.
 
-**GitHub is deprecated as a forge.** The SessionStart hook automatically rewrites the `origin` remote from GitHub to Gitea and patches `forge.primary` to `"gitea"` on all fleet machines. GitHub references in older configs are auto-corrected on the next session start.
+**Per-project forge is authoritative.** Each project declares its intended forge in `.samverk/project.yaml` (`forge: gitea` or `forge: github`). The `primary` field in `.devkit-config.json` only affects DevKit's own operations (auto-pull, sync branches) and sets the default for new project scaffolding. Projects on GitHub, Gitea, or both are fully supported -- the forge wrappers detect per-repo from the git remote URL.
+
+The SessionStart hook auto-corrects the DevKit clone's origin remote to Gitea and patches `forge.primary` to `"gitea"` since DevKit itself lives on Gitea. This does not affect other project repos.
 
 ## Affected Skills
 

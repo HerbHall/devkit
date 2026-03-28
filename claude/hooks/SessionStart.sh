@@ -70,7 +70,8 @@ devkit_pull() {
         return 0
     fi
 
-    # Ensure origin points to Gitea (self-healing forge cutover)
+    # Ensure DevKit clone's origin points to Gitea (DevKit lives on Gitea).
+    # This only affects the DevKit repo, not other project repos.
     local origin_url
     origin_url=$(git -C "$devkit_path" remote get-url origin 2>/dev/null)
     if [[ "$origin_url" == *"github.com"* ]]; then
@@ -254,8 +255,9 @@ devkit_generate_mcp_json() {
 devkit_generate_mcp_json "$(_devkit_resolve_path)"
 
 # ===== Config Forge Patch =====
-# Ensures ~/.devkit-config.json reflects forge.primary: "gitea".
-# Auto-corrects machines configured before the Gitea cutover.
+# Sets the machine default forge to Gitea for DevKit operations and new project
+# scaffolding. Per-project forges are declared in .samverk/project.yaml and are
+# not affected by this setting. Projects on GitHub remain on GitHub.
 _devkit_patch_config_forge() {
     local config="$HOME/.devkit-config.json"
     [ -f "$config" ] || return 0
