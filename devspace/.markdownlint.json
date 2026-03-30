@@ -34,7 +34,10 @@
       "guidelines", "idiom", "idioms", "process", "forms",
       "validation", "diagnostics", "performance", "security",
       "testing", "accessibility", "stakeholders",
-      "criterion", "issue", "lesson"
+      "criterion", "issue", "lesson",
+      "evaluation_steps", "remediation", "success_criteria",
+      "workflows_index", "reference_index", "skill_coordination",
+      "diagnostics", "usage_recording"
     ]
   },
   "MD034": true,

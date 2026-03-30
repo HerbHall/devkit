@@ -35,7 +35,10 @@
       "validation", "diagnostics", "performance", "security",
       "testing", "accessibility", "stakeholders",
       "criterion", "issue", "lesson",
-      "scope", "focus_areas", "output_format"
+      "scope", "focus_areas", "output_format",
+      "evaluation_steps", "remediation", "success_criteria",
+      "workflows_index", "reference_index", "skill_coordination",
+      "usage_recording"
     ]
   },
   "MD034": true,

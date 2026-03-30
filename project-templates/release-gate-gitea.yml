@@ -1,0 +1,177 @@
+# Release Gate (Gitea)
+#
+# Evaluates release-please PRs on Gitea and auto-merges based on release tier.
+# Language-agnostic — only reads release-please manifest and git history.
+#
+# Prerequisites:
+#   - release-please configured (see release-please-config.json template)
+#   - .release-please-manifest.json at repo root
+#   - CI_GITEA_TOKEN secret with repo write access
+#     (NOTE: do NOT name the secret GITEA_TOKEN — that prefix is reserved
+#     by Gitea and causes the secret to be silently empty at runtime)
+#
+# Release tiers:
+#   Immediate  — Critical/security fix (fix!:, CVE, breaking change) -> auto-merge
+#   Threshold  — Minor+ version bump OR 5+ accumulated fixes -> auto-merge
+#   Batched    — Below threshold -> labeled, waits for manual merge
+#
+# Customization:
+#   - Fix threshold: change the "5" in FIX_COUNT comparison (line ~80)
+#   - Gitea internal URL: set GITEA_URL env var or update the default below
+#   - Merge method: change "squash" in the merge API payload (line ~140)
+
+name: Release Gate
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  evaluate:
+    name: Evaluate Release
+    if: >-
+      startsWith(github.event.pull_request.head.ref, 'release-please--')
+    runs-on: ubuntu-latest
+    outputs:
+      decision: ${{ steps.gate.outputs.decision }}
+      reason: ${{ steps.gate.outputs.reason }}
+      version_from: ${{ steps.gate.outputs.version_from }}
+      version_to: ${{ steps.gate.outputs.version_to }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Evaluate release criteria
+        id: gate
+        run: |
+          set -euo pipefail
+
+          # Get version info from manifest
+          CURRENT=$(git show origin/main:.release-please-manifest.json 2>/dev/null | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('.', list(d.values())[0]))" 2>/dev/null || echo "0.0.0")
+          NEW=$(python3 -c "import json; d=json.load(open('.release-please-manifest.json')); print(d.get('.', list(d.values())[0]))")
+          echo "version_from=$CURRENT" >> "$GITHUB_OUTPUT"
+          echo "version_to=$NEW" >> "$GITHUB_OUTPUT"
+
+          CUR_MAJOR=$(echo "$CURRENT" | cut -d. -f1)
+          CUR_MINOR=$(echo "$CURRENT" | cut -d. -f2)
+          NEW_MAJOR=$(echo "$NEW" | cut -d. -f1)
+          NEW_MINOR=$(echo "$NEW" | cut -d. -f2)
+
+          # Get commits since last release tag
+          LAST_TAG=$(git describe --tags --abbrev=0 origin/main 2>/dev/null || echo "")
+          if [ -n "$LAST_TAG" ]; then
+            COMMIT_LOG=$(git log "${LAST_TAG}..origin/main" --format="%s" 2>/dev/null || echo "")
+          else
+            COMMIT_LOG=$(git log origin/main --format="%s" 2>/dev/null || echo "")
+          fi
+
+          # Count changelog entries by type
+          FEAT_COUNT=$(echo "$COMMIT_LOG" | grep -c "^feat" || true)
+          FIX_COUNT=$(echo "$COMMIT_LOG" | grep -c "^fix" || true)
+          TOTAL=$((FEAT_COUNT + FIX_COUNT))
+
+          echo "Commits since ${LAST_TAG:-beginning}: feat=$FEAT_COUNT fix=$FIX_COUNT total=$TOTAL"
+          echo "Version: $CURRENT -> $NEW"
+
+          # Tier 1: Immediate — critical/security fix
+          HAS_CRITICAL=false
+          if echo "$COMMIT_LOG" | grep -qiE '^fix!:|BREAKING CHANGE'; then
+            HAS_CRITICAL=true
+          fi
+          if echo "$COMMIT_LOG" | grep -qiE 'CVE-|security|vulnerability|critical'; then
+            HAS_CRITICAL=true
+          fi
+
+          if [ "$HAS_CRITICAL" = "true" ]; then
+            echo "decision=immediate" >> "$GITHUB_OUTPUT"
+            echo "reason=Critical or security fix detected" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Tier 2: Threshold — minor/major bump OR 5+ accumulated fixes
+          if [ "$NEW_MAJOR" -gt "$CUR_MAJOR" ]; then
+            echo "decision=threshold" >> "$GITHUB_OUTPUT"
+            echo "reason=Major version bump ($CURRENT -> $NEW)" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ "$NEW_MINOR" -gt "$CUR_MINOR" ]; then
+            echo "decision=threshold" >> "$GITHUB_OUTPUT"
+            echo "reason=Minor version bump with $FEAT_COUNT feature(s) ($CURRENT -> $NEW)" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ "$FIX_COUNT" -ge 5 ]; then
+            echo "decision=threshold" >> "$GITHUB_OUTPUT"
+            echo "reason=$FIX_COUNT bug fixes accumulated ($CURRENT -> $NEW)" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Below threshold — stay batched
+          echo "decision=batched" >> "$GITHUB_OUTPUT"
+          echo "reason=Patch only with $TOTAL change(s), below threshold ($CURRENT -> $NEW)" >> "$GITHUB_OUTPUT"
+
+      - name: Post decision comment
+        env:
+          GITEA_URL: http://192.168.1.160:3000
+          CI_GITEA_TOKEN: ${{ secrets.CI_GITEA_TOKEN }}
+        run: |
+          DECISION="${{ steps.gate.outputs.decision }}"
+          REASON="${{ steps.gate.outputs.reason }}"
+          FROM="${{ steps.gate.outputs.version_from }}"
+          TO="${{ steps.gate.outputs.version_to }}"
+          PR_NUMBER="${{ gitea.event.pull_request.number }}"
+          REPO="${{ gitea.repository }}"
+
+          if [ "$DECISION" = "immediate" ] || [ "$DECISION" = "threshold" ]; then
+            ICON="+"
+            ACTION="Auto-merge enabled."
+          else
+            ICON="*"
+            ACTION="Waiting for more changes or manual merge."
+          fi
+
+          BODY="### $ICON Release Gate: \`$DECISION\`
+
+**Version**: $FROM -> $TO
+**Reason**: $REASON
+**Action**: $ACTION"
+
+          curl -sL -X POST "$GITEA_URL/api/v1/repos/$REPO/issues/$PR_NUMBER/comments" \
+            -H "Authorization: token $CI_GITEA_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"body\": $(echo "$BODY" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))')}"
+
+  auto-merge:
+    name: Auto-merge Release
+    needs: evaluate
+    if: needs.evaluate.outputs.decision == 'immediate' || needs.evaluate.outputs.decision == 'threshold'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enable auto-merge via Gitea API
+        env:
+          GITEA_URL: http://192.168.1.160:3000
+          CI_GITEA_TOKEN: ${{ secrets.CI_GITEA_TOKEN }}
+        run: |
+          PR_NUMBER="${{ gitea.event.pull_request.number }}"
+          REPO="${{ gitea.repository }}"
+
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X POST "$GITEA_URL/api/v1/repos/$REPO/pulls/$PR_NUMBER/merge" \
+            -H "Authorization: token $CI_GITEA_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"Do":"squash","merge_message_field":"squash"}')
+
+          # 200/204 = merged, 405 = already merged — all are success
+          if [ "$STATUS" != "200" ] && [ "$STATUS" != "204" ] && [ "$STATUS" != "405" ]; then
+            echo "Merge failed with HTTP $STATUS"
+            exit 1
+          fi
+          echo "Merge completed (HTTP $STATUS)"

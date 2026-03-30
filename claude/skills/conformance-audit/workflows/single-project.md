@@ -154,7 +154,10 @@ fi
 MISSING=""
 [ ! -f "$PROJECT/.release-please-manifest.json" ] && MISSING="$MISSING manifest"
 [ ! -f "$PROJECT/release-please-config.json" ] && MISSING="$MISSING config"
-[ ! -f "$PROJECT/.github/workflows/release-please.yml" ] && MISSING="$MISSING workflow"
+RELEASE_PLEASE_WF=false
+[ -f "$PROJECT/.github/workflows/release-please.yml" ] && RELEASE_PLEASE_WF=true
+[ -f "$PROJECT/.gitea/workflows/release-please.yml" ] && RELEASE_PLEASE_WF=true
+[ "$RELEASE_PLEASE_WF" = "false" ] && MISSING="$MISSING workflow"
 if [ -z "$MISSING" ]; then
     echo "PASS: release-please fully configured"
 else

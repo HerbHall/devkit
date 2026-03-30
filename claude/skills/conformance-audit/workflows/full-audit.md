@@ -104,8 +104,11 @@ ls "$project/.github/workflows/"*ci* "$project/.github/workflows/"*lint* "$proje
 # Check 7: .editorconfig (root = false)
 [ -f "$project/.editorconfig" ] && ! grep -q 'root = true' "$project/.editorconfig"
 
-# Check 8: release-please
-[ -f "$project/.release-please-manifest.json" ] && [ -f "$project/release-please-config.json" ] && [ -f "$project/.github/workflows/release-please.yml" ]
+# Check 8: release-please (accepts .github/ or .gitea/ workflows path)
+RELEASE_PLEASE_WF=false
+[ -f "$project/.github/workflows/release-please.yml" ] && RELEASE_PLEASE_WF=true
+[ -f "$project/.gitea/workflows/release-please.yml" ] && RELEASE_PLEASE_WF=true
+[ -f "$project/.release-please-manifest.json" ] && [ -f "$project/release-please-config.json" ] && [ "$RELEASE_PLEASE_WF" = "true" ]
 
 # Check 9: LICENSE
 [ -f "$project/LICENSE" ]
