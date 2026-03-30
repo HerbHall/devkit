@@ -1,5 +1,22 @@
 # Changelog
 
+## [2.8.0](https://github.com/HerbHall/devkit/compare/v2.7.1...v2.8.0) (2026-03-30)
+
+
+### Features
+
+* add autolearn integration workflow for doc-review findings ([#583](https://github.com/HerbHall/devkit/issues/583)) ([f26d008](https://github.com/HerbHall/devkit/commit/f26d008b3051c7c92b5eeeb3bd3fa9a654305397))
+* add doc-review Phase 0/1 artifacts ([#580](https://github.com/HerbHall/devkit/issues/580)) ([b61bd03](https://github.com/HerbHall/devkit/commit/b61bd0307db8353d1ced5986b6d1589b04667a0e))
+* **agent:** add executable reference validation to doc-reviewer ([#585](https://github.com/HerbHall/devkit/issues/585)) ([aae3bdc](https://github.com/HerbHall/devkit/commit/aae3bdca187e58c2d0cb9741342fe00f97d82f95)), closes [#579](https://github.com/HerbHall/devkit/issues/579)
+* DevKit Zone infrastructure, tool version registry, and family folder structure ([ff10d8b](https://github.com/HerbHall/devkit/commit/ff10d8be85cadab540c09b59c89f2887bf216a6a))
+* DevKit Zone infrastructure, tool version registry, and family folder structure ([f63f1e8](https://github.com/HerbHall/devkit/commit/f63f1e88b7ad90f43f69fe04d8aadd090ba91f70))
+* **doc-review:** rewrite consistency workflow to use Synapset docs pool ([#584](https://github.com/HerbHall/devkit/issues/584)) ([1d5c902](https://github.com/HerbHall/devkit/commit/1d5c902611d4818ea7d74be94ad6f5e3e3fe41fb))
+
+
+### Bug Fixes
+
+* **rules:** replace nonexistent docker-qc targets with generic verification language ([#582](https://github.com/HerbHall/devkit/issues/582)) ([430d147](https://github.com/HerbHall/devkit/commit/430d1473883b8aa327fa383f3bca925c05748c3c)), closes [#578](https://github.com/HerbHall/devkit/issues/578)
+
 ## [2.7.1](https://github.com/HerbHall/devkit/compare/v2.7.0...v2.7.1) (2026-03-18)
 
 
