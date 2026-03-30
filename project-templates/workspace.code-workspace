@@ -1,0 +1,39 @@
+{
+    // DevKit workspace template — see docs/vscode-workspaces.md for the convention
+    //
+    // Usage:
+    //   1. Copy this file to <project-root>/<project-name>.code-workspace
+    //   2. Replace the settings block with the relevant devspace/shared-vscode/<stack>.jsonc fragment
+    //   3. Replace extensions.recommendations with the stack-specific list from
+    //      devspace/shared-vscode/extensions.jsonc
+    //   4. Remove settings that duplicate your VS Code User Settings
+    //
+    // Or use: /workspace scaffold  (DevKit skill — auto-detects stack and merges fragments)
+    "folders": [
+        {
+            "path": "."
+        }
+    ],
+    "settings": {
+        // Merge stack-specific settings from devspace/shared-vscode/<stack>.jsonc here.
+        // Remove this comment block after merging.
+        //
+        // Go projects:         copy from go.jsonc
+        // TypeScript projects: copy from typescript.jsonc
+        // Rust projects:       no fragment yet — leave settings empty
+        // Other/base:          leave settings empty
+    },
+    "extensions": {
+        "recommendations": [
+            // Merge from devspace/shared-vscode/extensions.jsonc for your stack.
+            // Example for a Go project:
+            //   "golang.go",
+            //   "zxh404.vscode-proto3"
+            //
+            // Always include general extensions if not in your global VS Code profile:
+            //   "eamodio.gitlens",
+            //   "davidanson.vscode-markdownlint",
+            //   "editorconfig.editorconfig"
+        ]
+    }
+}

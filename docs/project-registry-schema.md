@@ -30,6 +30,11 @@ The project registry tracks which projects on a machine consume DevKit configura
       "samverk": {
         "managed": "boolean",
         "phase": "string (current lifecycle phase)"
+      },
+      "vscodeWorkspace": {
+        "path": "string (absolute path to .code-workspace file, or null if not present)",
+        "lastSynced": "string (ISO 8601 datetime, or null)",
+        "stackProfile": "string (go | typescript | rust | base — detected or overridden stack)"
       }
     }
   ]
@@ -53,6 +58,10 @@ The project registry tracks which projects on a machine consume DevKit configura
 | `samverk` | object? | Optional Samverk overlay status (present only for Samverk-managed projects) |
 | `samverk.managed` | boolean | Whether the Samverk overlay is applied |
 | `samverk.phase` | string | Current lifecycle phase (read from `.samverk/project.yaml`) |
+| `vscodeWorkspace` | object? | Optional VS Code workspace tracking (populated by `devkit workspace sync`) |
+| `vscodeWorkspace.path` | string\|null | Absolute path to `.code-workspace` file, or `null` if not present |
+| `vscodeWorkspace.lastSynced` | string\|null | Timestamp of last extension sync (ISO 8601 datetime), or `null` |
+| `vscodeWorkspace.stackProfile` | string | Detected or overridden stack: `go`, `typescript`, `rust`, or `base` |
 
 ## Example
 
@@ -72,6 +81,11 @@ The project registry tracks which projects on a machine consume DevKit configura
       "samverk": {
         "managed": true,
         "phase": "execution"
+      },
+      "vscodeWorkspace": {
+        "path": "D:\\DevSpace\\SubNetree\\subnetree.code-workspace",
+        "lastSynced": "2026-03-21T10:00:00Z",
+        "stackProfile": "go"
       }
     },
     {
