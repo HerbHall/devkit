@@ -363,3 +363,79 @@ Synapset: pool=devkit, ID=606
 
 Parallel Agent Orchestration legacy stash/pop approach. Superseded by AP#127 (worktree isolation).
 Synapset: pool=devkit, ID=607
+
+## Archived 2026-03-20: Rules compaction (niche/workspace-specific entries)
+
+## AP#50 (archived 2026-03-20)
+
+VS Code Auto-Open File on Workspace Start via tasks.json with runOn: folderOpen.
+Synapset: pool=devkit, ID=690
+
+## AP#51 (archived 2026-03-20)
+
+Two-Tier Session Startup: VS Code folderOpen task + Claude Code SessionStart hook for DASHBOARD.md.
+Synapset: pool=devkit, ID=691
+
+## AP#74 (archived 2026-03-20)
+
+Iterative Bootstrap Debugging on New Machines -- run end-to-end, fix all in single pass.
+Synapset: pool=devkit, ID=692
+
+## AP#110 (archived 2026-03-20)
+
+Docker Desktop Extension Marketplace Submission Checklist. Project-specific to Runbooks. See also KG#77.
+Synapset: pool=devkit, ID=693
+
+## Archived 2026-03-21: Rules compaction (size reduction)
+
+### Infrastructure and project-specific entries
+
+## AP#69 (archived 2026-03-21)
+
+GitHub API as CLI template fallback on Windows MSYS -- use gh api with --jq and base64 -d.
+Synapset: pool=devkit, ID=742
+
+## AP#88 (archived 2026-03-21)
+
+Agent-generated markdown needs MD038 check -- subagents produce code spans with trailing spaces.
+Synapset: pool=devkit, ID=743
+
+## AP#97 (archived 2026-03-21)
+
+Combine complementary issues into single PR with Closes #X, Closes #Y to reduce CI runs.
+Synapset: pool=devkit, ID=744
+
+## AP#120 (archived 2026-03-21)
+
+Secrets block in ~/.devkit-config.json for PAT distribution -- new-project.ps1 auto-sets on new repos.
+Synapset: pool=devkit, ID=745
+
+## AP#121 (archived 2026-03-21)
+
+Periodic project audit via Explore subagent covering 10 dimensions to catch documentation drift.
+Synapset: pool=devkit, ID=746
+
+## AP#126 (archived 2026-03-21)
+
+Cloudflare Email Routing replaces MailChannels for Workers -- use send_email binding with EmailMessage.
+Synapset: pool=devkit, ID=747
+
+## AP#133 (archived 2026-03-21)
+
+Prefer dynamic MCP discovery over static prompt files -- static files duplicate and contradict live state.
+Synapset: pool=devkit, ID=748
+
+## AP#134 (archived 2026-03-21)
+
+Issue specs must reference verified exported API -- check method exists and is exported before writing spec.
+Synapset: pool=devkit, ID=749
+
+## AP#138 (archived 2026-03-21)
+
+Two-org Gitea lifecycle model: samverk-research for exploratory work, samverk for production projects.
+Synapset: pool=devkit, ID=750
+
+## AP#140 (archived 2026-03-21)
+
+Dual-forge force-sync procedure: enable admin push, git push --force, restore branch protection.
+Synapset: pool=devkit, ID=751

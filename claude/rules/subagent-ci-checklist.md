@@ -74,9 +74,11 @@ finish. To help:
 
 Run these checks and fix any errors:
 
+0. If you are modifying more than one file, run `/code-review` before committing. This is not optional.
 1. If you added/removed dependencies in package.json: `cd web && pnpm install` to sync pnpm-lock.yaml
 2. `npx tsc --noEmit` -- TypeScript compilation
-3. `npx eslint src/<your-files>` -- Lint check
+3. `pnpm lint` -- Lint check (ESLint v9 requires flat config; `npx eslint` alone fails if eslint.config.js is missing)
+4. For any new or modified `fetchJSON<T>()` call: curl the live endpoint and confirm actual JSON field names match the TypeScript interface exactly. If the response is wrapped (e.g., `{items: T[], total: number}`), unwrap in the API client function, not in the component.
 
 Common frontend CI failures to watch for:
 - pnpm-lock.yaml drift: CI uses `--frozen-lockfile`. If you added shadcn/ui components or new deps, `pnpm install` MUST run to update the lockfile.
@@ -85,6 +87,7 @@ Common frontend CI failures to watch for:
 - Unused imports: ESLint catches imports TypeScript doesn't flag. Verify every named import is referenced.
 - Setup wizard tests: If modifying setup.tsx steps, update setup.test.tsx step navigation helpers.
 - shadcn/ui imports: Verify component names match what's actually exported (CardHeader vs CardContent, etc.)
+- For any bug fix that reaches a component: add a test that would have caught the bug. Reference which production bug the test prevents in a comment.
 ```
 
 ## Go Agent Checklist [GO-CI] (paste into Go agent prompts)
@@ -105,6 +108,7 @@ Run these checks and fix any errors:
 5. If you added/modified HTTP handlers with swagger annotations (@Summary, @Router, @Param, etc.):
    `go run github.com/swaggo/swag/cmd/swag@v1.16.4 init -g cmd/<app>/main.go -o api/swagger --parseDependency --parseInternal`
    Include the regenerated api/swagger/ files with your other changes.
+6. If you added a new persistence mechanism (file write, database insert, cache write), write a test that exercises the full read->write->restart->read cycle. Verify data survives a simulated restart (recreate the struct from the file/DB). Verify stale/expired data is not loaded.
 
 Common Go CI failures to watch for:
 - gosec G101: Constants near credential code get flagged. Add `//nolint:gosec // G101: <reason>`

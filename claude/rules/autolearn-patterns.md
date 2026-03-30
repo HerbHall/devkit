@@ -1,8 +1,8 @@
 ---
 description: Learned patterns from past sessions. Read when encountering similar situations.
 tier: 2
-entry_count: 68
-last_updated: "2026-03-18"
+entry_count: 72
+last_updated: "2026-03-30"
 ---
 
 # Learned Patterns
@@ -166,20 +166,7 @@ Structure as: Research issues -> Implementation issues -> Gate issue (checklist)
 ### Dual-forge rebase requires --onto to replay only feature commits
 
 **Context:** Projects using two forges (e.g., GitHub as `origin` + Gitea as `gitea` remote) have the same logical history but different commit SHAs (squash-merged separately into each). A feature branch based on GitHub `main` cannot fast-forward onto Gitea `main`. Naive `git rebase gitea/main feat/branch` replays 80+ commits from the divergence point, producing conflicts on already-merged unrelated commits.
-**Fix:** Use `--onto` to replay only the feature commits:
-
-```bash
-# Find the last GitHub main commit the branch was based on
-git log --oneline main | head -5  # e.g. d96284e
-
-# Replay only commits after that point onto Gitea main
-git rebase --onto gitea/main d96284e feat/branch
-
-# Fetch first (KG#123: Gitea rejects force-push with stale info)
-git fetch gitea feat/branch
-git push --force-with-lease gitea feat/branch
-```
-
+**Fix:** `git rebase --onto gitea/main <last-github-main-commit> feat/branch` replays only feature commits. Find the fork point with `git log --oneline main | head -5`. Then `git fetch gitea feat/branch && git push --force-with-lease gitea feat/branch`.
 **See also:** KG#123 (Gitea force-push requires fetch first)
 
 ## 23. Go Slice Assignment Creates Alias, Not Copy
@@ -266,22 +253,6 @@ Check CI on ALL PRs first. Merge green sequentially (rebase between each). Close
 **Context:** "Create X" issues may already have deliverables in the codebase. Planning without checking leads to overscoped work.
 **Fix:** Search codebase first: `grep -r "<keyword>" --include="*.svg" --include="*.md" .` Can reduce scope by 90%.
 
-## 50. VS Code Auto-Open File on Workspace Start
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** tooling
-**Context:** Auto-open a file when VS Code loads a workspace without an extension.
-**Fix:** Create `.vscode/tasks.json` with `runOn: folderOpen` task. First open prompts "Allow?" -- permanent after that.
-
-## 51. Two-Tier Session Startup: Static File + Interactive Hook
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** workflow-pattern
-**Context:** Need both IDE and Claude Code oriented on project state at startup.
-**Fix:** Combine: (1) VS Code task (`runOn: folderOpen`) auto-opens DASHBOARD.md, (2) Claude Code SessionStart hook injects `/dashboard` instruction. Static file orients human; hook provides live routing.
-
 ## 57. JSX Short-Circuit with `unknown` Type Is Not ReactNode
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
@@ -305,14 +276,6 @@ Check CI on ALL PRs first. Merge green sequentially (rebase between each). Close
 **Category:** testing-pattern
 **Context:** E2E tests asserting specific widget names or exact data values break when UI changes labels or seed data differs.
 **Fix:** Assert stable structural elements: page headings, primary action buttons, navigation links, generic data labels. Avoid exact numeric values or feature-specific section names.
-
-## 69. GitHub API as CLI Template Fallback
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** tooling-workaround
-**Context:** CLI scaffold/init commands fail on Windows MSYS (hanging prompts, Unicode crashes).
-**Fix:** Fetch templates via `gh api repos/{owner}/{repo}/contents/{path} --jq '.content' | base64 -d`.
 
 ## 71. Scope CI Lint to Maintained Files on First Introduction
 
@@ -348,14 +311,6 @@ Windows Store Python aliases hang forever. `command -v` resolves them as valid b
 ### PowerShell temp file from MSYS bash
 
 Inline PowerShell from MSYS bash breaks with `$env:PATH`, special chars. Write temp `.ps1` file using single-quoted heredoc (`'PSEOF'`), execute with `powershell.exe -NoProfile -File /tmp/cmd.ps1 2>&1`.
-
-## 74. Iterative Bootstrap Debugging on New Machines
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** workflow-pattern
-**Context:** First-time bootstrap surfaces cascading issues. Each phase may expose issues invisible until prior phases complete.
-**Fix:** Run end-to-end, capture full output, fix ALL failures in single pass. Multiple failures may share root cause (e.g., PATH staleness).
 
 ## 77. Small Wave Without Subagent for Focused Changes
 
@@ -453,13 +408,6 @@ Inline PowerShell from MSYS bash breaks with `$env:PATH`, special chars. Write t
 **Context:** Parallel agents modifying same file + linter/hook can merge both changes. Committing includes other agent's additions.
 **Fix:** After stash/pop sorting, diff shared file against main. Remove cross-branch additions before committing.
 
-## 88. Agent-Generated Markdown Needs MD038 Check
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** correction
-**Fix:** Subagents produce code spans with trailing spaces triggering MD038. Run `npx markdownlint-cli2 file.md` on agent-generated markdown before committing.
-
 ## 90. golangci-lint v2 Migration (Consolidated Reference)
 
 **Added:** 2026-02-17 | **Source:** Multiple | **Status:** active
@@ -489,14 +437,6 @@ Inline PowerShell from MSYS bash breaks with `$env:PATH`, special chars. Write t
 **Context:** `agent:human` issues need design decisions before implementation. One at a time wastes attention.
 **Fix:** Batch into single interactive pass with focused questions, capture decisions, launch background agents in parallel.
 
-## 97. Combine Complementary Issues Into Single PR
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Category:** workflow-pattern
-**Context:** Two issues where one's research feeds the other's requirements.
-**Fix:** Single PR with both deliverables. Use `Closes #X, Closes #Y`. Reduces CI runs and merge conflict risk.
-
 ## 100. Vitest Setup for React + Vite Projects
 
 **Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
@@ -512,15 +452,6 @@ Inline PowerShell from MSYS bash breaks with `$env:PATH`, special chars. Write t
 **Category:** workflow-pattern
 **Context:** Sprint achieved zero rework (all CI-green first pass) vs previous 1-3 fix-push cycles per PR.
 **Fix:** Key factors: (1) specific CI commands in prompts, (2) wave ordering respects deps, (3) read-before-write requirement, (4) single responsibility per agent.
-
-## 110. Docker Desktop Extension Marketplace Submission Checklist
-
-**Added:** 2026-03-02 | **Source:** Runbooks, RunNotes | **Status:** active
-
-**Category:** process-pattern
-**Context:** Marketplace submission has multiple prerequisites. Missing any causes rejection.
-**Fix:** Checklist: (1) Dockerfile labels (screenshots JSON, changelog HTML, additional-urls), (2) .hadolint.yaml ignores DL3048/DL3045, (3) multi-arch (amd64+arm64), (4) `docker extension validate`, (5) submit via docker/extensions-submissions.
-**See also:** KG#77
 
 ## 111. React Compiler and MUI Interaction Patterns (Consolidated Reference)
 
@@ -565,23 +496,6 @@ MUI Popper needs `anchorEl` during render. `useRef` + `ref.current` triggers Rea
 **Category:** process-pattern
 **Fix:** Always update `entry_count` and `last_updated` in YAML frontmatter when adding or removing entries from `known-gotchas.md` or `autolearn-patterns.md`.
 
-## 120. Secrets Block in ~/.devkit-config.json for PAT Distribution
-
-**Added:** 2026-03-08 | **Source:** DevKit | **Status:** active
-
-**Category:** scaffolding-pattern
-**Context:** New repos need PATs (e.g., `RELEASE_PLEASE_TOKEN`) as GitHub Actions secrets.
-**Fix:** Store in `~/.devkit-config.json` under `.Secrets`. `new-project.ps1` auto-sets them. Use `Set-DevkitSecrets.ps1` to backfill. See KG#94.
-
-## 121. Periodic Project Audit via Explore Subagent
-
-**Added:** 2026-03-08 | **Source:** DevKit | **Status:** active
-
-**Category:** process-pattern
-**Context:** Documentation, skill lists, CI coverage, and setup scripts drift from reality without automated validation.
-**Fix:** Run structured Explore subagent audit periodically covering 10 dimensions: docs accuracy, skill routing, agent templates, rules metadata, CI jobs, setup scripts, project templates, hooks, sync manifest, cross-references.
-**See also:** AP#47, AP#83, AP#85
-
 ## 122. Python UTF-8 I/O on Windows for Unicode-Heavy Scripts
 
 **Added:** 2026-03-09 | **Source:** Samverk | **Status:** active
@@ -617,14 +531,6 @@ MUI Popper needs `anchorEl` during render. `useRef` + `ref.current` triggers Rea
 **Context:** Copilot adds NEW review comments to already-merged PRs, days after merge. These need a second pass.
 **Fix:** Fetch via `gh api repos/{o}/{r}/pulls/{n}/comments`, filter by `created_at` post-merge. Implement clear fixes on a followup branch referencing the original PR number. Flag questionable changes for user decision.
 
-## 126. Cloudflare Email Routing Replaces MailChannels for Workers
-
-**Added:** 2026-03-14 | **Source:** herbhall.net | **Status:** active
-
-**Category:** pattern
-**Context:** MailChannels shut down free Cloudflare Workers integration. Replacement is Cloudflare Email Routing `send_email` binding.
-**Fix:** Enable Email Routing on zone, add `[[send_email]]` binding in wrangler.toml with `destination_address`, use `EmailMessage` from `cloudflare:email` + `mimetext` for MIME. Requires `nodejs_compat` flag. Note: mimetext `setHeader('Reply-To', ...)` is broken -- inject into raw MIME directly.
-
 ## 127. Worktree Isolation for Parallel Code-Gen Agents
 
 **Added:** 2026-03-14 | **Source:** Synapset | **Status:** active
@@ -649,6 +555,21 @@ MUI Popper needs `anchorEl` during render. `useRef` + `ref.current` triggers Rea
 
 **Context:** Worktree agents branch from main at launch time. After Wave N merges, Wave N+1 branches are behind main and show as CONFLICTING on GitHub.
 **Fix:** After merging a wave, run `git rebase --onto origin/main <old-base> <branch>` for each next-wave branch. Find old-base with `git log --oneline <branch>` -- second commit is the fork point. Different agents may fork from different main commits -- verify per branch. Also: worktree branches often have unstaged `index.html` changes from embedded SPA builds -- run `git checkout -- path/to/index.html` before rebase.
+### Stacked worktree commits: rebase --onto to separate agent branches
+
+**Context:** When parallel worktree agents all end up committing to the main worktree (instead of their isolated worktrees), commits become stacked on a single branch. For example, `feat/issue-102` ends up with commits for issues 103, 104, AND 102 stacked on top of each other -- only 102 should be there.
+**Fix:** Use `git rebase --onto origin/main <parent-commit> <branch>` to replay only the target commit onto main. The parent-commit is the hash of the commit just below your target in `git log --oneline <branch>`. Run this for each affected branch separately.
+**See also:** KG#25
+
+### Sequential worktrees for issues sharing central files
+
+**Context:** When a wave of code-gen issues all touch the same central files (e.g., `tools.go` + `search.go`), parallel worktree agents produce merge conflicts requiring manual combination. Sequential execution eliminates this entirely.
+**Fix:** Sequential wave pattern: run agent A -> merge PR A -> `git pull main` -> run agent B -> merge PR B -> repeat. Result: zero conflicts, zero manual resolution. Use parallel only when issues have non-overlapping file sets. Check each issue's acceptance criteria to identify which files will be touched before deciding parallel vs sequential.
+
+### Check worktree for partial progress before re-running truncated agent
+
+**Context:** When a worktree agent returns a truncated response (mid-sentence, no PR created), do NOT re-run from scratch. The agent may have completed all code changes and only failed at the final summary/PR step.
+**Fix:** First inspect the worktree directory at `.claude/worktrees/agent-*/`. Review what files were changed with `git diff main...HEAD` inside the worktree. If substantial work exists, continue via `SendMessage` to the same agent or run a targeted agent for only the missing piece. This can save 70k+ tokens compared to a full re-run.
 
 ## 132. Exclude Release-Please CHANGELOG From Markdownlint
 
@@ -657,23 +578,6 @@ MUI Popper needs `anchorEl` during render. `useRef` + `ref.current` triggers Rea
 **Category:** ci-config
 **Context:** Release-please generates CHANGELOG.md with asterisk list markers (`*`) and double blank lines. These violate MD004 and MD012 but cannot be fixed -- the file is regenerated on each release.
 **Fix:** Add `"CHANGELOG.md"` to the `ignores` array in `.markdownlint-cli2.jsonc`. Do not attempt `replace_all` on asterisk-space -- it corrupts bold markers (`**text:**`) inside list items.
-
-## 133. Prefer Dynamic MCP Discovery Over Static Prompt Files
-
-**Added:** 2026-03-17 | **Source:** Samverk | **Status:** active
-
-**Category:** process-pattern
-**Context:** Hand-written `.samverk/prompts/*.md` files listed issues as critical that were already implemented. MCP calls (`get_digest`, `list_open_prs`) at session start already provide live state. Static prompts duplicate and contradict.
-**Fix:** Use dynamic MCP discovery for session orientation. If static prompts are used, they should be generated (not hand-written) and include a staleness warning with a generation timestamp.
-**See also:** AP#85 (roadmap drift)
-
-## 134. Issue Specs Must Reference Verified Exported API
-
-**Added:** 2026-03-17 | **Source:** Samverk | **Status:** active
-
-**Category:** process-pattern
-**Context:** Issue spec said "call into existing `dispatcher.Claim()`" but no such public method existed, and the caller and callee were in separate processes. A 2-minute codebase check would have caught both problems.
-**Fix:** Before writing implementation specs that reference internal methods, verify: (1) the method exists and is exported, (2) the caller and callee are in the same process. Extends AP#47 (check existing assets before scoping) and AP#83 (sprint scope reduction via exploration).
 
 ## 136. Go Interface Extension Requires Updating All Test Mocks
 
@@ -706,3 +610,140 @@ MUI Popper needs `anchorEl` during render. `useRef` + `ref.current` triggers Rea
 **Category:** workflow-pattern
 **Context:** A worktree agent exhausted ~140k tokens without committing (truncated output, incomplete work). Re-running with more context or broader permissions failed again. A focused re-run succeeded in ~50k tokens.
 **Fix:** Re-run with a narrow, explicit read list -- not a broader context. The re-run prompt should: (1) explicitly list the specific files to read FIRST before writing anything (file paths, struct names), (2) keep implementation steps minimal and concrete, (3) include a mandatory pre-commit CI checklist. Agents that explore broadly before writing rarely converge -- a narrow read list upfront prevents expensive exploration loops.
+## 141. Go restartCh Channel Pattern for Goroutine Slice Ownership
+
+**Added:** 2026-03-20 | **Source:** Samverk | **Status:** active
+
+**Category:** pattern
+**Context:** When a background timer goroutine calls a closure that writes to a local slice (e.g., `watchers[idx].cancel = wcancel`), and the main select loop also reads that slice, the race detector flags a concurrent read/write. This failure mode is flaky -- passes without `-race` and may pass sporadically in CI.
+**Fix:** Add `restartCh chan int`. Timer goroutine sends `restartCh <- idx` instead of writing to the slice directly. Main select loop adds `case idx := <-restartCh: startWatcher(idx)` — all slice writes stay on one goroutine. Use channels for goroutine ownership transfer rather than mutexes for shared local slice access.
+
+## 142. strace FD-Level Diagnosis for Process Hang vs Output Buffering
+
+**Added:** 2026-03-20 | **Source:** Samverk | **Status:** active
+
+**Category:** debugging-pattern
+**Context:** When a subprocess appears hung (no stdout output, `output_bytes=0`) but the process is alive, it may be buffering output rather than truly stuck.
+**Fix:** Use `strace` FD-level tracing to distinguish buffering from stuck:
+
+```bash
+strace -p PID -e trace=read,write,recvfrom
+```
+
+Active `recvfrom` calls on a network FD confirm the process is receiving data. Zero writes to stdout (FD 1) with active network reads = process is buffering output, not hung. Change the fix from "kill process" to "increase timeout". Discovered while diagnosing `claude --print` processes: `--print` mode buffers ALL output until the entire agentic session ends.
+
+## 143. React ErrorBoundary at Router Level -- Standard Pattern
+
+**Added:** 2026-03-20 | **Source:** Samverk | **Status:** active
+
+**Category:** frontend-pattern
+**Context:** React apps without an ErrorBoundary show a silent black screen when any render error occurs -- React unmounts the entire tree with no visible error or crash dialog. Looks identical to a hang or network failure. Standard practice for all React dashboards.
+**Fix:** Add `ErrorBoundary` in `App.tsx` wrapping all routes:
+
+```tsx
+class ErrorBoundary extends React.Component<{children: React.ReactNode}, {error: Error | null}> {
+  state = { error: null }
+  static getDerivedStateFromError(error: Error) { return { error } }
+  componentDidCatch(error: Error) { console.error('App crashed:', error) }
+  render() {
+    if (this.state.error) return <div style={{padding:'2rem',color:'red'}}>Error: {(this.state.error as Error).message}</div>
+    return this.props.children
+  }
+}
+```
+
+Wrap at router level: `<ErrorBoundary><Routes>...</Routes></ErrorBoundary>`.
+**See also:** AP#111 (React Compiler and MUI patterns)
+
+## 144. Tauri 2 Multi-Window Label Routing Pattern
+
+**Added:** 2026-03-21 | **Source:** claude-token-stats | **Status:** active
+
+**Category:** frontend-pattern
+**Context:** Tauri 2 apps with multiple windows sharing one frontend bundle need to render different root components per window without React Router or URL-based routing.
+**Fix:** Detect window identity at the entry point via `getCurrentWindow().label` (synchronous), then conditionally render root components:
+
+```tsx
+// main.tsx
+import { getCurrentWindow } from '@tauri-apps/api/window';
+
+const windowLabel = getCurrentWindow().label;
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  windowLabel === 'dashboard' ? <Dashboard /> : <App />
+);
+```
+
+Each window gets the correct UI with zero navigation overhead. Typical window config:
+
+- Popup (`main`): 380×500, `decorations: false`, `visible: false`, `skipTaskbar: true`
+- Dashboard (`dashboard`): 1100×700, `decorations: true`, `visible: false`, `skipTaskbar: false`
+
+Backend opens a named window: `app.get_webview_window("dashboard").show()`
+**See also:** KG#176 (Tauri 2 API gotchas — getCurrentWindow import path)
+
+## 145. Use WIP Branch Instead of Stash for Branch-Switching Work
+
+**Added:** 2026-03-22 | **Source:** samverk | **Status:** active
+
+**Category:** workflow-pattern
+**Context:** When in-progress work exists and a multi-step task requires switching between multiple branches (e.g., rebasing, merging, resolving stacked PRs), `git stash` carries risk: `git stash drop` is irreversible and easy to run accidentally during cleanup. A WIP branch is safer — it survives branch switches, can be inspected later, and is trivially recoverable.
+**Fix:** Before any multi-branch operation when uncommitted work exists:
+
+```bash
+# Instead of: git stash push -m "..."
+git add -A
+git commit -m "wip: [description] -- branch-switching work in progress"
+# Do your multi-branch work
+# Afterwards, soft-reset to un-commit and restore working state:
+git reset HEAD~1
+```
+
+If you must use stash, inspect before dropping:
+
+```bash
+git stash show -p stash@{0}   # always inspect before dropping
+# prefer git stash pop over git stash drop
+```
+
+**Why:** `git stash drop` permanently deletes staged and tracked-but-modified files with no recovery path. In the samverk migration session, AGENTS.md and CLAUDE.md edits were permanently lost this way.
+
+## 146. Cherry-Pick Only Unique Commits for Stacked PRs
+
+**Added:** 2026-03-22 | **Source:** samverk | **Status:** active
+
+**Category:** workflow-pattern
+**Context:** When parallel feature branches are stacked (branch B was created on top of branch A, so B contains A's commit plus its own), simple rebase fails after A is squash-merged to main. Git cannot recognize the squashed version of A as equivalent to the original commit, causing conflicts.
+**Fix:**
+
+```bash
+# 1. Identify the unique commit in branch B (first line is unique, second is A's)
+git log --oneline origin/feature/B | head -2
+
+# 2. Reset branch B to current main and replay only the unique commit
+git checkout --track origin/feature/B -B feature/B
+git reset --hard origin/main
+git cherry-pick <tip-commit-of-B>
+
+# 3. Push and enable auto-merge
+git push --force origin feature/B
+gh pr merge N --squash --auto
+```
+
+If the cherry-pick still conflicts (A and B both touched the same file), resolve as additive — keep both sides. Conflicts from stacked PRs are always additive, never destructive.
+
+## 147. Sequential Auto-Merge Requires Manual Branch Updates Between Merges
+
+**Added:** 2026-03-22 | **Source:** samverk | **Status:** active
+
+**Category:** workflow-pattern
+**Context:** When N PRs all have auto-merge enabled and one merges, the remaining N-1 PRs enter "BEHIND" state. GitHub's auto-merge does NOT auto-update behind branches — it waits indefinitely even if all CI checks passed on the most recent push.
+**Fix:** After each merge in a batch, manually update remaining behind PRs:
+
+```bash
+# After PR N merges:
+gh pr update-branch <remaining-pr-1>
+gh pr update-branch <remaining-pr-2>
+# ...
+```
+
+This triggers new CI runs via merge commits; auto-merge fires once CI passes. For N sequential PRs, expect O(N²/2) total update-branch calls. If running many PRs, consider a workflow that auto-updates behind branches on push to main.

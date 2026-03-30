@@ -13,6 +13,20 @@ This skill provides a structured approach to debugging that prevents random gues
 
 ## 4-Phase Debugging Process
 
+### Version Sync Check (live services)
+
+Before investigating a behavior discrepancy in a deployed service, verify the deployed binary matches your local source:
+
+````bash
+# Check deployed version
+curl http://host/healthz  # or: ssh host 'binary --version'
+
+# Check git sync
+git log HEAD..main --oneline  # are you behind main?
+````
+
+If a version mismatch exists: pull/deploy first, then re-test before debugging. This eliminates phantom bugs where the code you are reading is not the code that is running.
+
 ### Phase 1: Reproduce
 
 Before fixing, reliably reproduce the issue.

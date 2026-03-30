@@ -1,0 +1,65 @@
+name: Contributor Gate
+
+on:
+  pull_request_target:
+    types: [opened, reopened]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  check-contributor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if contributor is approved
+        uses: actions/github-script@{{ACTIONS_GITHUB_SCRIPT_VERSION}}
+        with:
+          script: |
+            const author = context.payload.pull_request.user.login;
+            const repo = context.repo;
+
+            // Owner is always allowed
+            const { data: repoData } = await github.rest.repos.get(repo);
+            if (author === repoData.owner.login) {
+              console.log(`${author} is the repo owner — allowed`);
+              return;
+            }
+
+            // Bots are always allowed (Dependabot, release-please, etc.)
+            if (author.endsWith('[bot]')) {
+              console.log(`${author} is a bot — allowed`);
+              return;
+            }
+
+            // Check approved contributors list
+            let approved = [];
+            let message = 'This project is not currently accepting external contributions.';
+            try {
+              const { data: file } = await github.rest.repos.getContent({
+                ...repo,
+                path: '.github/approved-contributors.json',
+              });
+              const config = JSON.parse(Buffer.from(file.content, 'base64').toString());
+              approved = config.contributors || [];
+              message = config.message || message;
+            } catch (e) {
+              console.log('No approved-contributors.json found — only owner and bots allowed');
+            }
+
+            if (approved.includes(author)) {
+              console.log(`${author} is on the approved list — allowed`);
+              return;
+            }
+
+            // Not approved — close the PR
+            console.log(`${author} is not approved — closing PR`);
+            await github.rest.issues.createComment({
+              ...repo,
+              issue_number: context.payload.pull_request.number,
+              body: `@${author} ${message}`,
+            });
+            await github.rest.pulls.update({
+              ...repo,
+              pull_number: context.payload.pull_request.number,
+              state: 'closed',
+            });

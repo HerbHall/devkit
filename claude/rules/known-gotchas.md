@@ -1,8 +1,8 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 50
-last_updated: "2026-03-19"
+entry_count: 52
+last_updated: "2026-03-30"
 ---
 
 # Known Gotchas
@@ -72,14 +72,6 @@ Platform-specific issues, tool quirks, and surprising behaviors discovered throu
 
 **Issue:** ANY change to Go types in swagger-annotated handlers requires regenerating the swagger spec.
 **Fix:** Always run `swag init` (or `make swagger`) after modifying handlers/structs. Commit regenerated files alongside Go changes.
-
-## 17. websocket.Dial Response Body Must Be Closed
-
-**Added:** 2026-02-17 | **Source:** SubNetree | **Status:** active
-
-**Platform:** Go (all) / coder/websocket library
-**Issue:** `websocket.Dial` returns `(*Conn, *http.Response, error)`. The `bodyclose` linter requires the response body closed.
-**Fix:** Always capture and close: `if resp != nil && resp.Body != nil { resp.Body.Close() }`.
 
 ## 18. Windows PowerShell Process and JSON Quirks (Consolidated Reference)
 
@@ -151,6 +143,20 @@ All parallel agents write to the same working directory. Sort into branches via 
 
 **Issue:** Two parallel worktree agents both modifying a shared registration file (e.g. `tools.go`, `router.go`, `routes.go`, skill routing tables) create a two-block rebase conflict when the second branch is rebased onto main after the first merges.
 **Fix:** When planning parallel agents that all add to a shared registration file, assign file ownership -- only ONE agent touches the shared file. Others wait or use a different integration point. Extends the general parallel-agent rule with the most common specific case.
+### Worktree isolation is partial when launching 5+ agents simultaneously
+
+**Issue:** When launching 5+ parallel agents with `isolation: "worktree"`, not all agents receive isolated worktrees. In observed sessions, only 2-3 of 5 agents got proper worktree directories. The other agents worked in the shared main working directory, causing cross-contamination (commits appearing in wrong branches, agents needing stash-based sorting).
+**Fix:** After launching 5+ parallel agents, verify worktree-agent-{id} branches exist before assuming isolation (`git branch -r | grep worktree-agent`). Fallback: stash-based sorting from AP#22. Limit parallel worktree agents to 3 when isolation is critical.
+
+### Parallel agents contaminate main worktree when feature branch is checked out
+
+**Issue:** When parallel worktree agents are launched while the main worktree has a feature branch checked out, agents' commits can land on the main worktree's current branch in addition to their isolated worktree branches. Causes duplicate PRs and stacked commits on the wrong branch.
+**Fix:** Before launching parallel agents, run `git checkout main` in the main worktree to avoid contaminating a feature branch.
+
+### After worktree agent completes, main working dir may be on agent's feature branch
+
+**Issue:** After a worktree-isolated Agent tool call completes, the main working directory may be on the agent's feature branch rather than main. Silent failure modes: cherry-pick returns "no changes added to commit", git commit creates commit on wrong branch, git push pushes wrong branch.
+**Fix:** Always run `git branch --show-current` before any post-agent git operations. Run `git checkout main` (or your intended base branch) before cherry-picking, committing, or pushing.
 
 ## 26. Sequential Same-File PR Merge Requires Rebase Between Each
 
@@ -207,21 +213,6 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Issue:** v7 enforces strict JSON schema. v2.1 config keys fail with v2.10 schema. `linters-settings:` moved under `linters: settings:`. `issues: exclude-rules:` moved to `linters: exclusions: rules:`.
 **Fix:** Migrate config to v2.10 schema. Use `@v7` (not `@v6`) for golangci-lint v2. Default binary mode (not `goinstall`).
 
-## 77. Docker Desktop Extension Development Gotchas (Consolidated Reference)
-
-**Added:** 2026-02-17 | **Source:** Multiple | **Status:** active
-
-**Platform:** Docker Desktop Extensions
-
-- **Marketplace:** Submit via docker/extensions-submissions. Run `docker extension validate` first.
-- **hadolint:** DL3048/DL3045 false positives. Add `.hadolint.yaml` with `ignored: [DL3048, DL3045]`.
-- **Vitest:** `@docker/extension-api-client` CJS/ESM mismatch. Add `resolve.alias` -> mock file. See KG#87.
-- **Version drift:** Designate one source of truth. CI overrides Dockerfile ARG via `--build-arg`.
-- **Labels:** Screenshots (JSON array, min 3, 2400x1600px), changelog (HTML), icon (local file).
-- **Multi-arch:** Must build `linux/amd64` + `linux/arm64` via `docker buildx`.
-- **MUI v5:** `@docker/docker-mui-theme` pins v5. Use `InputProps` not `slotProps.input`.
-- **Update after rebuild:** Use `docker extension install` (not `update`) -- tracks by digest.
-
 ## 91. markdownlint-cli2 Nested node_modules Not Excluded by Root Pattern
 
 **Added:** 2026-03-03 | **Source:** Samverk | **Status:** active
@@ -238,14 +229,6 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Issue:** `.claude/` (trailing slash) ignores entire directory. `!.claude/settings.json` cannot override.
 **Fix:** Use `.claude/*` (glob) instead. Glob-level ignores allow negation.
 
-## 97. Copilot Auto-Review Is UI-Only (No REST API)
-
-**Added:** 2026-03-05 | **Source:** Runbooks | **Status:** active
-
-**Platform:** GitHub
-**Issue:** Copilot code review toggle in rulesets is UI-only. API can create the rule but UI may need manual confirmation.
-**Fix:** After API ruleset creation, manually verify in Settings > Rules > Rulesets. Create a test PR to confirm.
-
 ## 98. Rules Files Over 40k Degrade Session Performance
 
 **Added:** 2026-03-07 | **Source:** DevKit | **Status:** active
@@ -253,6 +236,7 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Platform:** Claude Code (all)
 **Issue:** Rules files over 40k cause context to be silently dropped at task transitions.
 **Fix:** Run `/rules-compact` to stay below 35k per file. `/conformance-audit` check #17 flags violations.
+**Note:** DevKit CI (`lint.yml`) does NOT enforce these thresholds. Files over 40k will still pass CI — the limits are self-enforced performance guidelines only. Do not treat file size as a hard CI prerequisite when planning issue batches.
 
 ## 99. Copilot Cannot Approve PRs -- Review Is Informational Only (Consolidated Reference)
 
@@ -343,14 +327,6 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Issue:** Agent markdown tables have MD056 errors: pipes in code spans parsed as separators, or missing columns.
 **Fix:** Run `npx markdownlint-cli2` on agent `.md` files. Use `&#124;` for pipes in cells. Verify column counts.
 
-## 114. Set-StrictMode in Dot-Sourced PS Lib Pollutes Caller Scope
-
-**Added:** 2026-03-09 | **Source:** DevKit | **Status:** active
-
-**Platform:** PowerShell (all)
-**Issue:** `Set-StrictMode -Version Latest` at the top level of a dot-sourced `.ps1` lib file propagates to the calling script's scope and all subsequently dot-sourced files.
-**Fix:** Do NOT put `Set-StrictMode` in dot-sourced library files. Set it only in the entry-point script that owns its own execution context.
-
 ## 115. TypeScript API Interface Phantom Field Drift from Go Backend
 
 **Added:** 2026-03-09 | **Source:** Samverk | **Status:** active
@@ -358,6 +334,11 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Platform:** TypeScript / Go (full-stack)
 **Issue:** TypeScript API interfaces accumulate phantom fields the Go backend never sends. Causes `undefined` React keys and silent failures.
 **Fix:** Verify TS interfaces against actual Go JSON output (`curl` the endpoint). Grep for TS uses when changing Go JSON field names. See AP#79.
+
+### `?? 0` fallbacks mask field name mismatches (variant)
+
+**Issue:** When `fetchJSON<T>()` is called with a TypeScript interface whose field names do not match the actual Go JSON response keys, `?? 0` / `?? []` fallbacks in components silently display 0 or empty instead of crashing. No TypeScript error, no console error. Example: interface has `total_cost_usd` but Go sends `estimated_cost_usd` — dashboard shows $0.00 for the entire project lifetime.
+**Fix:** Curl the live endpoint and compare actual JSON keys to the TS interface before shipping any new API-connected component. This is different from phantom fields (extra fields the backend never sends) — this is completely wrong field names from day one.
 
 ## 116. Go context.WithTimeout Cancels Cleanup Operations
 
@@ -382,23 +363,7 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Platform:** Windows (MSYS_NT) / GitHub CLI
 **Issue:** A fine-grained PAT set as Windows User env var `GITHUB_TOKEN` shadows `gh` CLI's keyring-stored OAuth token. Token precedence: `GITHUB_TOKEN` env > keyring OAuth > `GH_TOKEN` env. Fine-grained PATs often lack `issues:write` scope, causing 403 on `gh issue close/create`.
 **Fix:** Remove the User env var: `[Environment]::SetEnvironmentVariable('GITHUB_TOKEN', $null, 'User')`. PATs for CI (e.g., release-please) should only be GitHub Actions secrets, never local env vars. Inline override: `GITHUB_TOKEN= gh <command>`.
-**See also:** AP#120 (secrets distribution)
-
-## 121. MailChannels Free Tier Deprecated
-
-**Added:** 2026-03-14 | **Source:** herbhall.net | **Status:** active
-
-**Platform:** Cloudflare Workers
-**Issue:** MailChannels shut down free Cloudflare Workers integration. `api.mailchannels.net/tx/v1/send` returns 401 Unauthorized.
-**Fix:** Migrate to Cloudflare Email Routing `send_email` binding. See AP#126 for the replacement pattern.
-
-## 122. Cloudflare Account Token Requires CLOUDFLARE_ACCOUNT_ID for Wrangler
-
-**Added:** 2026-03-14 | **Source:** herbhall.net | **Status:** active
-
-**Platform:** Cloudflare / Wrangler
-**Issue:** Account API tokens fail on `/memberships` (error 10001) and `/user/tokens/verify` (error 9109). Wrangler calls `/memberships` on startup and fails with "Unable to authenticate request."
-**Fix:** Set `CLOUDFLARE_ACCOUNT_ID` env var alongside Account API token. Wrangler skips memberships lookup when account ID is explicit. User API tokens work without this workaround.
+**See also:** secrets distribution via `~/.devkit-config.json` (archived pattern AP120)
 
 ## 123. Gitea API and Actions Gotchas (Consolidated Reference)
 
@@ -431,11 +396,6 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Issue:** Gitea REST API calls via the Cloudflare tunnel URL fail with "token is required" because the tunnel strips the `Authorization` header.
 **Fix:** Use the internal URL (e.g., `http://192.168.1.160:3000`) for all Gitea API calls. Token extraction: `printf 'protocol=https\nhost=gitea.example.com\n' | git credential fill | grep password`
 
-### Samverk MCP handler init gated on GitHub env vars (was KG#161, resolved)
-
-**Issue:** Samverk MCP handler init was gated on `GITHUB_TOKEN + SAMVERK_GITHUB_OWNER + SAMVERK_GITHUB_REPO` all being set. If any was missing, all MCP routes and server.yaml projects were skipped.
-**Fix:** Resolved in Samverk refactor/38 -- MCP handler and server.yaml projects now initialize unconditionally. GitHub env vars only needed for GitHub-hosted projects.
-
 ### Force-push rejected with 'stale info' -- fetch first
 
 **Issue:** `git push --force` or `--force-with-lease` to Gitea fails with "stale info" when the local remote-tracking ref is stale or missing (e.g., branch was created remotely via a PR or prior push from another worktree).
@@ -444,12 +404,22 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 ### semantic-release EGITNOPERMISSION via Cloudflare Tunnel -- needs second url.insteadOf
 
 **Issue:** semantic-release uses `repositoryUrl` for both release notes link generation AND the git push target. If `repositoryUrl` points to the public Cloudflare Tunnel URL and Cloudflare strips `Authorization` headers, the tag push fails with `EGITNOPERMISSION`.
-**Fix:** Add a second `url.insteadOf` rule in CI that rewrites the public URL to authenticated localhost -- the first rule covering `localhost:3000` is not enough alone:
+**Fix:** Add a second `url.insteadOf` rule rewriting the public Cloudflare Tunnel URL to authenticated localhost — the rule for `localhost:3000` alone is not enough. Both must be present: one for `http://localhost:3000/` and one for `https://gitea.herbhall.net/`.
 
-```yaml
-git config --global url."http://user:${TOKEN}@localhost:3000/".insteadOf "http://localhost:3000/"
-git config --global url."http://user:${TOKEN}@localhost:3000/".insteadOf "https://gitea.herbhall.net/"
-```
+### Issue creation requires label IDs, not names
+
+**Issue:** `POST /api/v1/repos/{owner}/{repo}/issues` with `labels: ["agent:human"]` (string names) returns 422 Unprocessable Entity. Gitea requires integer label IDs. GitHub's API accepts both names and IDs, so code that works on GitHub silently fails on Gitea.
+**Fix:** Query labels first to get the ID mapping: `GET /api/v1/repos/{owner}/{repo}/labels` returns `[{"id": 275, "name": "agent:human"}, ...]`. Pass integer IDs in the create payload: `{"title": "...", "labels": [275, 338]}`.
+
+### force_merge 405 has two causes
+
+**Issue:** HTTP 405 from the Gitea merge PR API has two distinct causes: (1) PR is already merged (empty body, documented in KG#123 above), and (2) PR has ancestor commits that Gitea main does not have (dual-forge drift) — returns 405 with body `{"message":"Please try again later"}` and PR state is `open` with `mergeable=False`.
+**Fix:** Distinguish by checking PR state + body content before retrying. For case 2 (dual-forge drift), use the force-sync procedure from AP#140.
+
+### gh CLI targets GitHub, not Gitea
+
+**Issue:** When a repo has both GitHub (`origin`) and Gitea (`gitea`) remotes, `gh pr create --repo owner/repo` always creates a GitHub PR regardless of which forge is primary. Agent prompts using `gh pr create` will create GitHub PRs even when Gitea is the intended forge.
+**Fix:** Use the Gitea REST API for Gitea PRs: `POST /api/v1/repos/{owner}/{repo}/pulls` with `Authorization: token {TOKEN}`. The `gh` CLI has no Gitea support.
 
 ## 125. go:embed Cache Misses Embedded File Changes
 
@@ -459,14 +429,6 @@ git config --global url."http://user:${TOKEN}@localhost:3000/".insteadOf "https:
 **Issue:** Go build cache doesn't detect changes to `go:embed` files when Go source hasn't changed. Embedded SPA files (`web/dist/` -> `internal/server/static/`) stay stale after frontend rebuild, causing deployed binary to serve old JS bundles.
 **Fix:** Always use `make build` or `make redeploy` for projects with embedded SPAs. Consider `go build -a` or touching a Go source file after SPA rebuild to bust cache.
 **Deploy:** Ensure deploy scripts rebuild the SPA before `go build`. Skipping frontend build silently serves stale JS bundles baked in at compile time.
-
-## 126. Tailscale Funnel Rejects Host Header from Within Tailnet
-
-**Added:** 2026-03-14 | **Source:** Samverk | **Status:** active
-
-**Platform:** Tailscale
-**Issue:** Funnel returns "Forbidden: invalid Host header" when accessed from a device within the same tailnet. Intra-tailnet traffic bypasses Funnel's public ingress path via WireGuard. External clients work fine.
-**Fix:** Use Cloudflare Tunnel instead of Tailscale Funnel for universal access (both internal and external clients).
 
 ## 135. MCP Streamable HTTP Requires GET for SSE; OAuth Breaks Custom Connectors
 
@@ -484,23 +446,6 @@ git config --global url."http://user:${TOKEN}@localhost:3000/".insteadOf "https:
 **Issue:** SPA catch-all route (`/ -> spaHandler`) intercepts paths not explicitly registered for all HTTP methods. Registering only `POST /mcp` causes GET/DELETE to fall through to SPA, returning HTML instead of JSON.
 **Fix:** Register without method prefix: `mux.Handle("/mcp", handler)` when the handler routes methods internally.
 **See also:** AP#28 (Go 1.22+ ServeMux route patterns)
-
-## 150. Go MCP SDK Rejects Non-Localhost Host Headers Behind Reverse Proxy
-
-**Added:** 2026-03-17 | **Source:** Samverk | **Status:** active
-
-**Platform:** Go (mcp-go SDK) / Cloudflare Tunnel
-**Issue:** Go MCP SDK `StreamableHTTPHandler` rejects requests with non-localhost `Host` headers, returning 403 "Forbidden: invalid Host header". Reverse proxies (Cloudflare Tunnel, nginx) forward the original hostname, triggering the rejection.
-**Fix:** Add `httpHostHeader: localhost:PORT` to cloudflared ingress config. For other proxies, rewrite the Host header to `localhost:PORT` before forwarding.
-**Debugging tip:** Cloudflare Security Analytics "Mitigation: Not mitigated" immediately shows the block is from the origin server, not Cloudflare edge. Check this FIRST before investigating WAF rules.
-
-## 151. Cloudflare Free Plan WAF Managed Ruleset Cannot Be Disabled
-
-**Added:** 2026-03-17 | **Source:** Samverk | **Status:** active
-
-**Platform:** Cloudflare (Free plan)
-**Issue:** Cloudflare Free plan has an "Always active" managed WAF ruleset that cannot be disabled or skipped. WAF skip rules only affect user-deployed managed rules, not the built-in ones.
-**Fix:** No workaround for disabling built-in rules. If built-in rules block legitimate traffic, use a different ingress method or upgrade to a paid plan with full WAF rule control.
 
 ## 152. Background Agents (`run_in_background`) Cannot Use MCP Tools
 
@@ -528,73 +473,148 @@ git config --global url."http://user:${TOKEN}@localhost:3000/".insteadOf "https:
 **Issue:** stdio-based MCP servers (sqlite, memory, sequential-thinking, context7, ms365-onenote) hang indefinitely when they fail to initialize (wrong path, missing auth, process crash). Tool calls never return and the session must be manually cancelled. The "If unavailable, skip" instruction in workflows has no way to detect unavailability before attempting the call.
 **Fix:** Before calling any stdio MCP tool, verify it appears in the available tools list. If not listed, skip the call entirely. For workflows, add explicit pre-check instructions. HTTP-based MCP servers (Synapset) fail fast with connection errors instead of hanging.
 
-## 156. DevKit CI Metadata Validator Checks See-Also Lines and Added Metadata
+## 172. ESLint v9 Requires eslint.config.js — .eslintrc.* Silently Fails
 
-**Added:** 2026-03-17 | **Source:** DevKit | **Status:** active
+**Added:** 2026-03-20 | **Source:** Samverk | **Status:** active
 
-**Platform:** DevKit CI (lint.yml)
-**Issue:** The metadata validator (`Validate rule metadata` job) checks two things: (1) lines matching `^\*\*See also:\*\*` are scanned for `KG#N` and `AP#N` references -- each referenced entry must exist as `## N.` in the target file; (2) `**Added:**` lines must have exactly 3 pipe-separated fields (Added, Source, Status). Prose references like "(was KG#117)" in headings and body text do NOT trigger failures -- only `**See also:**` lines are validated.
-**Fix:** When referencing archived entries in `**See also:**` lines, omit the `KG#`/`AP#` prefix or remove the reference. Prose labels (e.g., "(was KG#117)") anywhere else in the entry are safe. Never add extra pipe fields to `**Added:**` lines.
+**Platform:** Node.js / Frontend (ESLint v9+)
+**Issue:** ESLint v9 dropped `.eslintrc.*` support entirely. Projects with ESLint v9 installed but no `eslint.config.(js|mjs|cjs)` file get exit code 2: "ESLint couldn't find an eslint.config.* file." The `pnpm lint` script appears to be configured but ESLint never actually runs — easy to miss because the script exits without surfacing a lint error. Discovered in a project where the lint script had existed since creation but was silently no-opping.
+**Fix:** Create `eslint.config.js` (flat config format) or migrate from `.eslintrc.*` using the ESLint v9 migration guide. Verify lint is actually running by checking for output, not just exit code 0.
 
-## 162. GitHub Issues-Disabled Repo: PRs Closeable but Regular Issues Need Re-Enable
+## 173. TypeScript Generic Fetch Wrapper Silently Accepts Wrong Response Shape
 
-**Added:** 2026-03-17 | **Source:** Samverk | **Status:** active
+**Added:** 2026-03-20 | **Source:** Samverk | **Status:** active
 
-**Platform:** GitHub API / gh CLI
-**Issue:** When `has_issues=false` on a GitHub repo, individual issue GETs return 410 and PATCH on regular issues returns 403. However, PRs (which share the `/issues` endpoint) can still be closed via PATCH even with issues disabled.
-**Fix:** To close regular issues when issues are disabled: (1) re-enable: `GITHUB_TOKEN= gh api repos/OWNER/REPO -X PATCH -f has_issues=true`, (2) close the issues, (3) re-disable. The `GITHUB_TOKEN=` prefix clears any fine-grained PAT that lacks repo settings scope.
-**See also:** KG#120 (fine-grained PAT shadows gh CLI OAuth)
+**Platform:** TypeScript / React (all)
+**Issue:** `fetchJSON<T>()` generic parameter does not validate the actual HTTP response shape at runtime. A Go handler returning `{items: T[], total: number}` typed as `fetchJSON<T[]>()` is silently accepted by TypeScript. The mismatch is benign until code calls `.forEach()` or `.map()` on the result, throwing `TypeError` at runtime. A later PR added `.forEach()` — the first iteration call — which crashed the entire React app (black screen, no error boundary).
+**Fix:** Unwrap response in the API client: `const data = await fetchJSON<{items: T[]}>(...); return data.items`. Prevention: generate TS interfaces from Go DTOs using openapi-typescript or similar. Always curl the endpoint and verify the response shape matches the TS type before shipping.
+**See also:** KG#115 (phantom field drift), KG#174 (black screen from missing error boundary)
 
-## 163. semantic-release/git Incompatible With Branch Protection Requiring PR Status Checks
+## 174. React 18 Production: Missing Error Boundary Causes Silent Black Screen
 
-**Added:** 2026-03-17 | **Source:** Synapset | **Status:** active
+**Added:** 2026-03-20 | **Source:** Samverk | **Status:** active
 
-**Platform:** Gitea / GitHub Actions
-**Issue:** `@semantic-release/git` and `@semantic-release/changelog` push commits directly to the default branch. Branch protection requiring `(pull_request)` status checks always rejects these -- direct commits can never have a `pull_request` CI context. Error: "Protected branch update failed: changes must be made through a pull request".
-**Fix:** Remove `@semantic-release/git` and `@semantic-release/changelog` from the plugin chain. Keep: `@semantic-release/commit-analyzer`, `@semantic-release/release-notes-generator`, and the release plugin. Semantic-release still creates the git tag and platform release without the direct-commit plugins.
+**Platform:** React 18 (production)
+**Issue:** An unhandled `TypeError` in a `useMemo` or render function during re-render (post-loading-state) causes React to unmount the entire component tree if no error boundary exists. Result: completely blank/black page with no error message. Looks identical to a network hang or infinite load. Playwright may not reproduce if it snapshots during loading state before data arrives — misleading diagnosis.
+**Fix:** Add a top-level `ErrorBoundary` in `App.tsx` wrapping all routes (`<ErrorBoundary><Routes>...</Routes></ErrorBoundary>`). Minimum viable class: `state = { error: null }`, `getDerivedStateFromError` sets it, `render()` returns error message div when `this.state.error` is set, otherwise `this.props.children`. See AP#143 for full pattern.
+**Note:** This error is silent in production. DevTools console shows the original TypeError.
+**See also:** KG#173 (TypeScript fetch wrapper wrong shape)
 
-## 164. Gitea act_runner actcache Grows Unboundedly, Causes ENOSPC
+## 175. TypeScript Interface Auto-Resolve Drops Closing Braces in Conflict Resolution
 
-**Added:** 2026-03-17 | **Source:** Synapset | **Status:** active
+**Added:** 2026-03-20 | **Source:** Samverk | **Status:** active
 
-**Platform:** Gitea Actions (act_runner / Linux)
-**Issue:** act_runner caches workflow artifacts at `/home/git/.cache/actcache/cache/`. No built-in eviction. Can consume 20+ GB on a 40GB disk, causing ENOSPC in all running CI workflows.
-**Fix:** (1) Immediate cleanup: `rm -rf /home/git/.cache/actcache/cache/*`. (2) Daily pruning cron (run as `git` user): `0 3 * * * find /home/git/.cache/actcache/cache -mindepth 1 -maxdepth 1 -mtime +7 -exec rm -rf {} +`. (3) Disk alert at >80% usage via `logger`.
-**Infrastructure note:** `proxmox.herbhall.net` resolves to the dns-proxy LXC, NOT the Proxmox host. Actual Proxmox host is `192.168.1.203`. `pct resize` and `pvesm` are only available on the Proxmox host itself.
+**Platform:** TypeScript / Git (all)
+**Issue:** Auto-resolving merge conflicts in `.ts` files using "keep both sides" concatenation can drop the closing `}` between adjacent interface declarations. The conflict zone boundary is treated as a text separator, not as syntax — the `}` ending one block gets swallowed when the next block starts immediately after.
+**Symptom:** `TS1131: Property or signature expected` at the line where the next interface begins.
+**Fix:** After any automated conflict resolution in `.ts` files, always run `npx tsc --noEmit` before committing. Visually inspect boundaries between adjacent interface or type declarations.
+**See also:** KG#153 (cherry-pick conflict resolution truncates functions at marker boundaries)
 
-## 165. Lingering Process Blocks Binary Replacement During Deploy
+## 176. Tauri 2 API Gotchas (Consolidated Reference)
 
-**Added:** 2026-03-18 | **Source:** Samverk | **Status:** active
+**Added:** 2026-03-21 | **Source:** claude-token-stats | **Status:** active
 
-**Platform:** Linux deploy scripts
-**Issue:** `scp` to replace a running Go binary fails with `dest open: Failure` even after `systemctl stop` because an orphaned process (launched outside systemd, or that survived the stop signal) keeps the binary mapped as its executable. `lsof /usr/local/bin/<binary>` shows the PID with type `txt`.
-**Fix:** Add a `fuser -k` step to the deploy script before `scp`:
+**Platform:** Tauri 2 (all)
 
-```bash
-# Kill any processes holding the binary open
-ssh "root@${HOST}" 'fuser -k /usr/local/bin/<binary> 2>/dev/null || true'
-sleep 1
-scp bin/<binary>-linux-amd64 "root@${HOST}:/usr/local/bin/<binary>"
+### tauri-plugin-positioner v2 has no tray-relative Position variants
+
+**Issue:** `Position` enum in v2.3.1 only has screen-edge variants (TopLeft, TopRight, TopCenter, BottomLeft, BottomRight, BottomCenter, LeftCenter, RightCenter, Center). `TrayCenter`, `TrayBottomCenter`, etc. do not exist — compiler error: "no variant or associated item named TrayCenter found".
+**Fix:** Use `Position::BottomRight` as the fallback for Windows system tray apps.
+
+### TrayIconBuilder::menu_on_left_click renamed to show_menu_on_left_click
+
+**Issue:** Method renamed in Tauri 2. Produces a deprecation warning pointing to the correct name.
+**Fix:** Direct rename to `show_menu_on_left_click`. No behavior change.
+
+### getCurrentWindow and WebviewWindow come from different modules
+
+**Issue:** `getCurrentWindow()` is from `@tauri-apps/api/window`. `WebviewWindow` class (for `getByLabel`) is from `@tauri-apps/api/webviewWindow`. Mixing import sources causes TS2305.
+**Fix:** Use two separate imports:
+
+```ts
+import { getCurrentWindow } from '@tauri-apps/api/window';
+import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 ```
 
-Diagnose manually: `ssh root@host 'lsof /usr/local/bin/<binary>'` then kill listed PIDs.
+## 177. Recharts 3 Tooltip formatter Typed as ValueType | undefined
 
-## 166. Trivy install.sh Fails With Permission Denied on Pre-Installed Runner Binary
+**Added:** 2026-03-21 | **Source:** claude-token-stats | **Status:** active
 
-**Added:** 2026-03-18 | **Source:** Samverk | **Status:** active
+**Platform:** TypeScript / Recharts 3.x
+**Issue:** Recharts 3.x Tooltip `formatter` callback parameter is typed as `ValueType | undefined` (where `ValueType = string | number | undefined`), not as `number`. Writing `(value: number) => ...` causes TS2322.
+**Fix:** Guard the value before using numeric operations:
 
-**Platform:** GitHub Actions (Linux)
-**Issue:** The aquasecurity `trivy` install.sh script fails with `install: cannot remove '/usr/local/bin/trivy': Permission denied` when the runner has trivy pre-installed at a system path. The CI job user cannot write to `/usr/local/bin`.
-**Fix:** Install to a user-writable directory instead:
+```ts
+formatter={(value) => {
+  const v = typeof value === 'number' ? value : Number(value ?? 0);
+  return [`$${v.toFixed(4)}`, 'Cost'];
+}}
+```
 
-```yaml
-- name: Install trivy
-  run: |
-    mkdir -p "$HOME/.local/bin"
-    curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
-      | sh -s -- -b "$HOME/.local/bin"
-    echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-    "$HOME/.local/bin/trivy" --version
+For BarChart with custom payload fields (e.g. `tokens`, `sessions` added to chart data), cast `props.payload`:
+
+```ts
+formatter={(value, _name, props) => {
+  const v = typeof value === 'number' ? value : Number(value ?? 0);
+  const tokens = (props.payload as { tokens?: number } | undefined)?.tokens ?? 0;
+  return [`$${v.toFixed(4)} · ${tokens} tokens`, 'Cost'];
+}}
+```
+
+Applies to both AreaChart and BarChart Tooltip formatters in Recharts 3.x.
+
+## 178. Stacked PR Branches Contain Prior Branch Commits — Cherry-Pick Required
+
+**Added:** 2026-03-22 | **Source:** samverk | **Status:** active
+
+**Platform:** Git / GitHub (all)
+**Issue:** When feature branches are created by stacking (branch B based on branch A, so B contains A's commit + its own), after squash-merging A, a plain `git rebase origin/main` on B fails. Git replays A's original commit, which now conflicts with the squashed version already in main. The PR shows as "dirty" (conflicted) with no obvious cause.
+**Fix:** Identify B's unique commit with `git log --oneline origin/feature/B | head -1`, reset to `origin/main`, then `git cherry-pick <that-commit>`. Force-push. See AP#146.
+
+## 179. Dual-Remote Checkout Ambiguity With Same Branch Names
+
+**Added:** 2026-03-22 | **Source:** samverk | **Status:** active
+
+**Platform:** Git (dual-forge repos)
+**Issue:** In repos with two remotes (e.g., `origin`=GitHub and `gitea`=Gitea) that both track identical branch names, `git checkout feature/foo` fails: `fatal: 'feature/foo' matched multiple (2) remote tracking branches`. Common in dual-forge setups where feature branches are mirrored to both remotes.
+**Fix:** Always specify the remote explicitly: `git checkout --track origin/feature/foo -B feature/foo`. The `-B` flag creates or resets the local branch cleanly.
+
+## 180. Gitea Protected Branch Blocks All Direct Pushes Including Admin Token
+
+**Added:** 2026-03-22 | **Source:** samverk | **Status:** active
+
+**Platform:** Gitea (all)
+**Issue:** Unlike GitHub where admin users can bypass branch protection, Gitea's protection blocks ALL direct pushes — even with an admin token. Error: `Not allowed to push to protected branch main`. This affects migration syncs and emergency patches.
+**Fix:** Temporarily delete the rule, push, then re-create:
+
+```bash
+# Delete
+curl -X DELETE http://GITEA_INTERNAL/api/v1/repos/{owner}/{repo}/branch_protections/main \
+  -H "Authorization: token TOKEN"
+# Push
+git push gitea main
+# Re-create
+curl -X POST http://GITEA_INTERNAL/api/v1/repos/{owner}/{repo}/branch_protections \
+  -H "Authorization: token TOKEN" -H "Content-Type: application/json" \
+  -d '{"branch_name":"main","rule_name":"main","enable_push":false}'
+```
+
+Use internal URL (not Cloudflare tunnel) — tunnel strips the Authorization header. See KG#123.
+
+## 181. Dual-Forge Diverged Mains: Use Merge Commit, Not Force-Push
+
+**Added:** 2026-03-22 | **Source:** samverk | **Status:** active
+
+**Platform:** Git (dual-forge repos)
+**Issue:** When GitHub and Gitea mains diverge (each has unique commits the other lacks), force-pushing one forge's main to the other destroys the unique commits on the receiving side. This is irreversible.
+**Fix:** Use a merge commit — it preserves both sides and is accepted as a fast-forward by the receiving forge (because its current tip becomes a parent of the merge commit):
+
+```bash
+git fetch origin && git fetch gitea
+git merge gitea/main --no-edit   # runs on local main tracking GitHub
+git push gitea main               # fast-forward from Gitea's perspective
+git push origin main              # sync merge commit back to GitHub
+git push gitea v1.2.3            # also push tags if any
 ```
 
 Note: reference the binary directly (`$HOME/.local/bin/trivy`) in the install step since `$GITHUB_PATH` is not applied to PATH until the **next** step.

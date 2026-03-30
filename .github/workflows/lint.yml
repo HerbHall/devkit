@@ -291,3 +291,13 @@ jobs:
             exit 1
           }
           Write-Host "PSScriptAnalyzer: no issues found"
+
+  validate-tool-registry:
+    name: Validate tool registry consistency
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check registry drift (src/ templates match rendered outputs)
+        run: python3 scripts/check-registry-drift.py
