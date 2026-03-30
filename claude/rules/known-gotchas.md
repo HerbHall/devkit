@@ -1,7 +1,7 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 54
+entry_count: 56
 last_updated: "2026-03-30"
 ---
 
@@ -698,3 +698,20 @@ Alternatively, use branch protection rules that match check run names instead of
 **Platform:** All (text processing)
 **Issue:** Bulk URL replacement (e.g., `github.com` -> `gitea.herbhall.net`) changes the URL but leaves surrounding text labels unchanged. "Check GitHub Issues" becomes misleading when the link points to Gitea.
 **Fix:** After URL migration, grep for the old service name near new URLs to catch stale labels: `grep -n "GitHub" <file> | grep -i "gitea"`.
+
+## 185. gh pr create Fails in Dual-Forge Repos Without Explicit Remote Config
+
+**Added:** 2026-03-30 | **Source:** DevKit | **Status:** active
+
+**Platform:** GitHub CLI (dual-forge repos)
+**Issue:** In repos with both `origin` (GitHub) and `gitea` remotes, `gh pr create` fails with `could not resolve remote "gitea": no matching remote found`. The CLI tries to resolve the push remote for the current branch and picks gitea if no explicit config is set.
+**Fix:** Two steps required before `gh pr create`: (1) `gh repo set-default <owner>/<repo>` to set the default GitHub repo, (2) `git config branch.<branch-name>.remote origin` to explicitly set the branch's remote. Both are needed -- `set-default` alone is insufficient.
+**See also:** KG#123 (Gitea API gotchas), KG#179 (dual-remote checkout ambiguity)
+
+## 186. Agent Worktree Isolation Fails When CWD Is Not a Git Repo
+
+**Added:** 2026-03-30 | **Source:** DevKit | **Status:** active
+
+**Platform:** Claude Code (all)
+**Issue:** After cross-directory operations (e.g., `cd /c/Users/herbh/.devkit-stable && git pull`), the shell CWD can be reset to a parent directory like `D:\DevSpace` that is not a git repository. Subsequent `Agent` calls with `isolation: "worktree"` fail with "not in a git repository and no WorktreeCreate hooks are configured." The error is not obvious because the CWD change is silent.
+**Fix:** Before launching worktree-isolated agents, verify CWD is inside a git repo: `git rev-parse --show-toplevel`. If CWD was reset, explicitly `cd` back to the target project directory first. Common trigger: updating `.devkit-stable` worktree resets CWD.

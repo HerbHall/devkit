@@ -1,7 +1,7 @@
 ---
 description: Learned patterns from past sessions. Read when encountering similar situations.
 tier: 2
-entry_count: 72
+entry_count: 73
 last_updated: "2026-03-30"
 ---
 
@@ -555,6 +555,7 @@ MUI Popper needs `anchorEl` during render. `useRef` + `ref.current` triggers Rea
 
 **Context:** Worktree agents branch from main at launch time. After Wave N merges, Wave N+1 branches are behind main and show as CONFLICTING on GitHub.
 **Fix:** After merging a wave, run `git rebase --onto origin/main <old-base> <branch>` for each next-wave branch. Find old-base with `git log --oneline <branch>` -- second commit is the fork point. Different agents may fork from different main commits -- verify per branch. Also: worktree branches often have unstaged `index.html` changes from embedded SPA builds -- run `git checkout -- path/to/index.html` before rebase.
+
 ### Stacked worktree commits: rebase --onto to separate agent branches
 
 **Context:** When parallel worktree agents all end up committing to the main worktree (instead of their isolated worktrees), commits become stacked on a single branch. For example, `feat/issue-102` ends up with commits for issues 103, 104, AND 102 stacked on top of each other -- only 102 should be there.
@@ -610,6 +611,7 @@ MUI Popper needs `anchorEl` during render. `useRef` + `ref.current` triggers Rea
 **Category:** workflow-pattern
 **Context:** A worktree agent exhausted ~140k tokens without committing (truncated output, incomplete work). Re-running with more context or broader permissions failed again. A focused re-run succeeded in ~50k tokens.
 **Fix:** Re-run with a narrow, explicit read list -- not a broader context. The re-run prompt should: (1) explicitly list the specific files to read FIRST before writing anything (file paths, struct names), (2) keep implementation steps minimal and concrete, (3) include a mandatory pre-commit CI checklist. Agents that explore broadly before writing rarely converge -- a narrow read list upfront prevents expensive exploration loops.
+
 ## 141. Go restartCh Channel Pattern for Goroutine Slice Ownership
 
 **Added:** 2026-03-20 | **Source:** Samverk | **Status:** active
@@ -747,3 +749,12 @@ gh pr update-branch <remaining-pr-2>
 ```
 
 This triggers new CI runs via merge commits; auto-merge fires once CI passes. For N sequential PRs, expect O(N²/2) total update-branch calls. If running many PRs, consider a workflow that auto-updates behind branches on push to main.
+
+## 148. Use Merge Instead of Rebase for Rules Files With Multiple Upstream Commits
+
+**Added:** 2026-03-30 | **Source:** DevKit | **Status:** active
+
+**Category:** workflow-pattern
+**Context:** When a feature branch is behind main by N commits that all touch the same rules files (autolearn-patterns.md, known-gotchas.md), `git rebase origin/main` produces N separate conflict resolution passes -- one per upstream commit. Each pass requires stripping conflict markers and fixing duplicate frontmatter. With 10+ upstream commits, this becomes O(N) manual resolutions.
+**Fix:** Use `git merge origin/main --no-edit` instead. Merge produces a single conflict resolution pass regardless of how many upstream commits touched the files. For additive rules files (both sides append entries), the resolution is always "keep both sides" -- strip markers, fix frontmatter count/date, commit. Rebase is still preferred for code files where commit history matters; merge is better for append-only config/rules files.
+**See also:** AP#82 (rebase conflict resolution: keep both), AP#22 (git stash and branch workflows)
