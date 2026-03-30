@@ -67,6 +67,30 @@ finish. To help:
 - Do NOT remove entries that look unfamiliar -- they belong to another agent
 ```
 
+## Hot File Guard [HOT-FILES] (paste into parallel agent prompts when known hot files exist)
+
+Replace `<file-list>` with the actual paths before pasting.
+
+```text
+## Hot Files -- Do NOT Modify These
+
+The following files are being fixed or modified by a parallel agent in this same wave.
+If you modify them too, your PR will conflict with that agent's PR:
+
+<file-list>
+  - internal/agent/validator.go
+  - web/src/components/Layout.tsx
+
+If you encounter a bug in one of these files that blocks your work:
+1. Note the bug in your PR description under "Discovered but deferred"
+2. Do NOT commit a fix -- the parallel agent is already handling it
+3. Work around it if possible (e.g., add a TODO comment, use a stub)
+
+If one of these files causes a test failure that you cannot work around:
+- Report it in your output and stop -- do not attempt a fix
+- The main context will sequence your work after the hot file PR merges
+```
+
 ## Frontend Agent Checklist [FE-CI] (paste into frontend agent prompts)
 
 ```text
