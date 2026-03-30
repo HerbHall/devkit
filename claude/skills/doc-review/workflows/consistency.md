@@ -1,37 +1,72 @@
 # Doc Review: Consistency Check
 
-Cross-document contradiction scan. Uses Synapset `find_contradictions` when available, falls back to structural comparison when not.
+Cross-document contradiction detection using Synapset semantic memory. Scans H2 sections against the `docs` pool to find conflicting claims across project documentation.
+
+## Prerequisites
+
+- Synapset MCP tools must be available (check tools list before calling -- stdio servers hang indefinitely when unavailable, see KG#155)
+- The `docs` pool must exist and be populated (3,132+ indexed memories across Toolkit projects)
+- Each memory in the pool is an H2-level section with metadata: `source={project}`, `category={doc-type}`, `tags={filename},{section-slug}`
+
+If Synapset is unavailable or the `docs` pool is empty, inform the user:
+
+> "The consistency workflow requires the Synapset `docs` pool. Run the document indexing pipeline to populate it, then re-run `/doc-review consistency`."
 
 ## Steps
 
-### 1. Determine Target Project
+### 1. Determine Scope
 
-If the user specified a project, resolve its path. Otherwise use the current working directory.
+Accept one of:
+
+- **Project name** (e.g., `samverk`, `devkit`, `synapset`, `opskit`) -- scan all `.md` files in the project root and key subdirectories (`docs/`, `claude/`, project root)
+- **File path** (e.g., `docs/architecture.md`) -- scan only that file
+- **No input** -- use the current working directory, derive the project name from `basename $(git rev-parse --show-toplevel 2>/dev/null || pwd)`
 
 ```bash
-PROJECT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-PROJECT_NAME=$(basename "$PROJECT")
+# Resolve project
+if [[ -n "$USER_INPUT" ]]; then
+  if [[ -f "$USER_INPUT" ]]; then
+    TARGET_FILES=("$USER_INPUT")
+    PROJECT_NAME=$(basename "$(git rev-parse --show-toplevel 2>/dev/null || pwd)")
+  else
+    PROJECT_NAME="$USER_INPUT"
+    PROJECT_ROOT=$(find /d/DevSpace/Toolkit -maxdepth 1 -iname "$PROJECT_NAME" -type d | head -1)
+  fi
+else
+  PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+  PROJECT_NAME=$(basename "$PROJECT_ROOT")
+fi
 ```
 
-### 2. Check Synapset Availability
+When scanning a full project, collect `.md` files from these locations (skip `node_modules`, `vendor`, `.git`, `CHANGELOG.md`):
 
-Attempt to verify if Synapset MCP tools are available and the `docs` pool exists:
-
-```text
-Try: list_pools via Synapset MCP
-If available and "docs" pool exists: use SEMANTIC mode (Step 3a)
-If available but no "docs" pool: use STRUCTURAL mode (Step 3b) + note that indexing is needed
-If unavailable: use STRUCTURAL mode (Step 3b)
+```bash
+find "$PROJECT_ROOT" -name "*.md" \
+  -not -path "*/node_modules/*" \
+  -not -path "*/.git/*" \
+  -not -path "*/vendor/*" \
+  -not -name "CHANGELOG.md" \
+  | head -50
 ```
 
-**Important:** If Synapset tools are not in the available tools list, skip the MCP call entirely (stdio MCP servers hang indefinitely when unavailable -- see KG#155).
+Cap at 50 files to keep the workflow tractable. If more exist, prioritize: `CLAUDE.md`, `README.md`, `METHODOLOGY.md`, `docs/*.md`, `claude/**/*.md`.
 
-### 3a. Semantic Mode (Synapset Available)
+### 2. Split Each File into H2 Sections
 
-For each key document in the project (CLAUDE.md, README.md, ADRs, requirements):
+For each `.md` file in scope, read the file and split on H2 (`##`) headings. Each H2 section becomes one unit for contradiction checking.
 
-1. Extract H2 sections as individual claims
-2. For each section, call `find_contradictions`:
+For each section, capture:
+
+- **file_path**: absolute path to the source file
+- **section_heading**: the H2 heading text
+- **section_content**: full text from the H2 heading to the next H2 (or end of file)
+- **section_slug**: lowercase, hyphenated version of the heading (matches the `tags` field in Synapset)
+
+Skip sections shorter than 30 characters (headings with no substantive content).
+
+### 3. Query Synapset for Contradictions
+
+For each section, call `find_contradictions` against the `docs` pool:
 
 ```text
 find_contradictions(
@@ -42,105 +77,110 @@ find_contradictions(
 )
 ```
 
-1. Filter out self-matches (same file + same section)
-2. Classify matches by similarity threshold:
-   - 0.95+: Critical -- near-identical claims that may contradict
-   - 0.90-0.95: High -- very similar claims, likely conflict
-   - 0.85-0.90: Medium -- related claims, possible inconsistency
+**Rate limiting**: Process sections sequentially. For large projects (20+ sections), batch in groups of 10 with a brief status update between batches so the user sees progress.
 
-### 3b. Structural Mode (Fallback)
+### 4. Filter Results
 
-Without Synapset, check for common cross-document inconsistencies by comparing claims structurally:
+For each result set, apply these filters:
 
-**Build commands:**
+1. **Remove self-matches**: If a returned memory's `tags` contain the same filename as the source section, AND the similarity is above 0.95, it is almost certainly the same section. Discard it.
 
-```bash
-# Extract build/test/lint commands from CLAUDE.md and Makefile
-grep -n '`.*make\|go build\|go test\|npm\|pnpm\|cargo' "$PROJECT/CLAUDE.md" 2>/dev/null
-grep -n '^[a-z].*:' "$PROJECT/Makefile" 2>/dev/null
-```
+   Match logic: compare the source file's basename (e.g., `CLAUDE.md`) against the memory's `tags` field. If the tag list includes the same filename, it is a self-match.
 
-Compare: does CLAUDE.md reference make targets that exist? Does it claim commands that differ from the Makefile?
+2. **Remove same-file matches**: If both the source section and the matched memory come from the same file (same filename in tags), discard. Cross-document contradictions are the goal.
 
-**Version claims:**
+3. **Keep cross-project matches**: Matches where `source` differs from the current `PROJECT_NAME` are especially valuable -- these indicate cross-project drift.
 
-```bash
-# Compare version references across docs
-grep -rn 'v[0-9]\+\.[0-9]\+\.[0-9]\+' "$PROJECT"/*.md --include="*.md" 2>/dev/null | head -20
-# Compare against VERSION file or package manifest
-cat "$PROJECT/VERSION" 2>/dev/null
-```
+### 5. Score and Classify by Severity
 
-**Architecture claims:**
+Group surviving matches into three severity levels:
 
-```bash
-# Extract directory structure claims from CLAUDE.md
-# Compare against actual directory structure
-ls -d "$PROJECT"/*/  2>/dev/null | head -20
-```
+| Severity | Similarity Range | Meaning |
+|----------|-----------------|---------|
+| **Critical** | 0.95+ | Near-identical claims across different documents. Very likely a contradiction or dangerous duplication where one copy could drift. |
+| **High** | 0.90 -- 0.94 | Very similar claims. Probable conflict -- same topic described differently, or divergent instructions for the same procedure. |
+| **Medium** | 0.85 -- 0.89 | Related claims. Possible inconsistency worth reviewing. May be complementary rather than contradictory. |
 
-**ADR cross-references:**
+### 6. Produce Findings Report
 
-```bash
-# Find ADR references across all docs
-grep -rn 'ADR-[0-9]\+' "$PROJECT" --include="*.md" 2>/dev/null
-# Verify referenced ADRs exist
-ls "$PROJECT"/docs/ADR-*.md 2>/dev/null
-```
+Format the output as:
 
-### 4. Compile Findings
-
-For each detected inconsistency:
-
-```text
-- **Severity**: Critical / High / Medium
-- **Category**: Contradiction | Version Drift | Missing Reference | Claim Mismatch
-- **Source A**: file_path:line -- "{claim_a}"
-- **Source B**: file_path:line -- "{claim_b}"
-- **Issue**: What is inconsistent
-- **Resolution suggestion**: Which source is likely correct and why
-```
-
-### 5. Produce Report
-
-```text
+````text
 # Consistency Report: {PROJECT_NAME}
 
-**Mode**: {Semantic (Synapset) | Structural (fallback)}
-**Documents checked**: {count}
-**Contradictions found**: {count}
+**Scope**: {count} files, {total_sections} sections checked
+**Contradictions found**: {critical_count} critical, {high_count} high, {medium_count} medium
 
-## Findings
+## Critical (>0.95 similarity)
 
-### Critical (Conflicting Claims)
-{findings}
+### Finding C-1
 
-### High (Likely Inconsistencies)
-{findings}
+- **Source**: `{file_path}` > {section_heading}
+- **Conflicts with**: `{matched_filename}` ({matched_project}) > {matched_section_summary}
+- **Similarity**: {score}
+- **Issue**: {one-line description of what conflicts}
+- **Source excerpt**: "{first 100 chars of source section}"
+- **Match excerpt**: "{first 100 chars of matched memory content}"
 
-### Medium (Possible Drift)
-{findings}
+### Finding C-2
+...
+
+## High (0.90--0.95 similarity)
+
+### Finding H-1
+...
+
+## Medium (0.85--0.90 similarity)
+
+### Finding M-1
+...
 
 ## Summary
 
-{One paragraph: overall consistency assessment, key areas of concern, recommended actions}
-```
+{One paragraph: overall consistency assessment. Note which document pairs
+have the most conflicts. Flag cross-project contradictions specifically.
+Recommend which document should be treated as authoritative for each
+conflicting claim.}
 
-### 6. Offer Follow-Up
+## Recommended Actions
 
-If in structural mode:
+- For critical findings: resolve immediately -- determine which document
+  is authoritative and update the other
+- For high findings: review during next doc maintenance pass
+- For medium findings: note for awareness -- may be intentional variation
+- For cross-project drift: file an issue in the authoritative project's
+  repo to update the stale copy
+````
 
-- "Synapset `docs` pool is not yet populated. Run the document indexing pipeline (Phase 2) to enable semantic contradiction detection."
+### 7. Handle Edge Cases
 
-For any findings:
+**No contradictions found**: Report a clean bill of health:
 
-- "Run `/doc-review <path>` on specific files to investigate findings in depth"
-- "For version drift issues, update the stale document to match the current state"
+> "No cross-document contradictions detected above 0.85 similarity threshold. {count} files and {sections} sections were checked."
 
-### 7. Important Limitations
+**Synapset returns errors**: If `find_contradictions` fails for a specific section (e.g., content too long, API error), log the section path, skip it, and continue. Report skipped sections at the end:
+
+> "Note: {N} sections were skipped due to API errors. Run `/doc-review consistency` again to retry, or check Synapset server health."
+
+**Large sections (>2000 chars)**: Truncate the query to the first 1500 characters. Synapset embeddings work best on focused content. If a section is very large, note this in the finding.
+
+### 8. Offer Follow-Up
+
+After presenting the report:
+
+- "Run `/doc-review {file_path}` on a specific file to investigate a finding in depth"
+- "For critical findings, I can update the stale document now -- provide the authoritative source and I will align the other"
+- "Run `/doc-review stale` to check if contradictions correlate with stale documents"
+
+### 9. Limitations
 
 Note to the user:
 
-- Structural mode catches surface-level inconsistencies (mismatched commands, version drift, missing references)
-- Semantic mode (requires Synapset docs pool) catches deeper contradictions (conflicting architectural claims, divergent rationale)
-- Neither mode catches omission contradictions (something was removed from code but the doc still claims it exists) -- that requires the audit workflow's semantic accuracy checks
+- Semantic similarity detects **surface contradictions** (same topic, different claims). It does not detect **omission contradictions** (something removed from code but docs still claim it exists) -- use the audit workflow for those.
+- Threshold 0.85 balances precision and recall. Lower thresholds produce more noise. Raise to 0.90 if results are too noisy.
+- The `docs` pool must be re-indexed after significant documentation changes for results to reflect the latest state.
+- Self-match filtering relies on filename tags. If a memory was indexed without proper tags, self-matches may leak through.
+
+## Post-Processing: Autolearn Capture
+
+After generating findings, follow the [autolearn integration](autolearn-integration.md) workflow to capture recurring patterns.
