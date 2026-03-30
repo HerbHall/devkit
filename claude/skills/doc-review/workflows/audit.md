@@ -88,6 +88,18 @@ grep -n '\[.*\](\..*\.md' "$file" | head -20
 
 For each internal link, verify the target file exists relative to the source file's directory.
 
+### 7.5. Validate Executable References
+
+For files containing fenced code blocks (especially CLAUDE.md, CONTRIBUTING.md, and runbooks):
+
+1. Extract all fenced code blocks with shell/bash syntax
+2. For each `make <target>`: check the project Makefile for matching target definitions
+3. For each `npm run <script>` or `pnpm <script>`: check package.json scripts object
+4. For each `go run <path>`: verify the directory/package exists on disk
+5. Report missing targets/scripts as HIGH severity findings
+
+Focus on CLAUDE.md and CONTRIBUTING.md first (highest-value for developer onboarding accuracy).
+
 ### 8. Compile Report
 
 Produce a structured report:
