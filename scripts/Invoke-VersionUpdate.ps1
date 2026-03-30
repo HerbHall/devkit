@@ -327,17 +327,25 @@ function Invoke-Propagate {
 
     # Resolve project dirs
     if ($ProjectsArg -eq 'all') {
-        $projectDirs = Get-ChildItem -Path $devspacePath -Directory | Where-Object { Test-Path (Join-Path $_.FullName '.git') }
+        # Search up to 2 levels deep to handle family-folder structure (D:\DevSpace\Family\Project\)
+        $projectDirs = @(Get-ChildItem -Path $devspacePath -Directory | ForEach-Object {
+            $direct = $_
+            if (Test-Path (Join-Path $direct.FullName '.git')) {
+                $direct
+            } else {
+                Get-ChildItem -Path $direct.FullName -Directory | Where-Object { Test-Path (Join-Path $_.FullName '.git') }
+            }
+        })
     } else {
         $names = $ProjectsArg -split ','
-        $projectDirs = $names | ForEach-Object {
+        $projectDirs = @($names | ForEach-Object {
             $p = Join-Path $devspacePath $_.Trim()
             if (-not (Test-Path $p)) {
                 Write-Warn "Project directory not found: $p — skipping"
                 return
             }
             Get-Item $p
-        } | Where-Object { $_ -ne $null }
+        } | Where-Object { $_ -ne $null })
     }
 
     if ($projectDirs.Count -eq 0) {

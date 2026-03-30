@@ -1,6 +1,6 @@
 ---
 phase: execution
-updated: 2026-03-21T22:00:00Z
+updated: 2026-03-21T22:30:00Z
 updated_by: claude-code
 managed_by: samverk
 ---
@@ -15,9 +15,10 @@ Active maintenance and execution. AI tooling methodology, Claude Code configurat
 ## What Is Running
 
 - `~/.claude/` symlinks pointing to `~/.devkit-stable/` (stable worktree, branch: stable)
-  `-LinkStable` ran 2026-03-21 -- dev copy at D:\DevSpace\devkit\ no longer serves live rules
+  50 valid symlinks confirmed; stable at ff10d8b (PR #494 merge commit, 2026-03-21)
 - `~/.devkit-stable/` worktree on `stable` branch — current live rules source
-- 27 skills, 7 agents, 11 rules files, 95 active patterns (AP: 58 entries last AP#143; KG: 37 entries last KG#177)
+- Dev copy at `D:\DevSpace\Toolkit\devkit\` on `main` branch (clean, up to date)
+- 27 skills, 7 agents, 10 rules files, 95 active patterns (KG: 37 entries last KG#175; AP: 58 entries last AP#143)
 - 3 Claude Code hooks (SessionStart, SessionStop, SubagentVerify) + 3 git hooks (pre-push, pre-commit, commit-msg)
 - Credentials migrated to PowerShell SecretStore vault (HomeLabVault)
 - **Samverk dispatcher STOPPED** (2026-03-21) -- stopped to prevent file conflicts during restructuring.
@@ -25,27 +26,21 @@ Active maintenance and execution. AI tooling methodology, Claude Code configurat
 
 ## In Flight
 
-- **PR #494** (feature/devkit-zone-infrastructure) -- OPEN on GitHub. Contains:
-  - ADR-0018: DevKit Zone convention + project family structure
-  - ADR-0019: Centralized tool version registry
-  - `tool-registry.json`: centralized tool version registry (wired to src/ templates via tokens)
-  - `scripts/Invoke-VersionUpdate.ps1`: 5-mode version update script
-  - `scripts/check-registry-drift.py`: CI drift detector (in lint.yml)
-  - Conformance check #21: Tool Version Currency
-  - `.devkit-family.json` files for all 6 families: Toolkit, Samverk, Personal, Games, Unity, Websites
-  - VS Code workspace files updated for all moved projects
-  - KG#176, KG#177, AP#144: Tauri 2 and Recharts patterns ingested
-  - Rules compaction: KG 51→37, AP 68→58 (24 entries archived to Synapset IDs 728-751)
+None. PR #494 merged and promoted to stable. Dev on main, stable at ff10d8b.
+
+## VS Code Workspace
+
+- `D:\DevSpace\devkit.code-workspace` -- created 2026-03-21 (was missing, caused session handoff errors)
+  Open via: `code D:\DevSpace\devkit.code-workspace`
 
 ## DevSpace Structure (as of 2026-03-21)
 
 ```text
 D:\DevSpace\
-├── devkit\                  ← TEMP at root; move to Toolkit\ AFTER this CC session exits
-│                              (Windows blocks mv while CC session has CWD = devkit)
-│                              Command: Move-Item D:\DevSpace\devkit D:\DevSpace\Toolkit\devkit
-├── Toolkit\samverk\         ← Samverk app (was D:\DevSpace\Samverk\)
-├── Toolkit\Synapset\        ← MCP memory server (was D:\DevSpace\Synapset\)
+├── devkit.code-workspace    ← Open this to work on DevKit
+├── Toolkit\devkit\          ← DevKit dev copy (branch: main)
+├── Toolkit\samverk\         ← Samverk app
+├── Toolkit\Synapset\        ← MCP memory server
 ├── Samverk\SubNetree\       ← network monitoring platform
 ├── Samverk\RunNotes\
 ├── Samverk\Runbooks\
@@ -65,22 +60,19 @@ D:\ root is now clean: bots\, Websites\, Timberborn-Mods\, UnityDev\ all removed
 
 ## Queued (do in order)
 
-1. **Wave 4: devkit move to Toolkit/** (NEXT SESSION, do first thing)
-   - symlinks ALREADY pointing to stable worktree (-LinkStable done 2026-03-21)
-   - In a terminal outside CC: `Move-Item D:\DevSpace\devkit D:\DevSpace\Toolkit\devkit`
-   - Reopen CC from D:\DevSpace\Toolkit\devkit
-   - Update ~/.devkit-config.json devspacePath if needed (or add devkitPath field)
+1. **Restart Samverk dispatcher** (NEXT)
+   - `ssh root@192.168.1.162` and run `samverk dispatch` with original flags
+   - Check process history on server for flags used previously
 
-2. **Merge PR #494** -- merge the zone infrastructure PR after move completes
-   - After merge, promote stable: `pwsh setup/sync.ps1 -Promote`
-   - Restart Samverk dispatcher
-
-3. **Propagate tool versions to managed projects** (operational, not tooling)
+2. **Propagate tool versions to managed projects** (operational, not tooling)
    - `pwsh scripts/Invoke-VersionUpdate.ps1 -Mode Propagate -Projects all -DryRun`
    - Review and apply updates project by project
 
 ## Recently Completed
 
+- **PR #494 merge + stable promote** (2026-03-21): Zone infrastructure merged to main (ff10d8b).
+  Fixed broken stable worktree `.git` pointer (old path D:\DevSpace\devkit -> D:\DevSpace\Toolkit\devkit).
+  Reset stable to origin/main. Created `D:\DevSpace\devkit.code-workspace`. Dev switched to main.
 - **PR #494 prep complete** (2026-03-21): All deliverables committed to feature branch.
   Zone infrastructure, ADR-0018 + ADR-0019, version management tooling, rules compaction.
 - **Rules compaction** (2026-03-21): KG 46.8k→36.9k (-21%), AP 42.8k→37.0k (-14%).
