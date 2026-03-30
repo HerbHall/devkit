@@ -1,7 +1,7 @@
 # MCP Lazy-Loading Gateway Feasibility Research
 
 **Date:** 2026-03-14
-**Issue:** [#293](https://github.com/HerbHall/devkit/issues/293)
+**Issue:** [#293](https://gitea.herbhall.net/samverk/devkit/issues/293)
 **Status:** Complete
 
 ## Problem Statement

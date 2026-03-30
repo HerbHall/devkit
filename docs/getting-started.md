@@ -18,7 +18,7 @@ Clone the repository into your workspace root. The recommended location is `D:\D
 
 ```bash
 cd ~/workspace  # or wherever your projects live
-git clone https://github.com/HerbHall/devkit.git
+git clone https://gitea.herbhall.net/samverk/devkit.git
 ```
 
 ## Step 2: Run Setup

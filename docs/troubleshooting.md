@@ -113,7 +113,7 @@ pwsh -File setup/sync.ps1 -Link
 
 **Symptom**: `pwsh -File setup/verify.ps1` does nothing or shows a stub message.
 
-**Status**: This is a known issue ([#204](https://github.com/HerbHall/devkit/issues/204)). The `verify.ps1` script is a stub.
+**Status**: This is a known issue ([#204](https://gitea.herbhall.net/samverk/devkit/issues/204)). The `verify.ps1` script is a stub.
 
 **Workaround**: Use the bootstrap Phase 6 verification instead:
 
@@ -154,4 +154,4 @@ Tools installed via winget update the registry PATH but not the current session.
 
 - **Known gotchas**: See `claude/rules/known-gotchas.md` for 98 documented platform-specific issues
 - **Autolearn patterns**: See `claude/rules/autolearn-patterns.md` for 117 discovered patterns
-- **File an issue**: [DevKit Issues](https://github.com/HerbHall/devkit/issues)
+- **File an issue**: [DevKit Issues](https://gitea.herbhall.net/samverk/devkit/issues)

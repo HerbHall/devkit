@@ -126,5 +126,5 @@ Use Python for setup scripts.
 ## References
 
 - [ADR-0012: Three-Tier Architecture](ADR-0012-three-tier-architecture.md) -- defines which files are universal vs machine-specific
-- [Issue #83: Dual-language scripting strategy](https://github.com/HerbHall/devkit/issues/83)
-- [Issue #82: Cross-platform support](https://github.com/HerbHall/devkit/issues/82)
+- [Issue #83: Dual-language scripting strategy](https://gitea.herbhall.net/samverk/devkit/issues/83)
+- [Issue #82: Cross-platform support](https://gitea.herbhall.net/samverk/devkit/issues/82)
