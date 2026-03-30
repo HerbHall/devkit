@@ -1,7 +1,7 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 52
+entry_count: 54
 last_updated: "2026-03-30"
 ---
 
@@ -143,6 +143,7 @@ All parallel agents write to the same working directory. Sort into branches via 
 
 **Issue:** Two parallel worktree agents both modifying a shared registration file (e.g. `tools.go`, `router.go`, `routes.go`, skill routing tables) create a two-block rebase conflict when the second branch is rebased onto main after the first merges.
 **Fix:** When planning parallel agents that all add to a shared registration file, assign file ownership -- only ONE agent touches the shared file. Others wait or use a different integration point. Extends the general parallel-agent rule with the most common specific case.
+
 ### Worktree isolation is partial when launching 5+ agents simultaneously
 
 **Issue:** When launching 5+ parallel agents with `isolation: "worktree"`, not all agents receive isolated worktrees. In observed sessions, only 2-3 of 5 agents got proper worktree directories. The other agents worked in the shared main working directory, causing cross-contamination (commits appearing in wrong branches, agents needing stash-based sorting).
@@ -326,6 +327,11 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 
 **Issue:** Agent markdown tables have MD056 errors: pipes in code spans parsed as separators, or missing columns.
 **Fix:** Run `npx markdownlint-cli2` on agent `.md` files. Use `&#124;` for pipes in cells. Verify column counts.
+
+### MD029 ordered list numbering breaks after fenced code blocks
+
+**Issue:** When writing step-by-step workflows with embedded fenced code blocks (common in CONTRIBUTING.md), the list item after the code block is renumbered to `1.` by the parser. MD029 (ordered-list-item-prefix) flags it as misnumbered because the code block breaks list context.
+**Fix:** Convert the post-code-block step to prose paragraph instead of a numbered list item. Alternative: ensure blank line + correct next number after the code fence closing.
 
 ## 115. TypeScript API Interface Phantom Field Drift from Go Backend
 
@@ -684,3 +690,11 @@ curl -X POST "http://<gitea>/api/v1/repos/<owner>/<repo>/pulls/<N>/merge" \
 
 Alternatively, use branch protection rules that match check run names instead of commit status contexts — but the mismatch is architectural and `force_merge` is the practical workaround.
 **See also:** KG#123 (Gitea API and Actions gotchas)
+
+## 184. URL Migration Leaves Surrounding Text Labels Stale
+
+**Added:** 2026-03-30 | **Source:** DevKit | **Status:** active
+
+**Platform:** All (text processing)
+**Issue:** Bulk URL replacement (e.g., `github.com` -> `gitea.herbhall.net`) changes the URL but leaves surrounding text labels unchanged. "Check GitHub Issues" becomes misleading when the link points to Gitea.
+**Fix:** After URL migration, grep for the old service name near new URLs to catch stale labels: `grep -n "GitHub" <file> | grep -i "gitea"`.
