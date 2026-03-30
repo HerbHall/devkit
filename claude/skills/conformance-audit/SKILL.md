@@ -1,16 +1,16 @@
 ---
 name: conformance-audit
-description: Cross-project conformance auditing against DevKit standards (20-point checklist). Full audits, single-project checks, and auto-fix of common gaps.
+description: Cross-project conformance auditing against DevKit standards (25-point checklist). Full audits, single-project checks, and auto-fix of common gaps.
 user_invocable: true
 ---
 
 # Conformance Audit
 
-Cross-project conformance auditing against DevKit standards. Run a 20-point checklist across all projects, audit a single project, or auto-fix common gaps.
+Cross-project conformance auditing against DevKit standards. Run a 25-point checklist across all projects, audit a single project, or auto-fix common gaps.
 
 <essential_principles>
 
-**The 20-point checklist is the single source of truth for conformance.** All audit workflows reference `references/checklist.md` for check definitions, pass criteria, and fix references. Do not invent checks outside this list.
+**The 25-point checklist is the single source of truth for conformance.** All audit workflows reference `references/checklist.md` for check definitions, pass criteria, and fix references. Do not invent checks outside this list.
 
 **Stack detection determines which checks apply.** Go projects need `.golangci.yml`, Rust needs clippy in CI, Node needs `eslint.config.js`, etc. Checks that do not apply to the detected stack are reported as "skip", not "fail".
 
@@ -23,7 +23,7 @@ Cross-project conformance auditing against DevKit standards. Run a 20-point chec
 <intake>
 **conformance-audit triggered.** What kind of conformance audit do you need?
 
-1. **Full audit** -- Run 19-point conformance check across all projects
+1. **Full audit** -- Run 25-point conformance check across all projects
 2. **Single project** -- Audit one specific project
 3. **Fix gaps** -- Auto-fix common conformance gaps for a project
 

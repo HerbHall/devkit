@@ -1,6 +1,6 @@
 # Conformance Checklist
 
-19-point checklist for DevKit project conformance. Each check includes what to look for, which stacks need it, how to determine pass/fail, and which DevKit template provides the fix.
+25-point checklist for DevKit project conformance. Each check includes what to look for, which stacks need it, how to determine pass/fail, and which DevKit template provides the fix.
 
 ## Stack Detection
 
@@ -190,6 +190,130 @@ A project may match multiple stacks (e.g., Go backend + Node frontend). Apply ch
 - **Fail indicators**: Multiple active entries missing from Synapset corpus
 - **Fix reference**: Run `/rules-compact` batch-ingest sync, or manually `store_memory` for missing entries
 - **Note**: This check is **informational only** (does not affect score). Skip entirely if Synapset MCP tools are unavailable
+
+### 21. Tool Version Currency
+
+- **What to check**: CI workflow files use action versions that meet or exceed the `min_supported` version from the DevKit tool registry (`tool-registry.json`). Files using versions below `min_supported` are a hard fail. Files using versions below `current` (but at or above `min_supported`) are a soft warning.
+- **Stacks**: All projects with `.github/workflows/`
+- **Pass criteria**: Every `uses: owner/action@vN` in every workflow file resolves to a version at or above `min_supported` for that tool in the registry.
+- **Fail indicators**: Any action pinned below `min_supported` (e.g., `actions/checkout@v2` when `min_supported` is v3). Also flag: floating version refs (`@master`, `@stable`, `@latest`) — these are always a fail.
+- **Warning indicators**: Action pinned at or above `min_supported` but below `current` — project is behind but not critically. List as `WARN` in output, do not count against score.
+- **Fix reference**: Run `scripts/Invoke-VersionUpdate.ps1 -Mode Propagate -Projects <name> -DryRun` to preview, then without `-DryRun` to create an update PR.
+- **Registry location**: `D:\DevSpace\devkit\tool-registry.json` (or `$DEVKIT_ROOT/tool-registry.json`)
+- **Check snippet**:
+
+```bash
+# Read registry min_supported versions and check project workflow files
+REGISTRY="$DEVKIT_ROOT/tool-registry.json"
+FAILS=0; WARNS=0
+for wf in .github/workflows/*.yml; do
+  while IFS= read -r line; do
+    if echo "$line" | grep -qE 'uses: .+@(v[0-9]+|stable|master|latest)'; then
+      action=$(echo "$line" | grep -oE '[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+(-[a-zA-Z0-9_-]+)*(?=@)')
+      ver=$(echo "$line" | grep -oE '@.+$' | tr -d '@')
+      # Floating refs are always FAIL
+      if echo "$ver" | grep -qE '^(stable|master|latest)$'; then
+        echo "FAIL: $wf: $action@$ver (floating ref -- pin to specific version)"; FAILS=$((FAILS+1))
+        continue
+      fi
+      result=$(python3 -c "
+import json, sys
+reg = json.load(open('$REGISTRY'))
+for t in reg['tools'].values():
+    if t.get('action') == '$action':
+        print(t.get('min_supported',''), t.get('current',''))
+        sys.exit(0)
+print('unknown unknown')
+" 2>/dev/null)
+      min_v=$(echo "$result" | cut -d' ' -f1 | tr -d 'v')
+      cur_v=$(echo "$result" | cut -d' ' -f2 | tr -d 'v')
+      act_v=$(echo "$ver" | tr -d 'v')
+      [ "$result" = "unknown unknown" ] && continue
+      if [ "$act_v" -lt "$min_v" ] 2>/dev/null; then
+        echo "FAIL: $(basename $wf): $action@v$act_v below min_supported v$min_v"; FAILS=$((FAILS+1))
+      elif [ "$act_v" -lt "$cur_v" ] 2>/dev/null; then
+        echo "WARN: $(basename $wf): $action@v$act_v below current v$cur_v"; WARNS=$((WARNS+1))
+      fi
+    fi
+  done < "$wf"
+done
+[ "$FAILS" -eq 0 ] && echo "PASS ($WARNS warnings)" || echo "FAIL ($FAILS critical, $WARNS warnings)"
+```
+
+### 22. DevKit Enrollment Marker Present
+
+- **What to check**: The project root contains a `.devkit.json` enrollment marker with valid required fields.
+- **Stacks**: All DevKit-managed projects (any repo under a DevSpace folder)
+- **Pass criteria**: `.devkit.json` exists at repo root with `project`, `tier`, `family`, and `devkit_version` fields present and non-empty.
+- **Fail indicators**: Missing `.devkit.json` (orphan project — was not created via `new-project.ps1`). Or missing required fields.
+- **Fix reference**: Run `setup/new-project.ps1` for new projects. For existing projects, create manually:
+  `{"project":"<name>","tier":"full","profile":"<stack>","family":"<Family>","managed_by":null,"created":"<date>","devkit_version":"<version>"}`
+- **Note**: Orphan detection in `SessionStart.sh` also flags this at session start.
+
+### 23. Document Structure Compliance
+
+- **What to check**: Required document types exist and match schemas from `doc-schemas.yaml`
+- **Stacks**: All
+- **Pass criteria**: At minimum, `CLAUDE.md` and `README.md` exist and contain their required sections per schema. Check `CLAUDE.md` for "Quick Start" or "Quick Reference" section and at least one build/test command. Check `README.md` for "Description" (or a top-level paragraph) and "Usage" or "Installation" section.
+- **Fail indicators**: `CLAUDE.md` missing required sections (no Quick Start, no build commands). `README.md` missing usage/installation guidance. For Toolkit projects: `SECURITY.md` missing (Medium severity, not a hard fail).
+- **Fix reference**: Run `/doc-review audit` for detailed per-file findings. Use `doc-schemas.yaml` as the write contract for regenerating compliant documents.
+- **Schema location**: `D:\DevSpace\Toolkit\devkit\devspace\templates\doc-schemas.yaml`
+
+### 24. Link Integrity
+
+- **What to check**: Internal cross-references in markdown files resolve to existing files
+- **Stacks**: All
+- **Pass criteria**: Sample up to 20 markdown files. Extract internal links (relative paths to `.md` files). All sampled links resolve to existing files.
+- **Fail indicators**: Any internal link points to a non-existent file. Anchor references (`#section`) to non-existent headings in the target file.
+- **Fix reference**: Run `lychee --offline --include-fragments .` for comprehensive local link checking. Run `/doc-review fix` for formatting-level corrections.
+- **Check snippet**:
+
+```bash
+FAILS=0
+for f in $(find . -name "*.md" -not -path "*/node_modules/*" -not -path "*/.git/*" | head -20); do
+  dir=$(dirname "$f")
+  while IFS= read -r link; do
+    target=$(echo "$link" | sed 's/#.*//')  # strip anchor
+    [ -z "$target" ] && continue
+    if [ ! -f "$dir/$target" ] && [ ! -f "$target" ]; then
+      echo "FAIL: $f -> $target (not found)"
+      FAILS=$((FAILS+1))
+    fi
+  done < <(grep -oP '\[.*?\]\(\K[^)]+' "$f" | grep -E '\.md' | grep -v '^http')
+done
+[ "$FAILS" -eq 0 ] && echo "PASS" || echo "FAIL ($FAILS broken links)"
+```
+
+### 25. Documentation Freshness
+
+- **What to check**: Core documentation updated within 90 days when related code has been actively changed
+- **Stacks**: All
+- **Pass criteria**: `CLAUDE.md` and `README.md` last modified within 90 days, OR no code files (`.go`, `.ts`, `.rs`, `.cs`, `.py`) modified in the same 90-day window (dormant project exception).
+- **Fail indicators**: `CLAUDE.md` or `README.md` not updated in 90+ days while code files in the same project have recent commits.
+- **Fix reference**: Run `/doc-review stale` for a detailed freshness report showing which documents reference actively-changed code.
+- **Check snippet**:
+
+```bash
+THRESHOLD=90
+NOW=$(date +%s)
+FAILS=0
+CODE_RECENT=$(git log --since="${THRESHOLD} days ago" --name-only --pretty=format: -- \
+  "*.go" "*.ts" "*.tsx" "*.rs" "*.cs" "*.py" | sort -u | grep -v '^$' | wc -l)
+if [ "$CODE_RECENT" -eq 0 ]; then
+  echo "SKIP (dormant project -- no code changes in ${THRESHOLD} days)"
+  exit 0
+fi
+for doc in CLAUDE.md README.md; do
+  [ ! -f "$doc" ] && continue
+  LAST=$(git log -1 --format=%ct -- "$doc" 2>/dev/null || echo 0)
+  DAYS=$(( (NOW - LAST) / 86400 ))
+  if [ "$DAYS" -gt "$THRESHOLD" ]; then
+    echo "FAIL: $doc last updated ${DAYS} days ago (threshold: ${THRESHOLD})"
+    FAILS=$((FAILS+1))
+  fi
+done
+[ "$FAILS" -eq 0 ] && echo "PASS" || echo "FAIL ($FAILS stale core docs)"
+```
 
 ## Scoring
 
