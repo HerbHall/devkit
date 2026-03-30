@@ -145,14 +145,15 @@ Frontend:
 ```text
 ## Pre-PR Docker QC Gate
 
-Before creating a PR for significant features, run Docker QC to catch runtime issues:
+Before creating a PR for significant features, verify in a containerized environment:
 
-1. `make docker-qc` -- Builds from local source with seed data
-2. Open http://localhost:8080 and verify:
-   - Setup wizard completes successfully
-   - Dashboard loads with device data
-   - New feature works as expected in a containerized environment
-3. `make docker-qc-down` -- Tear down when done
+1. Build a Docker image from local source (project Makefile, docker compose, or manual Dockerfile)
+2. Run with seed data if available
+3. Open the web UI (typically http://localhost:8080) and verify:
+   - Setup wizard or initial config completes
+   - Dashboard or main view loads with data
+   - New feature works as expected
+4. Tear down containers when done
 
 This catches issues that unit tests miss: missing embeds, broken routes,
 runtime panics, config collisions, and container-specific failures.

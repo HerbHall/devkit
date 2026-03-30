@@ -52,13 +52,15 @@ Always follow: Explore (read files) -> Plan (design approach) -> Code (implement
 
 For significant features (new modules, API changes, UI additions):
 
-- Run `make docker-qc` to build from local source with seed data
-- Browse `http://localhost:8080` and verify the feature works in a container
-- Run `make docker-qc-smoke` for automated endpoint verification
-- Run `make docker-qc-down` to tear down
+- Build and run the project in a Docker container with seed data
+- Browse the web UI and verify the feature works in a containerized environment
+- Run smoke tests against the container endpoints if available
+- Tear down the container when done
 - Skip for docs-only, test-only, or lint-fix changes
 
 This catches runtime issues (missing embeds, config collisions, broken routes) that unit tests and CI can't. Faster feedback loop than waiting for CI.
+
+Projects should provide a Makefile or script target for this workflow (e.g., `make docker-qc` or `docker compose up --build`). If no target exists, build and run manually.
 
 ## 7. CI Verification
 
