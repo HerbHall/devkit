@@ -1,8 +1,8 @@
 ---
 description: Learned patterns from past sessions. Read when encountering similar situations.
 tier: 2
-entry_count: 61
-last_updated: "2026-03-22"
+entry_count: 72
+last_updated: "2026-03-30"
 ---
 
 # Learned Patterns
@@ -551,6 +551,10 @@ MUI Popper needs `anchorEl` during render. `useRef` + `ref.current` triggers Rea
 **Context:** Parallel worktree agents both modifying the same file create merge conflicts if both branches merge independently.
 **Fix:** Merge the first branch to main via fast-forward, then rebase the second branch onto updated main before merging. Both merges stay fast-forward with zero conflicts.
 
+### Inter-wave rebase required after each wave merges (from issue #434)
+
+**Context:** Worktree agents branch from main at launch time. After Wave N merges, Wave N+1 branches are behind main and show as CONFLICTING on GitHub.
+**Fix:** After merging a wave, run `git rebase --onto origin/main <old-base> <branch>` for each next-wave branch. Find old-base with `git log --oneline <branch>` -- second commit is the fork point. Different agents may fork from different main commits -- verify per branch. Also: worktree branches often have unstaged `index.html` changes from embedded SPA builds -- run `git checkout -- path/to/index.html` before rebase.
 ### Stacked worktree commits: rebase --onto to separate agent branches
 
 **Context:** When parallel worktree agents all end up committing to the main worktree (instead of their isolated worktrees), commits become stacked on a single branch. For example, `feat/issue-102` ends up with commits for issues 103, 104, AND 102 stacked on top of each other -- only 102 should be there.
@@ -591,6 +595,21 @@ MUI Popper needs `anchorEl` during render. `useRef` + `ref.current` triggers Rea
 **Context:** Tests asserting exact counts (e.g., `len(tools) != 41`) fail whenever a new item is added. Common in tool-discovery tests, route-registration tests, and enum exhaustiveness checks.
 **Fix:** Before creating a PR that adds tools/routes/handlers, search for `len(...) != N` or `assert.Equal(t, N, len(...))` patterns and update the expected count. For non-correctness counts, prefer `>= N` over exact equality.
 
+## 138. Use GIT_EDITOR=true for Non-Interactive Rebase Continue
+
+**Added:** 2026-03-18 | **Source:** Synapset | **Status:** active
+
+**Category:** correction
+**Context:** `git rebase --continue --no-edit` fails with `error: unknown option 'no-edit'`. The `--no-edit` flag is not valid for `git rebase --continue`.
+**Fix:** Use `GIT_EDITOR=true git rebase --continue` instead. Setting `GIT_EDITOR` to `true` (a no-op binary) suppresses the editor without the invalid flag, silently accepting the default commit message.
+
+## 139. Narrow Read List for Re-Running Failed Worktree Agents
+
+**Added:** 2026-03-18 | **Source:** Synapset | **Status:** active
+
+**Category:** workflow-pattern
+**Context:** A worktree agent exhausted ~140k tokens without committing (truncated output, incomplete work). Re-running with more context or broader permissions failed again. A focused re-run succeeded in ~50k tokens.
+**Fix:** Re-run with a narrow, explicit read list -- not a broader context. The re-run prompt should: (1) explicitly list the specific files to read FIRST before writing anything (file paths, struct names), (2) keep implementation steps minimal and concrete, (3) include a mandatory pre-commit CI checklist. Agents that explore broadly before writing rarely converge -- a narrow read list upfront prevents expensive exploration loops.
 ## 141. Go restartCh Channel Pattern for Goroutine Slice Ownership
 
 **Added:** 2026-03-20 | **Source:** Samverk | **Status:** active

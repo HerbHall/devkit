@@ -12,9 +12,23 @@
       "Grep",
       "Task",
       "Skill",
-      "mcp__*"
+      "mcp__MCP_DOCKER__*",
+      "mcp__sqlite__*",
+      "mcp__memory__*",
+      "mcp__synapset__*",
+      "mcp__samverk__*",
+      "mcp__sequential-thinking__*",
+      "mcp__context7__*",
+      "mcp__ms365-onenote__*",
+      "mcp__claude_ai_Cloudflare_Developer_Platform__*",
+      "mcp__claude_ai_Microsoft_Learn__*"
     ],
-    "_comment_permissions": "These are broad permissions. For tighter control, replace with granular rules like: Bash(git add:*), Bash(gh run watch:*), Read(/path/to/project/**)"
+    "deny": [
+      "mcp__claude_ai_Samverk_MCP__*",
+      "mcp__claude_ai_Synapset_MCP__*"
+    ],
+    "_comment_permissions": "MCP wildcards require server name: mcp__servername__* (not mcp__*). Add one entry per MCP server. For tighter control, replace broad tool names with granular rules like: Bash(git add:*), Read(/path/to/project/**)",
+    "_comment_deny": "Deny remote Claude.ai connectors that duplicate locally-configured MCP servers. Local servers (in ~/.claude/mcp.json) take precedence -- they use direct LAN connections with Bearer auth instead of OAuth through Cloudflare tunnels. Add entries here for any MCP server that has both a local and remote configuration."
   },
   "hooks": {
     "UserPromptSubmit": [

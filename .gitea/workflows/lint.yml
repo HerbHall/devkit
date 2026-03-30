@@ -170,43 +170,88 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
 
       - name: Validate YAML templates
         run: |
-          pip install pyyaml
-          python -c "
-          import yaml, glob, sys
+          python3 - << 'PYEOF'
+          import sys, io, os, tarfile, json, urllib.request, glob
+          try:
+              import yaml
+          except ImportError:
+              api = json.loads(urllib.request.urlopen(
+                  'https://pypi.org/pypi/PyYAML/json').read())
+              src_url = next(u['url'] for u in api['urls']
+                             if u['packagetype'] == 'sdist')
+              data = urllib.request.urlopen(src_url).read()
+              with tarfile.open(fileobj=io.BytesIO(data), mode='r:gz') as tf:
+                  os.makedirs('/tmp/pyyaml/yaml', exist_ok=True)
+                  for m in tf.getmembers():
+                      if '/yaml/' in m.name and m.name.endswith('.py'):
+                          fobj = tf.extractfile(m)
+                          if fobj:
+                              dest = '/tmp/pyyaml/yaml/' + os.path.basename(m.name)
+                              open(dest, 'wb').write(fobj.read())
+              sys.path.insert(0, '/tmp/pyyaml')
+              import yaml
           errors = 0
-          for f in sorted(glob.glob('project-templates/*.yml')):
+          files = sorted(glob.glob('project-templates/*.yml'))
+          for f in files:
               try:
-                  with open(f) as fh:
-                      yaml.safe_load(fh)
-                  print(f'OK: {f}')
-              except yaml.YAMLError as e:
-                  print(f'ERROR: {f}: {e}')
+                  yaml.safe_load(open(f))
+                  print('OK: ' + f)
+              except Exception as e:
+                  print('ERROR: ' + f + ': ' + str(e))
                   errors += 1
           if errors:
               sys.exit(1)
-          print(f'All {len(glob.glob(\"project-templates/*.yml\"))} YAML templates valid')
-          "
+          print('All ' + str(len(files)) + ' YAML templates valid')
+          PYEOF
 
       - name: Validate JSON templates
         run: |
-          python -c "
-          import json, glob, sys
+          python3 - << 'PYEOF'
+          import sys, glob, json
           errors = 0
-          for f in sorted(glob.glob('project-templates/*.json')):
+          files = sorted(glob.glob('project-templates/*.json'))
+          for f in files:
               try:
-                  with open(f) as fh:
-                      json.load(fh)
-                  print(f'OK: {f}')
+                  json.load(open(f))
+                  print('OK: ' + f)
               except json.JSONDecodeError as e:
-                  print(f'ERROR: {f}: {e}')
+                  print('ERROR: ' + f + ': ' + str(e))
                   errors += 1
           if errors:
               sys.exit(1)
-          print(f'All {len(glob.glob(\"project-templates/*.json\"))} JSON templates valid')
-          "
+          print('All ' + str(len(files)) + ' JSON templates valid')
+          PYEOF
+
+  merge:
+    name: Auto-merge
+    needs: [markdown, validate-skills, verify-skill-count, validate-rule-metadata, validate-templates]
+    if: gitea.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Merge safe PR types after CI passes
+        run: |
+          TITLE="${{ gitea.event.pull_request.title }}"
+          PR="${{ gitea.event.pull_request.number }}"
+          REPO="${{ gitea.repository }}"
+
+          if ! echo "$TITLE" | grep -qE '^(chore|docs|ci|style|fix|refactor|test|feat|autolearn)(\(.+\))?(!)?: '; then
+            echo "Skipping: '$TITLE' does not match a conventional commit prefix"
+            exit 0
+          fi
+
+          echo "Safe prefix detected -- merging PR #${PR}: $TITLE"
+          HTTP=$(curl -sw "%{http_code}" -o /dev/null -X POST \
+            -H "Authorization: token ${{ secrets.CI_GITEA_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{"Do":"squash","delete_branch_after_merge":true}' \
+            "https://gitea.herbhall.net/api/v1/repos/${REPO}/pulls/${PR}/merge")
+
+          if [ "$HTTP" = "200" ] || [ "$HTTP" = "204" ] || [ "$HTTP" = "405" ]; then
+            echo "Merge result: HTTP $HTTP (200/204=merged, 405=already merged)"
+          else
+            echo "Merge failed: HTTP $HTTP"
+            exit 1
+          fi

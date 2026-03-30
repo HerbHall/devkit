@@ -20,7 +20,7 @@ Examples of broad wildcards:
 
 - `"Bash"` -- matches all Bash commands
 - `"Read"` -- matches all Read operations
-- `"mcp__*"` -- matches all MCP tools
+- `"mcp__servername__*"` -- matches all tools from a specific MCP server (note: `mcp__*` does NOT work as a universal wildcard)
 
 ### 3. Find redundant specific entries
 
@@ -28,7 +28,7 @@ For each broad wildcard found, identify specific entries it subsumes:
 
 - `"Bash"` subsumes `"Bash(git add:*)"`, `"Bash(gh pr merge 30 --squash --admin)"`, etc.
 - `"Read"` subsumes `"Read(d:/DevSpace/**)"`, etc.
-- `"mcp__*"` subsumes `"mcp__memory__create_entities"`, `"mcp__MCP_DOCKER__mcp-find"`, etc.
+- `"mcp__servername__*"` subsumes `"mcp__servername__toolname"` (e.g., `"mcp__memory__*"` subsumes `"mcp__memory__create_entities"`)
 
 An entry is redundant if a broader entry in the same array already covers it.
 

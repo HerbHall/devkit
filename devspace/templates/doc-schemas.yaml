@@ -1,0 +1,432 @@
+# Document Structure Schemas (Write Contracts)
+#
+# These schemas define the expected structure for each document type.
+# Dual-use:
+#   1. Validation: doc-review skill checks existing docs against these schemas
+#   2. Write contract: agents producing docs must conform to these schemas
+#
+# Schema fields:
+#   type: Document type identifier
+#   description: What this document type is for
+#   filename_pattern: Regex matching filenames of this type
+#   strictness: strict (all required sections must exist in order) | flexible (required sections must exist, order varies)
+#   frontmatter: Required metadata (yaml or markdown-inline style)
+#   h1: Pattern for the top-level heading
+#   sections: Required and optional H2 sections with constraints
+#
+# Section constraints:
+#   required: true/false
+#   order: Position hint (lower = earlier). Only enforced when strictness=strict.
+#   subsections: Required H3 headings under this H2
+#   contains: Content type requirements (code_block, table, checklist, list)
+#   description: What this section should contain
+
+schemas:
+
+  # --- Formal Decision Documents ---
+
+  - type: adr
+    description: Architecture Decision Record -- captures a significant design decision with context, rationale, and consequences
+    filename_pattern: "^ADR-\\d{3,4}.*\\.md$"
+    strictness: strict
+    frontmatter:
+      style: markdown-inline
+      required_fields:
+        - name: Status
+          values: [Proposed, Accepted, Deprecated, Superseded]
+        - name: Date
+          format: "YYYY-MM-DD"
+        - name: Deciders
+    h1:
+      pattern: "^# ADR-\\d{3,4}: .+"
+    sections:
+      - heading: Context
+        required: true
+        order: 1
+        description: What issue or forces are at play. Why this decision is needed.
+      - heading: Decision
+        required: true
+        order: 2
+        description: The change being proposed or agreed to.
+      - heading: Consequences
+        required: true
+        order: 3
+        subsections:
+          - heading: Positive
+            required: true
+          - heading: Negative
+            required: true
+          - heading: Neutral
+            required: true
+      - heading: Impact Assessment
+        required: true
+        order: 4
+        description: Scope, reversibility, dependencies affected, review level required.
+        contains: [list]
+      - heading: Alternatives Considered
+        required: true
+        order: 5
+        description: At least 1 alternative with rationale for rejection.
+      - heading: References
+        required: false
+        order: 6
+
+  - type: design-doc
+    description: Lightweight RFC/design document for proposed system changes
+    filename_pattern: "^DES-\\d{3,4}.*\\.md$"
+    strictness: strict
+    frontmatter:
+      style: markdown-inline
+      required_fields:
+        - name: Status
+          values: [Draft, "In Review", Accepted, Implemented, Abandoned]
+        - name: Date
+          format: "YYYY-MM-DD"
+        - name: Author
+      optional_fields:
+        - name: Related
+          description: "Cross-references (ADR-NNN, RN-NNN, RF-NNN)"
+    h1:
+      pattern: "^# DES-\\d{3,4}: .+"
+    sections:
+      - heading: Problem Statement
+        required: true
+        order: 1
+      - heading: Goals
+        required: true
+        order: 2
+        contains: [list]
+      - heading: Non-Goals
+        required: true
+        order: 3
+        contains: [list]
+      - heading: Proposed Design
+        required: true
+        order: 4
+        subsections:
+          - heading: "API / Interface"
+            required: false
+          - heading: Data Model
+            required: false
+      - heading: Implementation Plan
+        required: true
+        order: 5
+        contains: [list]
+      - heading: Open Questions
+        required: true
+        order: 6
+        contains: [checklist]
+      - heading: References
+        required: false
+        order: 7
+
+  - type: test-plan
+    description: QA test plan for a feature, release, or component
+    filename_pattern: "^TP-\\d{3,4}.*\\.md$"
+    strictness: strict
+    frontmatter:
+      style: markdown-inline
+      required_fields:
+        - name: Status
+          values: [Draft, Active, Complete]
+        - name: Date
+          format: "YYYY-MM-DD"
+        - name: Scope
+      optional_fields:
+        - name: Related
+    h1:
+      pattern: "^# TP-\\d{3,4}: .+"
+    sections:
+      - heading: Objective
+        required: true
+        order: 1
+      - heading: Test Strategy
+        required: true
+        order: 2
+      - heading: Test Cases
+        required: true
+        order: 3
+        contains: [table]
+        description: "Tables with columns: #, Scenario, Steps, Expected Result, Status"
+      - heading: Edge Cases
+        required: true
+        order: 4
+        contains: [list]
+      - heading: Environment
+        required: true
+        order: 5
+      - heading: Results
+        required: true
+        order: 6
+
+  # --- Project Configuration Documents ---
+
+  - type: claude-md
+    description: Project configuration for Claude Code agents -- build commands, architecture, conventions
+    filename_pattern: "^CLAUDE\\.md$"
+    strictness: flexible
+    frontmatter:
+      style: none
+    h1:
+      pattern: "^# .+"
+      description: "Project name as H1"
+    sections:
+      - heading: Quick Start
+        required: true
+        contains: [code_block]
+        description: "Must contain executable build/test/run commands"
+        aliases: [Build Commands, Build and Test, Getting Started]
+      - heading: Architecture
+        required: true
+        description: "High-level system structure"
+        aliases: [Project Structure, Directory Structure, Structure]
+      - heading: Development Conventions
+        required: false
+        aliases: [Conventions, Code Style, Coding Standards]
+      - heading: Testing
+        required: false
+        aliases: [Tests, Test Strategy]
+      - heading: Key Dependencies
+        required: false
+        aliases: [Dependencies, Tech Stack, Stack]
+      - heading: Common Tasks
+        required: false
+
+  - type: agents-md
+    description: Copilot/agent instructions for automated coding
+    filename_pattern: "^AGENTS\\.md$"
+    strictness: strict
+    frontmatter:
+      style: none
+    h1:
+      pattern: "^# .+"
+    sections:
+      - heading: Tech Stack
+        required: true
+        order: 1
+      - heading: Build and Test Commands
+        required: true
+        order: 2
+        contains: [code_block]
+      - heading: Project Structure
+        required: true
+        order: 3
+      - heading: Workflow Rules
+        required: true
+        order: 4
+        subsections:
+          - heading: Always Do
+            required: true
+          - heading: Ask First
+            required: true
+          - heading: Never Do
+            required: true
+      - heading: Core Principles
+        required: true
+        order: 5
+      - heading: Error Handling
+        required: true
+        order: 6
+      - heading: Testing Conventions
+        required: true
+        order: 7
+      - heading: Commit Format
+        required: true
+        order: 8
+
+  # --- Community/Governance Documents ---
+
+  - type: readme
+    description: Project landing page for GitHub/Gitea
+    filename_pattern: "^README\\.md$"
+    strictness: flexible
+    frontmatter:
+      style: none
+    h1:
+      pattern: "^# .+"
+    sections:
+      - heading: Description
+        required: true
+        description: "Can be implicit (text after H1 before first H2)"
+        aliases: [Overview, About, Introduction]
+      - heading: Installation
+        required: false
+        contains: [code_block]
+        aliases: [Getting Started, Quick Start, Setup]
+      - heading: Usage
+        required: false
+        aliases: [How to Use, Examples]
+      - heading: License
+        required: true
+        aliases: [Licensing]
+
+  - type: contributing
+    description: Contributor guidelines
+    filename_pattern: "^CONTRIBUTING\\.md$"
+    strictness: strict
+    frontmatter:
+      style: none
+    h1:
+      pattern: "^# Contributing to .+"
+    sections:
+      - heading: Getting Started
+        required: true
+        order: 1
+      - heading: Development Workflow
+        required: true
+        order: 2
+      - heading: Commit Messages
+        required: true
+        order: 3
+      - heading: Pull Requests
+        required: true
+        order: 4
+      - heading: Reporting Issues
+        required: true
+        order: 5
+      - heading: Code of Conduct
+        required: true
+        order: 6
+
+  - type: security
+    description: Security vulnerability reporting policy
+    filename_pattern: "^SECURITY\\.md$"
+    strictness: strict
+    frontmatter:
+      style: none
+    h1:
+      pattern: "^# Security Policy"
+    sections:
+      - heading: Reporting a Vulnerability
+        required: true
+        order: 1
+      - heading: What to Include
+        required: true
+        order: 2
+      - heading: Response Timeline
+        required: true
+        order: 3
+      - heading: Supported Versions
+        required: true
+        order: 4
+        contains: [table]
+
+  # --- Operational Documents ---
+
+  - type: handoff
+    description: Agent handoff document for cross-session work transfer
+    filename_pattern: "^handoff.*\\.md$"
+    strictness: strict
+    frontmatter:
+      style: markdown-inline
+      required_fields:
+        - name: Date
+          format: "YYYY-MM-DD"
+        - name: Type
+          values: ["Tier 1", "Tier 2", "Tier 3"]
+        - name: Repo
+        - name: Branch
+    h1:
+      pattern: "^# Handoff: .+"
+    sections:
+      - heading: Context
+        required: true
+        order: 1
+      - heading: Changes Required
+        required: true
+        order: 2
+      - heading: "Git Workflow (MANDATORY)"
+        required: true
+        order: 3
+        contains: [code_block]
+      - heading: Validation
+        required: true
+        order: 4
+      - heading: Commit Message
+        required: true
+        order: 5
+
+  - type: runbook
+    description: Operational procedure for infrastructure tasks
+    filename_pattern: ".*runbook.*\\.md$|.*ops.*\\.md$|.*recovery.*\\.md$"
+    strictness: flexible
+    frontmatter:
+      style: none
+    h1:
+      pattern: "^# .+"
+    sections:
+      - heading: Purpose
+        required: true
+        aliases: [Overview, About, When to Use]
+      - heading: Prerequisites
+        required: false
+        aliases: [Requirements, Before You Start]
+      - heading: Procedure
+        required: true
+        contains: [code_block]
+        aliases: [Steps, Instructions, How To]
+        description: "Must contain executable commands"
+      - heading: Troubleshooting
+        required: false
+        aliases: [Known Issues, Common Problems, Recovery]
+
+  # --- Skill Documents ---
+
+  - type: skill
+    description: Claude Code skill definition with frontmatter and routing
+    filename_pattern: "^SKILL\\.md$"
+    strictness: flexible
+    frontmatter:
+      style: yaml
+      required_fields:
+        - name: name
+        - name: description
+        - name: user_invocable
+          values: [true, false]
+      optional_fields:
+        - name: allowed-tools
+        - name: model
+    h1:
+      pattern: "^# .+"
+    sections:
+      - heading: When to Use
+        required: false
+        aliases: [Purpose, Overview]
+      - heading: Steps
+        required: false
+        aliases: [Workflow, Process, Procedure]
+
+  # --- Informational Documents (loosest schema) ---
+
+  - type: architecture
+    description: System architecture overview -- informational, no fixed template
+    filename_pattern: "^architecture\\.md$|^ARCHITECTURE\\.md$"
+    strictness: flexible
+    frontmatter:
+      style: none
+    h1:
+      pattern: "^# .+"
+    sections: []
+    notes: "No required sections. Informational docs are validated for freshness and cross-references only, not structure."
+
+  - type: requirements
+    description: Feature requirements with MoSCoW prioritization
+    filename_pattern: "^requirements\\.md$|^REQUIREMENTS\\.md$"
+    strictness: flexible
+    frontmatter:
+      style: none
+    h1:
+      pattern: "^# .+"
+    sections:
+      - heading: Must Have
+        required: true
+        aliases: [Must, Required]
+      - heading: Should Have
+        required: false
+        aliases: [Should, Important]
+      - heading: Could Have
+        required: false
+        aliases: [Could, Nice to Have]
+      - heading: Won't Have
+        required: false
+        aliases: ["Won't", Out of Scope, Not In Scope]

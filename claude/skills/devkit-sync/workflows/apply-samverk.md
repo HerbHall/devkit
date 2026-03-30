@@ -26,16 +26,11 @@ Add the Samverk lifecycle overlay to an existing DevKit-configured project.
    b. Check known absolute path: `D:\DevSpace\Samverk\overlay\` (Windows)
       or `~/DevSpace/Samverk/overlay/` (Unix)
 
-   c. Fetch from GitHub:
-
-      ```bash
-      gh api repos/HerbHall/samverk/contents/overlay/labels.json \
-        --jq '.content' | base64 -d
-      ```
+   c. Fetch via Samverk MCP `read_file` tool:
+      `project: samverk`, `path: overlay/labels.json`
 
    If none of the above succeed, report: "Samverk overlay spec not found. Clone
-   HerbHall/samverk into your DevSpace directory and retry, or ensure `gh` is
-   authenticated."
+   Samverk into your DevSpace directory, or ensure the Samverk MCP is configured."
 
 3. **Gather project info:**
 

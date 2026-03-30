@@ -240,6 +240,6 @@ Add CI checks that validate no machine-specific content (paths, usernames) appea
 ## References
 
 - [ADR-0011: DevKit Synchronization Architecture](ADR-0011-sync-architecture.md)
-- [Issue #81: Three-tier architecture design](https://github.com/HerbHall/devkit/issues/81)
-- [Issue #85: Project registry](https://github.com/HerbHall/devkit/issues/85)
-- [Issue #86: devkit promote command](https://github.com/HerbHall/devkit/issues/86)
+- [Issue #81: Three-tier architecture design](https://gitea.herbhall.net/samverk/devkit/issues/81)
+- [Issue #85: Project registry](https://gitea.herbhall.net/samverk/devkit/issues/85)
+- [Issue #86: devkit promote command](https://gitea.herbhall.net/samverk/devkit/issues/86)

@@ -76,7 +76,7 @@ For each MCP Memory entity not yet in rules files:
 **Preferences** (Tier 1 -- propose only):
 
 - Do NOT edit `workflow-preferences.md` directly
-- Create a DevKit issue: `gh issue create -R HerbHall/devkit --title "pref: <description>"`
+- Create a DevKit issue via Samverk MCP `create_issue` tool (`project: devkit`, `title: "pref: <description>"`)
 - Note the issue number in the update report
 
 Update `last_updated` in all modified files.

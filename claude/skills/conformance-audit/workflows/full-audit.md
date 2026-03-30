@@ -70,7 +70,7 @@ detect_stack() {
 
 Record the detected stack(s) alongside each project name.
 
-### 4. Run 18-Point Checklist
+### 4. Run 25-Point Checklist
 
 For each project, run every check from `references/checklist.md`. For each check:
 

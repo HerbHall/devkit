@@ -1,6 +1,6 @@
 # Conformance Checklist
 
-21-point checklist for DevKit project conformance. Each check includes what to look for, which stacks need it, how to determine pass/fail, and which DevKit template provides the fix.
+25-point checklist for DevKit project conformance. Each check includes what to look for, which stacks need it, how to determine pass/fail, and which DevKit template provides the fix.
 
 ## Stack Detection
 
@@ -249,6 +249,71 @@ done
 - **Fix reference**: Run `setup/new-project.ps1` for new projects. For existing projects, create manually:
   `{"project":"<name>","tier":"full","profile":"<stack>","family":"<Family>","managed_by":null,"created":"<date>","devkit_version":"<version>"}`
 - **Note**: Orphan detection in `SessionStart.sh` also flags this at session start.
+
+### 23. Document Structure Compliance
+
+- **What to check**: Required document types exist and match schemas from `doc-schemas.yaml`
+- **Stacks**: All
+- **Pass criteria**: At minimum, `CLAUDE.md` and `README.md` exist and contain their required sections per schema. Check `CLAUDE.md` for "Quick Start" or "Quick Reference" section and at least one build/test command. Check `README.md` for "Description" (or a top-level paragraph) and "Usage" or "Installation" section.
+- **Fail indicators**: `CLAUDE.md` missing required sections (no Quick Start, no build commands). `README.md` missing usage/installation guidance. For Toolkit projects: `SECURITY.md` missing (Medium severity, not a hard fail).
+- **Fix reference**: Run `/doc-review audit` for detailed per-file findings. Use `doc-schemas.yaml` as the write contract for regenerating compliant documents.
+- **Schema location**: `D:\DevSpace\Toolkit\devkit\devspace\templates\doc-schemas.yaml`
+
+### 24. Link Integrity
+
+- **What to check**: Internal cross-references in markdown files resolve to existing files
+- **Stacks**: All
+- **Pass criteria**: Sample up to 20 markdown files. Extract internal links (relative paths to `.md` files). All sampled links resolve to existing files.
+- **Fail indicators**: Any internal link points to a non-existent file. Anchor references (`#section`) to non-existent headings in the target file.
+- **Fix reference**: Run `lychee --offline --include-fragments .` for comprehensive local link checking. Run `/doc-review fix` for formatting-level corrections.
+- **Check snippet**:
+
+```bash
+FAILS=0
+for f in $(find . -name "*.md" -not -path "*/node_modules/*" -not -path "*/.git/*" | head -20); do
+  dir=$(dirname "$f")
+  while IFS= read -r link; do
+    target=$(echo "$link" | sed 's/#.*//')  # strip anchor
+    [ -z "$target" ] && continue
+    if [ ! -f "$dir/$target" ] && [ ! -f "$target" ]; then
+      echo "FAIL: $f -> $target (not found)"
+      FAILS=$((FAILS+1))
+    fi
+  done < <(grep -oP '\[.*?\]\(\K[^)]+' "$f" | grep -E '\.md' | grep -v '^http')
+done
+[ "$FAILS" -eq 0 ] && echo "PASS" || echo "FAIL ($FAILS broken links)"
+```
+
+### 25. Documentation Freshness
+
+- **What to check**: Core documentation updated within 90 days when related code has been actively changed
+- **Stacks**: All
+- **Pass criteria**: `CLAUDE.md` and `README.md` last modified within 90 days, OR no code files (`.go`, `.ts`, `.rs`, `.cs`, `.py`) modified in the same 90-day window (dormant project exception).
+- **Fail indicators**: `CLAUDE.md` or `README.md` not updated in 90+ days while code files in the same project have recent commits.
+- **Fix reference**: Run `/doc-review stale` for a detailed freshness report showing which documents reference actively-changed code.
+- **Check snippet**:
+
+```bash
+THRESHOLD=90
+NOW=$(date +%s)
+FAILS=0
+CODE_RECENT=$(git log --since="${THRESHOLD} days ago" --name-only --pretty=format: -- \
+  "*.go" "*.ts" "*.tsx" "*.rs" "*.cs" "*.py" | sort -u | grep -v '^$' | wc -l)
+if [ "$CODE_RECENT" -eq 0 ]; then
+  echo "SKIP (dormant project -- no code changes in ${THRESHOLD} days)"
+  exit 0
+fi
+for doc in CLAUDE.md README.md; do
+  [ ! -f "$doc" ] && continue
+  LAST=$(git log -1 --format=%ct -- "$doc" 2>/dev/null || echo 0)
+  DAYS=$(( (NOW - LAST) / 86400 ))
+  if [ "$DAYS" -gt "$THRESHOLD" ]; then
+    echo "FAIL: $doc last updated ${DAYS} days ago (threshold: ${THRESHOLD})"
+    FAILS=$((FAILS+1))
+  fi
+done
+[ "$FAILS" -eq 0 ] && echo "PASS" || echo "FAIL ($FAILS stale core docs)"
+```
 
 ## Scoring
 

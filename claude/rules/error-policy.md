@@ -24,12 +24,12 @@ and build issues can be resolved immediately.
 ### Step 2: Track It
 
 If the fix is out of scope (different module, different language,
-requires architectural change), create a GitHub issue immediately:
+requires architectural change), create an issue immediately via the
+Samverk MCP `create_issue` tool:
 
-```bash
-gh issue create -R OWNER/REPO --title "fix: <description>" \
-  --body "Found during <task>. Error: <details>. Location: <file:line>"
-```
+- `project`: the target project name (e.g., `devkit`, `samverk`, `synapset`)
+- `title`: `fix: <description>`
+- `body`: `Found during <task>. Error: <details>. Location: <file:line>`
 
 Never leave an error undocumented. The issue is the minimum
 acceptable response.
@@ -76,8 +76,8 @@ When working in a project (e.g., Samverk) and finding a gap that
 DevKit should address:
 
 1. **Do NOT** edit DevKit files directly from the project context
-2. **Do** create a GitHub issue in the DevKit repo:
-   `gh issue create -R HerbHall/devkit --title "..." --body "..."`
+2. **Do** create a DevKit issue via the Samverk MCP `create_issue` tool:
+   `project: devkit`, title and body describing what was found and why
 3. Include: what was found, where, why current rules didn't prevent
    it, and a proposed fix
 4. The fix gets implemented when actively working in DevKit context

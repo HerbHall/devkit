@@ -70,6 +70,23 @@ devkit_pull() {
         return 0
     fi
 
+    # Ensure DevKit clone's origin points to Gitea (DevKit lives on Gitea).
+    # This only affects the DevKit repo, not other project repos.
+    local origin_url
+    origin_url=$(git -C "$devkit_path" remote get-url origin 2>/dev/null)
+    if [[ "$origin_url" == *"github.com"* ]]; then
+        git -C "$devkit_path" remote set-url origin "https://gitea.herbhall.net/samverk/devkit.git" 2>/dev/null
+        _devkit_log "REMOTE_REWRITTEN_TO_GITEA"
+        echo "DevKit: origin rewritten from GitHub to Gitea"
+        # Remove duplicate gitea remote if it points to the same URL
+        local gitea_url
+        gitea_url=$(git -C "$devkit_path" remote get-url gitea 2>/dev/null || true)
+        if [ "$gitea_url" = "https://gitea.herbhall.net/samverk/devkit.git" ]; then
+            git -C "$devkit_path" remote remove gitea 2>/dev/null || true
+            _devkit_log "REMOVED_DUPLICATE_GITEA_REMOTE"
+        fi
+    fi
+
     # Fetch with timeout (5s) to avoid blocking on network issues
     if ! timeout 5 git -C "$devkit_path" fetch origin 2>/dev/null; then
         _devkit_log "SKIPPED_OFFLINE"
@@ -105,6 +122,235 @@ devkit_pull() {
 }
 
 devkit_pull
+
+# ===== Settings Reconciliation =====
+# Merges structural keys from settings.template.json into live settings.json.
+# Preserves all accumulated allow entries and local customizations.
+# Only adds keys present in template but missing from live settings.
+devkit_settings_reconcile() {
+    local devkit_path="$1"
+    local claude_dir="$HOME/.claude"
+    local live="$claude_dir/settings.json"
+    local template="$claude_dir/settings.template.json"
+
+    # Both files must exist
+    [ -f "$live" ] || return 0
+    [ -f "$template" ] || return 0
+
+    # Require python3 for JSON merge (bash can't safely parse JSON)
+    command -v python3 >/dev/null 2>&1 || return 0
+
+    python3 - "$template" "$live" <<'PYEOF'
+import json, sys, shutil
+from pathlib import Path
+
+template_path, live_path = sys.argv[1], sys.argv[2]
+
+try:
+    with open(template_path) as f:
+        template = json.load(f)
+    with open(live_path) as f:
+        live = json.load(f)
+except (json.JSONDecodeError, FileNotFoundError):
+    sys.exit(0)
+
+changed = False
+
+# --- Merge permissions.deny from template ---
+# Template deny entries are authoritative (fleet-wide policy).
+# Add any template deny entries missing from live settings.
+tmpl_deny = template.get("permissions", {}).get("deny", [])
+if tmpl_deny:
+    live.setdefault("permissions", {})
+    live_deny = live["permissions"].get("deny", [])
+    for entry in tmpl_deny:
+        if entry not in live_deny:
+            live_deny.append(entry)
+            changed = True
+    if live_deny:
+        live["permissions"]["deny"] = live_deny
+
+# --- Remove allow entries that are now denied ---
+# If template added a deny wildcard, remove matching specific allows.
+# e.g., deny "mcp__claude_ai_Samverk_MCP__*" removes
+#        allow "mcp__claude_ai_Samverk_MCP__list_issues"
+if tmpl_deny:
+    import fnmatch
+    live_allow = live.get("permissions", {}).get("allow", [])
+    filtered = []
+    for entry in live_allow:
+        denied = any(fnmatch.fnmatch(entry, pat) for pat in tmpl_deny)
+        if not denied:
+            filtered.append(entry)
+        else:
+            changed = True
+    if len(filtered) != len(live_allow):
+        live["permissions"]["allow"] = filtered
+
+# --- Merge hooks from template ---
+# Add hook event types (UserPromptSubmit, Stop, etc.) that exist in
+# template but are completely missing from live settings.
+tmpl_hooks = template.get("hooks", {})
+if tmpl_hooks:
+    live.setdefault("hooks", {})
+    for event_type, hooks_list in tmpl_hooks.items():
+        if event_type not in live["hooks"]:
+            live["hooks"][event_type] = hooks_list
+            changed = True
+
+# --- Merge enableAllProjectMcpServers from template ---
+for key in ["enableAllProjectMcpServers", "autoUpdatesChannel"]:
+    if key in template and key not in live:
+        live[key] = template[key]
+        changed = True
+
+if changed:
+    # Backup before modifying
+    backup = Path(live_path).with_suffix(".json.bak")
+    shutil.copy2(live_path, backup)
+    with open(live_path, "w") as f:
+        json.dump(live, f, indent=2)
+        f.write("\n")
+    print(f"DevKit: settings.json reconciled with template ({backup.name} backup created)")
+PYEOF
+}
+
+devkit_settings_reconcile "$(_devkit_resolve_path)"
+
+# ===== MCP Config Merge =====
+# Merges local MCP server entries from template into ~/.claude/mcp.json.
+# Preserves all existing servers -- only upserts servers defined in template.
+# Ensures local-network machines use LAN addresses (not CF tunnel URLs).
+# No secrets in repo -- tokens resolved from environment at runtime.
+devkit_generate_mcp_json() {
+    local devkit_path="$1"
+    local claude_dir="$HOME/.claude"
+    local target="$claude_dir/mcp.json"
+
+    [ -z "$devkit_path" ] && return 0
+
+    # Template may be symlinked or at the DevKit clone path
+    local template=""
+    if [ -f "$claude_dir/mcp/claude-code.template.json" ]; then
+        template="$claude_dir/mcp/claude-code.template.json"
+    elif [ -f "$devkit_path/mcp/claude-code.template.json" ]; then
+        template="$devkit_path/mcp/claude-code.template.json"
+    fi
+    [ -z "$template" ] && return 0
+
+    # Require auth token -- skip if not set
+    local auth_token="${SAMVERK_AUTH_TOKEN:-}"
+    if [ -z "$auth_token" ]; then
+        echo "DevKit: mcp.json skipped -- SAMVERK_AUTH_TOKEN not set"
+        return 0
+    fi
+
+    # Require python3 for safe JSON merge
+    command -v python3 >/dev/null 2>&1 || return 0
+
+    local host="${SAMVERK_HOST:-192.168.1.162}"
+
+    python3 - "$template" "$target" "$auth_token" "$host" <<'PYEOF'
+import json, sys, shutil
+from pathlib import Path
+
+template_path, target_path, auth_token, host = sys.argv[1:5]
+
+# Load template and substitute env vars
+try:
+    raw = Path(template_path).read_text()
+except FileNotFoundError:
+    sys.exit(0)
+
+raw = raw.replace("${SAMVERK_AUTH_TOKEN}", auth_token)
+raw = raw.replace("${SAMVERK_HOST}", host)
+
+try:
+    template = json.loads(raw)
+except json.JSONDecodeError:
+    print("DevKit: mcp.json merge skipped -- template parse error")
+    sys.exit(0)
+
+template_servers = template.get("mcpServers", {})
+if not template_servers:
+    sys.exit(0)
+
+# Load existing mcp.json (or start empty)
+live = {"mcpServers": {}}
+if Path(target_path).exists():
+    try:
+        with open(target_path) as f:
+            live = json.load(f)
+    except (json.JSONDecodeError, FileNotFoundError):
+        live = {"mcpServers": {}}
+
+live.setdefault("mcpServers", {})
+
+# Upsert template servers into live config
+changed = False
+for name, config in template_servers.items():
+    if live["mcpServers"].get(name) != config:
+        live["mcpServers"][name] = config
+        changed = True
+
+if changed:
+    # Backup before modifying
+    if Path(target_path).exists():
+        backup = Path(target_path).with_suffix(".json.bak")
+        shutil.copy2(target_path, backup)
+    with open(target_path, "w") as f:
+        json.dump(live, f, indent=2)
+        f.write("\n")
+    updated = ", ".join(template_servers.keys())
+    print(f"DevKit: mcp.json updated ({updated}) -- other servers preserved")
+PYEOF
+}
+
+devkit_generate_mcp_json "$(_devkit_resolve_path)"
+
+# ===== Config Forge Patch =====
+# Sets the machine default forge to Gitea for DevKit operations and new project
+# scaffolding. Per-project forges are declared in .samverk/project.yaml and are
+# not affected by this setting. Projects on GitHub remain on GitHub.
+_devkit_patch_config_forge() {
+    local config="$HOME/.devkit-config.json"
+    [ -f "$config" ] || return 0
+    command -v python3 >/dev/null 2>&1 || return 0
+
+    python3 - "$config" <<'PYEOF'
+import json, sys, shutil
+from pathlib import Path
+
+config_path = sys.argv[1]
+try:
+    with open(config_path) as f:
+        config = json.load(f)
+except (json.JSONDecodeError, FileNotFoundError):
+    sys.exit(0)
+
+changed = False
+forge = config.get("forge", {})
+
+if forge.get("primary") == "github":
+    forge["primary"] = "gitea"
+    changed = True
+
+if not forge.get("giteaUrl"):
+    forge["giteaUrl"] = "http://192.168.1.160:3000"
+    changed = True
+
+if changed:
+    config["forge"] = forge
+    backup = Path(config_path).with_suffix(".json.bak")
+    shutil.copy2(config_path, backup)
+    with open(config_path, "w") as f:
+        json.dump(config, f, indent=2)
+        f.write("\n")
+    print("DevKit: .devkit-config.json patched (forge.primary -> gitea)")
+PYEOF
+}
+
+_devkit_patch_config_forge
 
 # ===== Version Check =====
 # Compare local VERSION with origin/main after devkit_pull's fetch.

@@ -30,7 +30,7 @@ Deliberate retrospective analysis for continuous improvement. Extracts learnings
 Storage depends on WHERE the session is running:
 
 - **In DevKit repo** (`.sync-manifest.json` present): Create a feature branch, write Tier 2 rules, commit, push, and open a PR. DevKit is the source of truth but all changes still go through branch/PR — never commit directly to main.
-- **In any other project**: Write to MCP Memory only. For stack-specific or universal learnings, create a DevKit issue (`gh issue create -R HerbHall/devkit`) so the learning can be reviewed and promoted to rules files through a PR.
+- **In any other project**: Write to MCP Memory only. For stack-specific or universal learnings, create a DevKit issue via the Samverk MCP `create_issue` tool (`project: devkit`) so the learning can be reviewed and promoted to rules files through a PR.
 
 This prevents projects from modifying symlinked rules files directly. Symlinks provide READ access to DevKit rules; writing flows through issues.
 

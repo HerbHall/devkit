@@ -1,8 +1,8 @@
 ---
 description: Known gotchas and platform-specific issues. Read when debugging unexpected behavior.
 tier: 2
-entry_count: 41
-last_updated: "2026-03-22"
+entry_count: 52
+last_updated: "2026-03-30"
 ---
 
 # Known Gotchas
@@ -139,6 +139,10 @@ All parallel agents write to the same working directory. Sort into branches via 
 **Issue:** `git checkout <branch>` fails with "already used by worktree" when the branch is checked out in any worktree (including agent worktrees).
 **Fix:** Run `git worktree remove <path> --force` before checking out in the main tree. Prune worktrees after parallel agents complete.
 
+### Shared registration files are the most common parallel agent conflict surface (from issue #437)
+
+**Issue:** Two parallel worktree agents both modifying a shared registration file (e.g. `tools.go`, `router.go`, `routes.go`, skill routing tables) create a two-block rebase conflict when the second branch is rebased onto main after the first merges.
+**Fix:** When planning parallel agents that all add to a shared registration file, assign file ownership -- only ONE agent touches the shared file. Others wait or use a different integration point. Extends the general parallel-agent rule with the most common specific case.
 ### Worktree isolation is partial when launching 5+ agents simultaneously
 
 **Issue:** When launching 5+ parallel agents with `isolation: "worktree"`, not all agents receive isolated worktrees. In observed sessions, only 2-3 of 5 agents got proper worktree directories. The other agents worked in the shared main working directory, causing cross-contamination (commits appearing in wrong branches, agents needing stash-based sorting).
@@ -612,3 +616,71 @@ git push gitea main               # fast-forward from Gitea's perspective
 git push origin main              # sync merge commit back to GitHub
 git push gitea v1.2.3            # also push tags if any
 ```
+
+Note: reference the binary directly (`$HOME/.local/bin/trivy`) in the install step since `$GITHUB_PATH` is not applied to PATH until the **next** step.
+
+## 167. markdownlint-cli2 False Positives on Non-.md Files
+
+**Added:** 2026-03-18 | **Source:** DevKit | **Status:** active
+
+**Platform:** markdownlint-cli2 (all)
+**Issue:** Running `npx markdownlint-cli2` with a glob that accidentally includes non-`.md` files (e.g. `.gitignore`, `.sh` scripts) produces false positives. `#` comment lines are parsed as H1 headings, triggering MD022 (no blank line around headings), MD025 (multiple H1), and MD032 (no blank line around lists).
+**Fix:** Always scope markdownlint globs to `**/*.md` only. CI lint job already does this correctly — the issue only appears in manual local runs where a non-md file is passed directly or included via a broad glob.
+
+## 168. New Trivy CVE Day-Of Blocks All PRs — Hotfix With .trivyignore First
+
+**Added:** 2026-03-18 | **Source:** Synapset | **Status:** active
+
+**Platform:** GitHub Actions (CI with Trivy)
+**Issue:** A CVE published to GitHub Security Advisories at 13:00 UTC caused all PRs to fail Trivy scans from ~19:35 UTC onward on the same day -- including PRs that added zero new dependencies. Trivy downloads a fresh vulnerability DB on each CI run.
+**Fix:** For transitive deps with no fixed version, add a `.trivyignore` file suppressing the specific GHSA ID with a justification comment: (1) it is a transitive dep not directly used, (2) no fix is available, (3) attack surface is limited. Remove when upstream patches.
+**Critical ordering:** Merge the `.trivyignore` hotfix PR *before* feature PRs so CI unblocks across the board. The hotfix PR itself passes Trivy because the ignore is included in its own CI run.
+
+## 169. Gitea act_runner Host Executor Has No pip, ruby, or sudo
+
+**Added:** 2026-03-19 | **Source:** DevKit | **Status:** active
+
+**Platform:** Gitea Actions (act_runner host executor)
+**Issue:** act_runner's host executor runs jobs directly on the server. The "ubuntu-latest" label is just a tag — the actual environment depends on what's installed on the host. Discovered: `python3` is available but has no `pip` (`No module named pip`). No `ruby`. No `sudo` (git user lacks sudo, causing `sudo apt-get` to hang indefinitely — not fail fast). `actions/setup-python@v5` and `actions/setup-node@v4` may also fail.
+**Fix:** Use only Python3 stdlib. For third-party packages, bootstrap from PyPI source using `urllib.request` + `tarfile`:
+
+```python
+import sys, io, os, tarfile, json, urllib.request
+try:
+    import yaml
+except ImportError:
+    api = json.loads(urllib.request.urlopen(
+        'https://pypi.org/pypi/PyYAML/json').read())
+    src_url = next(u['url'] for u in api['urls']
+                   if u['packagetype'] == 'sdist')
+    data = urllib.request.urlopen(src_url).read()
+    with tarfile.open(fileobj=io.BytesIO(data), mode='r:gz') as tf:
+        os.makedirs('/tmp/pyyaml/yaml', exist_ok=True)
+        for m in tf.getmembers():
+            if '/yaml/' in m.name and m.name.endswith('.py'):
+                fobj = tf.extractfile(m)
+                if fobj:
+                    open('/tmp/pyyaml/yaml/' + os.path.basename(m.name), 'wb').write(fobj.read())
+    sys.path.insert(0, '/tmp/pyyaml')
+    import yaml
+```
+
+**Diagnosis tip:** A job that fails "after 0s" but logs show the checkout succeeded indicates the next step is failing immediately — check for missing modules, not missing actions.
+
+## 170. Gitea Actions Check Runs Do Not Satisfy Commit Status Branch Protection
+
+**Added:** 2026-03-19 | **Source:** DevKit | **Status:** active
+
+**Platform:** Gitea Actions / Gitea branch protection
+**Issue:** Gitea branch protection `status_check_contexts` (required status checks) matches against *commit statuses*, but Gitea Actions creates *check runs* — a different system. A PR where Actions CI passes will still show "Not all required status checks successful" and block merge. `gh pr checks` or the Gitea API shows runs as `completed/success` but the merge is still blocked.
+**Fix:** Use `"force_merge": true` in the Gitea merge PR API call:
+
+```bash
+curl -X POST "http://<gitea>/api/v1/repos/<owner>/<repo>/pulls/<N>/merge" \
+  -H "Authorization: token $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"Do":"squash","merge_message_field":"...","force_merge":true}'
+```
+
+Alternatively, use branch protection rules that match check run names instead of commit status contexts — but the mismatch is architectural and `force_merge` is the practical workaround.
+**See also:** KG#123 (Gitea API and Actions gotchas)

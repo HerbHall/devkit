@@ -146,16 +146,20 @@ If an existing pattern or gotcha was actively applied during this session (not j
 1. Store all learnings in MCP Memory only (step 5 above).
 2. For findings that are universal (apply across projects) or stack-specific (apply to all projects using this language/framework), create a DevKit issue:
 
-```bash
-gh issue create -R HerbHall/devkit \
-  --title "autolearn: <brief description>" \
-  --body "Source project: $(basename $(pwd))
+Use the Samverk MCP `create_issue` tool:
+
+- `project`: `devkit`
+- `title`: `autolearn: <brief description>`
+- `body`:
+
+```text
+Source project: <project name>
 Category: <pattern|gotcha|correction>
 Confidence: HIGH
 
 <description of the learning>
 
-Suggested rules file: <autolearn-patterns.md or known-gotchas.md>"
+Suggested rules file: <autolearn-patterns.md or known-gotchas.md>
 ```
 
 **Important:** Do NOT edit files in `~/.claude/rules/` -- they are symlinks to DevKit.
