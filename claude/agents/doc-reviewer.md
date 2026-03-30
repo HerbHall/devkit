@@ -58,6 +58,30 @@ Factual claims in the document are verifiable:
 - Environment variable names match what the code actually reads
 </area>
 
+<area name="executable_reference_validation">
+Validate that executable commands referenced in code blocks actually exist
+in the project's build system:
+- Extract all fenced code blocks with shell/bash language hints (or no hint
+  but containing shell-like commands)
+- For each `make <target>`: read the project Makefile, extract target names
+  (lines matching `^<name>:` and `.PHONY:` declarations). Report missing
+  targets as HIGH severity.
+- For each `npm run <script>` or `pnpm <script>` (excluding install/i):
+  read the project's package.json, check the `scripts` object. Report
+  missing scripts as HIGH severity.
+- For each `go run <path>`: verify the directory exists and contains
+  .go files. Report missing packages as HIGH severity.
+- For each `npx <package>`: check if the package appears in
+  devDependencies or dependencies in package.json. Report as MEDIUM
+  severity (npx can fetch packages remotely).
+- For each `cargo build`/`cargo run`/`cargo test`: verify Cargo.toml
+  exists at project root. Report missing as HIGH severity.
+- Skip validation for commands behind comments, conditional blocks,
+  or explicitly marked as examples/hypothetical.
+- When a Makefile/package.json/Cargo.toml does not exist at all, skip
+  the corresponding validation (the project may not use that build system).
+</area>
+
 <area name="freshness_signals">
 Indicators that content may be outdated:
 - References to deprecated tools, removed files, or archived projects
@@ -82,10 +106,11 @@ For agent-generated documents, validate the schema serves as an output specifica
 4. Check structure compliance: walk through required sections, verify presence and nesting
 5. Check internal consistency: compare claims across sections within the same document
 6. Check cross-references: verify all links, paths, and references resolve
-7. Spot-check semantic accuracy: verify 3-5 factual claims (commands, paths, versions)
-8. Note freshness signals: flag any indicators of staleness
-9. Compile findings with specific file:line references
-10. Deliver a clear verdict
+7. Validate executable references: extract code blocks, verify make targets against Makefile, npm/pnpm scripts against package.json, go run paths against filesystem, and cargo commands against Cargo.toml
+8. Spot-check remaining semantic accuracy: verify 3-5 other factual claims (paths, versions, env vars)
+9. Note freshness signals: flag any indicators of staleness
+10. Compile findings with specific file:line references
+11. Deliver a clear verdict
 </workflow>
 
 <output_format>
@@ -102,7 +127,7 @@ Structure your review as follows:
 For each finding:
 
 - **Severity**: Critical / High / Medium / Low
-- **Category**: Structure | Consistency | Cross-Reference | Accuracy | Freshness | Write Contract
+- **Category**: Structure | Consistency | Cross-Reference | Accuracy | Executable Reference | Freshness | Write Contract
 - **Location**: `file_path:line_number`
 - **Issue**: What the problem is, in plain language
 - **Recommendation**: What should change
@@ -119,7 +144,7 @@ When reviewing multiple files, produce one section per file, then a **Roll-Up Su
 <severity_guide>
 
 - **Critical**: Missing required document entirely (e.g., no CLAUDE.md), dangerous inaccuracy (command that would delete data), broken security guidance
-- **High**: Missing required section, factually wrong command or path, broken internal links that block navigation
+- **High**: Missing required section, factually wrong command or path, broken internal links that block navigation, missing make target / npm script / go package referenced in documentation
 - **Medium**: Missing optional-but-recommended section, stale version reference, orphan section not in schema
 - **Low**: Minor inconsistency between sections, link to external resource that may be stale, heading level off by one
 </severity_guide>

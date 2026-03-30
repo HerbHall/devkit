@@ -66,10 +66,12 @@ cross-reference integrity, and semantic accuracy.
 {LIST_OF_CONTEXT_FILES}
 
 Follow your review workflow exactly. Check structure against the schema,
-verify internal links resolve, spot-check that commands and paths are valid,
-and flag any staleness indicators. Return a structured report with Summary,
-Schema Compliance, Findings (by severity with file:line references), and
-a Verdict of APPROVE, REVISE, or REJECT.
+verify internal links resolve, validate that all executable references in
+code blocks (make targets, npm/pnpm scripts, go run paths) exist in the
+project's build system (check Makefile, package.json, filesystem), spot-check
+other factual claims, and flag any staleness indicators. Return a structured
+report with Summary, Schema Compliance, Findings (by severity with file:line
+references), and a Verdict of APPROVE, REVISE, or REJECT.
 ```
 
 ### 7. Handle the Verdict
