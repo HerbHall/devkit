@@ -139,3 +139,7 @@ Produce a structured report:
 ### 9. Present Results
 
 Display the report to the user. If there are Critical or High findings, highlight them first. Offer to run `/doc-review fix` for formatting issues or `/doc-review <path>` for deep review of specific failing files.
+
+## Post-Processing: Autolearn Capture
+
+After generating findings, follow the [autolearn integration](autolearn-integration.md) workflow to capture recurring patterns.
