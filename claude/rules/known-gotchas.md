@@ -277,6 +277,11 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 **Issue:** Using `$args` as a local variable triggers `PSAvoidAssignmentToAutomaticVariable`.
 **Fix:** Rename to `$cmdArgs`, `$labelArgs`, `$cliArgs`, or any non-reserved name. Other automatic variables: `$error`, `$input`, `$matches`, `$myinvocation`, `$psboundparameters`, `$pscmdlet`, `$psscriptroot`.
 
+### PSUseApprovedVerbs: "Detect" and other common unapproved verbs
+
+**Issue:** PSScriptAnalyzer warns `PSUseApprovedVerbs` when a function uses an unapproved verb. Common culprits: `Detect-`, `Check-`, `Validate-`, `Scan-`, `Discover-`. CI with `-Severity Warning` fails on these.
+**Fix:** Rename to an approved verb. Replacements: `Detect-` → `Get-` or `Find-`; `Check-` → `Test-`; `Validate-` → `Confirm-` or `Test-`; `Scan-` → `Search-`; `Discover-` → `Find-`. Full approved list: `Get-Command -CommandType Cmdlet | Select-Object -ExpandProperty Verb -Unique | Sort-Object`.
+
 ## 107. gh CLI Parameter Gotchas (Consolidated Reference)
 
 **Added:** 2026-03-08 | **Source:** Samverk | **Status:** active
@@ -420,6 +425,11 @@ Windows CRLF (`\r\n`) causes silent failures across multiple tools. Three known 
 
 **Issue:** When a repo has both GitHub (`origin`) and Gitea (`gitea`) remotes, `gh pr create --repo owner/repo` always creates a GitHub PR regardless of which forge is primary. Agent prompts using `gh pr create` will create GitHub PRs even when Gitea is the intended forge.
 **Fix:** Use the Gitea REST API for Gitea PRs: `POST /api/v1/repos/{owner}/{repo}/pulls` with `Authorization: token {TOKEN}`. The `gh` CLI has no Gitea support.
+
+### Hostname credential works with internal IP; local-IP credential is separate
+
+**Issue:** Two distinct credential entries can exist for the same Gitea server: one for the public hostname (`gitea.herbhall.net`) and one for the local IP (`192.168.1.160:3000`). API calls using the local-IP credential may return 401. The hostname credential authenticates correctly against the internal IP URL.
+**Fix:** Always extract credentials using the public hostname: `printf 'protocol=https\nhost=gitea.herbhall.net\n' | git credential fill | grep password`. Use that token with the internal IP API endpoint (`http://192.168.1.160:3000/api/v1/...`). The token is valid for both — it is the Gitea account token, not IP-specific.
 
 ## 125. go:embed Cache Misses Embedded File Changes
 
