@@ -36,10 +36,10 @@ A project may match multiple stacks (e.g., Go backend + Node frontend). Apply ch
 
 ### 3. CI Workflow
 
-- **What to check**: `.github/workflows/ci.yml` (or variant like `ci-node.yml`, `ci-rust.yml`, `ci-dotnet.yml`)
+- **What to check**: `ci.yml` (or variant) in `.github/workflows/` (GitHub) or `.gitea/workflows/` (Gitea)
 - **Stacks**: All
-- **Pass criteria**: At least one CI workflow file exists under `.github/workflows/` with a name containing `ci` or `lint` or `test` or `build`
-- **Fail indicators**: No `.github/workflows/` directory, or no CI-related workflow files
+- **Pass criteria**: At least one CI workflow file exists under `.github/workflows/` OR `.gitea/workflows/` with a name containing `ci`, `lint`, `test`, or `build`
+- **Fail indicators**: Neither `.github/workflows/` nor `.gitea/workflows/` contains a CI-related workflow file
 - **Fix reference**: `project-templates/ci.yml` (Go), `project-templates/ci-node.yml` (Node), `project-templates/ci-rust.yml` (Rust), `project-templates/ci-dotnet.yml` (.NET)
 - **Note**: CI workflows are too project-specific to auto-create; suggest the template but require manual customization
 
@@ -83,12 +83,17 @@ A project may match multiple stacks (e.g., Go backend + Node frontend). Apply ch
 
 - **What to check**: release-please configuration files exist
 - **Stacks**: All
-- **Pass criteria**: All three files exist:
-  - `.release-please-manifest.json`
-  - `release-please-config.json`
-  - `.github/workflows/release-please.yml`
-- **Fail indicators**: Any of the three files missing
-- **Fix reference**: `project-templates/release-please-manifest.json`, `project-templates/release-please-config.json`, `project-templates/release-please.yml`
+- **Pass criteria**: All three files/conditions are met:
+  - `.release-please-manifest.json` exists
+  - `release-please-config.json` exists
+  - A release-please workflow exists in the project's forge workflows directory:
+    - GitHub projects: `.github/workflows/release-please.yml`
+    - Gitea projects: `.gitea/workflows/release-please.yml`
+- **Fail indicators**: Any of the three missing
+- **Fix reference**:
+  - GitHub: `project-templates/release-please.yml`
+  - Gitea: `project-templates/release-please-gitea.yml`
+  - Both: `project-templates/release-please-manifest.json`, `project-templates/release-please-config.json`
 
 ### 9. LICENSE
 
@@ -116,20 +121,21 @@ A project may match multiple stacks (e.g., Go backend + Node frontend). Apply ch
 
 ### 12. Nightly Build Workflow
 
-- **What to check**: `.github/workflows/nightly.yml` (or variant) exists
+- **What to check**: `nightly.yml` (or variant) in the project's forge workflows directory
 - **Stacks**: Go, Node/Docker extension, Rust (skip for .NET desktop)
-- **Pass criteria**: A workflow file exists under `.github/workflows/` with `nightly` in its name or containing a `schedule:` trigger with a cron expression
-- **Fail indicators**: No nightly/scheduled workflow found
+- **Pass criteria**: A workflow file exists under `.github/workflows/` OR `.gitea/workflows/` with `nightly` in its name or containing a `schedule:` trigger with a cron expression
+- **Fail indicators**: No nightly/scheduled workflow found in either directory
 - **Fix reference**: `project-templates/nightly-go.yml` (Go), `project-templates/nightly-node.yml` (Node), `project-templates/nightly-rust.yml` (Rust)
 - **Note**: Nightly workflows are project-specific; suggest the template but require manual customization
 
 ### 13. Release Gate Workflow
 
-- **What to check**: `.github/workflows/release-gate.yml` exists
+- **What to check**: `release-gate.yml` in the project's forge workflows directory
 - **Stacks**: Only if release-please is configured (check 8 passes)
-- **Pass criteria**: File exists
+- **Pass criteria**: `release-gate.yml` exists under `.github/workflows/` (GitHub) or `.gitea/workflows/` (Gitea)
 - **Fail indicators**: release-please is configured but no release-gate workflow
-- **Fix reference**: `project-templates/release-gate.yml`
+- **Fix reference**: `project-templates/release-gate.yml` (GitHub), `project-templates/release-gate-gitea.yml` (Gitea, see DevKit #489)
+- **Note**: Gitea release-gate template not yet implemented — see issue #489
 
 ### 14. Workflow Trigger Patterns
 
