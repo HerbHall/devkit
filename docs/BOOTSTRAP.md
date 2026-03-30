@@ -20,13 +20,13 @@ Clone the devkit repository to your workspace root. We recommend `D:\DevSpace`.
 
 ```powershell
 cd D:\DevSpace
-git clone https://github.com/HerbHall/devkit.git
+git clone https://gitea.herbhall.net/samverk/devkit.git
 cd devkit
 ```
 
 ### Option B: Download as ZIP from GitHub
 
-1. Go to [https://github.com/HerbHall/devkit](https://github.com/HerbHall/devkit)
+1. Go to [https://gitea.herbhall.net/samverk/devkit](https://gitea.herbhall.net/samverk/devkit)
 2. Click **Code > Download ZIP**
 3. Extract to `D:\DevSpace\devkit`
 4. Open PowerShell in the extracted folder
@@ -360,7 +360,7 @@ If bootstrap fails or you encounter issues:
    - `devkit -Phase 2` — just tool installs
    - etc.
 3. **Review the troubleshooting section above** for your specific error
-4. **Check GitHub Issues:** [https://github.com/HerbHall/devkit/issues](https://github.com/HerbHall/devkit/issues)
+4. **Check Issues:** [https://gitea.herbhall.net/samverk/devkit/issues](https://gitea.herbhall.net/samverk/devkit/issues)
 
 ## What's Installed
 
