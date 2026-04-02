@@ -117,4 +117,4 @@ DevKit's `claude/skills/` directory contains user-level skills. When scaffolding
 
 - [KG#61](../claude/rules/known-gotchas.md) -- Discovery that Claude Code settings do not cascade from parent directories
 - [AP#86](../claude/rules/autolearn-patterns.md) -- Archived pattern on linter/hook leaking cross-branch changes in settings files
-- [DevKit issue #131](https://github.com/HerbHall/devkit/issues/131) -- Project scaffolding should include `.claude/settings.json`
+- [DevKit issue #131](https://gitea.herbhall.net/samverk/devkit/issues/131) -- Project scaffolding should include `.claude/settings.json`

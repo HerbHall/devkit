@@ -7,7 +7,7 @@ All notable changes to this project will be documented in this file.
 """
 body = """
 {%- macro remote_url() -%}
-  https://github.com/HerbHall/{{ remote.github.owner }}/{{ remote.github.repo }}
+  https://gitea.herbhall.net/{{ remote.github.owner }}/{{ remote.github.repo }}
 {%- endmacro -%}
 
 {% if version -%}
@@ -56,5 +56,5 @@ breaking_always_bump_major = true
 initial_tag = "0.1.0"
 
 [remote.github]
-owner = "HerbHall"
+owner = "samverk"
 repo = "REPO_NAME"

@@ -32,7 +32,7 @@
         # Loop variables named $profile shadow the automatic $profile variable.
         # These are pre-existing throughout stack.ps1 where $profile means a
         # DevKit stack profile object (unrelated to PS's $profile path string).
-        # Tracked for future rename in https://github.com/HerbHall/devkit/issues
+        # Tracked for future rename in https://gitea.herbhall.net/samverk/devkit/issues
         'PSAvoidAssignmentToAutomaticVariable',
 
         # Start-Job ScriptBlocks that use param() + -ArgumentList pass variables
